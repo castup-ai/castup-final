@@ -398,237 +398,225 @@ export default function Explore() {
                             onClick={e => e.stopPropagation()}
                         >
                             {/* Detailed Profile Modal Transformation */}
-                            <div className="max-h-[85vh] overflow-y-auto custom-scrollbar">
-                                {/* 1. Hero / Header Section */}
-                                <div className="relative">
-                                    {/* Cover Photo */}
-                                    <div className="h-56 sm:h-64 w-full bg-bg-offset overflow-hidden relative">
-                                        {selectedProfile.coverPhoto ? (
-                                            <img src={selectedProfile.coverPhoto} className="w-full h-full object-cover" alt="Cover" />
-                                        ) : (
-                                            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary-light/10 flex items-center justify-center">
-                                                <Camera size={48} className="opacity-10" />
-                                            </div>
-                                        )}
-                                        {/* Share Button Overlay */}
-                                        <button className="absolute top-4 right-16 h-10 w-10 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/50 transition-all border border-white/10 shadow-2xl">
-                                            <Share2 size={18} />
-                                        </button>
-                                        {/* Close Button Overlay */}
-                                        <button
-                                            onClick={handleCloseProfile}
-                                            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/30 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/50 transition-all border border-white/10 shadow-2xl z-10"
-                                        >
-                                            <X size={20} />
-                                        </button>
-                                    </div>
-
-                                    {/* Profile Identity Overlay */}
-                                    <div className="px-6 pb-6 -mt-12 relative flex flex-col sm:flex-row items-end justify-between gap-6">
-                                        <div className="flex flex-col sm:flex-row items-end gap-5">
-                                            <div className="relative group">
-                                                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl bg-bg p-1.5 shadow-2xl overflow-hidden border border-border/50">
-                                                    {selectedProfile.photo ? (
-                                                        <img src={selectedProfile.photo} className="w-full h-full object-cover rounded-2xl" alt="Profile" />
-                                                    ) : (
-                                                        <div className="w-full h-full bg-primary/10 text-primary flex items-center justify-center text-4xl font-black">
-                                                            {selectedProfile.firstName?.[0] || 'U'}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="pb-2 space-y-1">
-                                                <div className="flex items-center gap-2">
-                                                    <h2 className="text-3xl font-black tracking-tight">{selectedProfile.firstName || 'Unknown'} {selectedProfile.lastName || 'User'}</h2>
-                                                    <CheckCircle size={22} className="text-primary" />
-                                                    <div className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black uppercase rounded">#{selectedProfile.role || 'Professional'}</div>
-                                                    <div className="flex items-center gap-1 text-accent font-black text-sm">
-                                                        <Star size={14} fill="currentColor" /> 5
-                                                    </div>
-                                                    <button
-                                                        onClick={e => {
-                                                            e.stopPropagation()
-                                                            setIsFavorite(!isFavorite)
-                                                        }}
-                                                        className={`h-9 w-9 rounded-full bg-bg-offset border border-border flex items-center justify-center transition-all ${isFavorite ? 'text-danger bg-danger/5 border-danger/20 scale-110 shadow-lg' : 'text-text-dim hover:text-danger'}`}
-                                                    >
-                                                        <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Action Buttons in Header */}
-                                        <div className="flex gap-3 pb-2">
-                                            <button className="h-11 px-6 bg-primary text-white text-[11px] font-black uppercase tracking-widest rounded-full shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                                                Add to Estimation List
-                                            </button>
-                                            <div className="relative group">
-                                                <button
-                                                    onClick={() => setShowContactDropdown(!showContactDropdown)}
-                                                    className="h-11 px-6 bg-accent text-white text-[11px] font-black uppercase tracking-widest rounded-full shadow-xl shadow-accent/20 flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                                                >
-                                                    Contact <ChevronDown size={14} className={`transition-transform duration-300 ${showContactDropdown ? 'rotate-180' : ''}`} />
-                                                </button>
-
-                                                <AnimatePresence>
-                                                    {showContactDropdown && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                            className="absolute bottom-full mb-3 right-0 w-48 bg-bg-offset border border-border rounded-2xl shadow-2xl p-2 z-50"
-                                                        >
-                                                            <button className="w-full text-left px-4 py-3 rounded-xl hover:bg-primary/5 transition-colors flex items-center gap-3 text-xs font-bold text-text-main">
-                                                                <Mail size={14} className="text-primary" /> Email Professionally
-                                                            </button>
-                                                            <button className="w-full text-left px-4 py-3 rounded-xl hover:bg-primary/5 transition-colors flex items-center gap-3 text-xs font-bold text-text-main border-t border-border/30">
-                                                                <MessageSquare size={14} className="text-accent" /> Direct Message
-                                                            </button>
-                                                            <button className="w-full text-left px-4 py-3 rounded-xl hover:bg-red-500/5 transition-colors flex items-center gap-3 text-xs font-bold text-danger border-t border-border/30">
-                                                                <X size={14} /> Clear Cache
-                                                            </button>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* 2. Demographic & Experience Grid */}
-                                <div className="px-8 py-8 border-t border-border/30">
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-12">
-                                        <GridStat label="Member Since" value="22/11/2025" />
-                                        <GridStat label="My Response Time" value="48 hours" />
-                                        <GridStat label="Location" value={selectedProfile.location || 'Kochi, Kerala, India'} />
-                                        <GridStat label="Age & Gender" value={`${selectedProfile.age || '--'}, ${selectedProfile.gender || 'Male'}`} />
-                                        <GridStat label="Languages Known" value={selectedProfile.languages?.join(', ') || 'English, Malayalam, Tamil, Hindi'} />
-                                        <GridStat label="Height & Weight" value={`${selectedProfile.height || '--'} (h), ${selectedProfile.weight || '--'} (w)`} />
-                                        <GridStat label="Skin Tone" value={selectedProfile.skinTone || 'Medium'} />
-                                    </div>
-                                </div>
-
-                                {/* 3. Description Section */}
-                                <div className="px-8 pb-10">
-                                    <h3 className="text-lg font-black tracking-tight mb-4">Description</h3>
-                                    <p className="text-sm leading-relaxed text-text-muted font-medium bg-bg-offset/30 p-6 rounded-3xl border border-border/50">
-                                        {selectedProfile.bio || `I am ${selectedProfile.firstName || 'a creator'} — a professional driven by strong characters and rooted emotions. My journey in cinema has always been about exploring real people, their struggles, and their spirited dreams. I love challenging myself and bringing authenticity to every frame. Acting is not just my profession, it's my passion and my identity.`}
-                                    </p>
-                                </div>
-
-                                {/* 4. Professional Stats Blocks */}
-                                <div className="px-8 pb-12 space-y-10">
-                                    <div className="space-y-1">
-                                        <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-text-dim">Years of Experience</h4>
-                                        <p className="text-sm font-black text-primary">{selectedProfile.yearsOfExperience || '10'}</p>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-text-dim">My Next Available Date</h4>
-                                        <p className="text-sm font-black text-accent">{selectedProfile.availabilityDate || '01/12/2025 to 31/12/2025'}</p>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-text-dim">Projects Worked On: Brand Name / Project Title</h4>
-                                        <p className="text-sm font-bold text-text-main leading-relaxed">
-                                            Angamaly Diaries, Velipadinte Pusthakam, Pokkiri Simon, Paipin Chuvattile Pranayam, Chekka Chivantha Vaanam, Sandakozhi 2, Contessa, Sachin, Ikkayude Sakadam, Love FM, Malik, Auto Shankar
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-text-dim">Projects Type</h4>
-                                        <p className="text-sm font-bold text-text-main">Feature Film, Drama, Web Series</p>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-text-dim">Additional Skills:</h4>
-                                        <p className="text-sm font-bold text-text-main">Action Choreographer, Dancer</p>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-text-dim">Awards and Recognition:</h4>
-                                        <p className="text-sm font-medium text-text-muted leading-relaxed">
-                                            South Indian International Movie Awards: Best actor in a Negative role, Vanitha Film Awards: Best Newcomer Actor, Asianet Film Awards: Best New Face Male, Asiavision Awards: New Sensation in acting, Filmfare Awards South: Best Supporting Actor
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* 5. Social & Media Hub */}
-                                <div className="px-8 pb-12 space-y-10">
+                            {/* Simplified Profile Modal Transformation */}
+                            <div className="p-6 md:p-8 max-h-[85vh] overflow-y-auto custom-scrollbar space-y-6">
+                                <div className="flex items-center justify-between mb-2">
                                     <div>
-                                        <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-text-dim mb-4">Social Media Links</h4>
-                                        <div className="flex gap-6">
-                                            <a href="#" className="flex items-center gap-2 text-xs font-black group transition-all">
-                                                <Instagram size={20} className="text-[#E4405F]" /> Instagram
-                                            </a>
-                                            <a href="#" className="flex items-center gap-2 text-xs font-black group transition-all">
-                                                <Globe size={20} className="text-primary" /> Facebook
-                                            </a>
-                                        </div>
+                                        <h2 className="text-2xl font-bold">Profile Details</h2>
+                                        <p className="text-text-muted text-sm mt-1">View professional information and connect</p>
                                     </div>
+                                    <button
+                                        onClick={handleCloseProfile}
+                                        className="h-10 w-10 rounded-full bg-bg-offset hover:bg-border text-text-main flex items-center justify-center transition-all"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
 
-                                    <div>
-                                        <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-text-dim mb-4">Youtube Links</h4>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                            {[1, 2, 3, 4, 5, 6].map(i => (
-                                                <div key={i} className="aspect-video bg-bg-offset rounded-2xl overflow-hidden group relative cursor-pointer border border-border/50">
-                                                    <div className="w-full h-full flex items-center justify-center bg-black/20">
-                                                        <div className="w-10 h-10 bg-danger text-white rounded-full flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110">
-                                                            <Play size={16} fill="white" />
-                                                        </div>
-                                                    </div>
-                                                    <div className="translate-y-full group-hover:translate-y-0 absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent transition-transform">
-                                                        <div className="text-[10px] font-black text-white px-2 py-0.5 bg-danger inline-block rounded-sm mb-1 uppercase">Official Trailer</div>
-                                                        <div className="text-[9px] font-bold text-white/80 line-clamp-1 truncate">Project Title Representation</div>
-                                                    </div>
+                                {/* Card 1: Identity & Connect */}
+                                <div className="bg-bg-offset border border-border/50 rounded-2xl p-6">
+                                    <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+                                        <div className="w-24 h-24 rounded-2xl bg-bg overflow-hidden shrink-0 border border-border/50">
+                                            {selectedProfile.photo ? (
+                                                <img src={selectedProfile.photo} className="w-full h-full object-cover" alt="Profile" />
+                                            ) : (
+                                                <div className="w-full h-full bg-primary/10 text-primary flex items-center justify-center text-3xl font-black">
+                                                    {selectedProfile.firstName?.[0] || 'U'}
                                                 </div>
-                                            ))}
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1 text-center md:text-left">
+                                            <h3 className="text-xl font-bold">{selectedProfile.firstName} {selectedProfile.lastName}</h3>
+                                            <p className="text-primary font-medium mt-1">{selectedProfile.role || 'Professional'}</p>
+                                            <p className="text-text-muted text-sm mt-2 flex items-center justify-center md:justify-start gap-1">
+                                                <MapPin size={14} /> {selectedProfile.location || 'Location not specified'}
+                                            </p>
+                                        </div>
+
+                                        <div className="flex flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
+                                            <button className="flex-1 md:flex-none h-11 px-6 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
+                                                <User size={16} /> Connect
+                                            </button>
+                                            <button className="flex-1 md:flex-none h-11 px-6 bg-bg border border-border text-text-main rounded-xl font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2">
+                                                <MessageSquare size={16} /> Message
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* 6. Portfolio Navigation - Final Tabs */}
-                                <div className="px-8 pb-16">
-                                    <div className="flex gap-8 border-b border-border mb-8">
-                                        {['Photos', 'Videos'].map(tab => (
-                                            <button
-                                                key={tab}
-                                                onClick={() => setPortfolioTab(tab)}
-                                                className={`pb-4 text-sm font-black tracking-widest uppercase transition-all relative ${portfolioTab === tab ? 'text-primary' : 'text-text-dim hover:text-text-main'}`}
-                                            >
-                                                {tab} ({tab === 'Photos' ? '4' : '1'})
-                                                {portfolioTab === tab && (
-                                                    <motion.div layoutId="pTab" className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" />
-                                                )}
-                                            </button>
-                                        ))}
+                                {/* Card 2: Professional Details */}
+                                <div className="bg-bg-offset border border-border/50 rounded-2xl p-6">
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <Briefcase size={18} className="text-primary" />
+                                        <h3 className="font-bold text-lg">Professional Overview</h3>
                                     </div>
 
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        {[1, 2, 3, 4].map(i => (
-                                            <div key={i} className="space-y-2">
-                                                <h5 className="text-[10px] font-black uppercase text-text-muted">Untitled</h5>
-                                                <div className="aspect-[3/4] bg-bg-offset rounded-2xl overflow-hidden border border-border/50 group relative">
-                                                    <div className="w-full h-full bg-gradient-to-br from-primary/10 to-transparent flex items-center justify-center">
-                                                        <Camera size={24} className="opacity-20" />
-                                                    </div>
-                                                    <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <ExternalLink size={24} className="text-white" />
-                                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                        <div>
+                                            <label className="text-text-muted text-xs font-bold mb-2 block">Age</label>
+                                            <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px]">
+                                                {selectedProfile.age || '25'} Years
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-text-muted text-xs font-bold mb-2 block">Gender</label>
+                                            <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium capitalize flex items-center min-h-[48px]">
+                                                {selectedProfile.gender || 'Not specified'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-text-muted text-xs font-bold mb-2 block">Height</label>
+                                            <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px]">
+                                                {selectedProfile.height || '175 cm'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-text-muted text-xs font-bold mb-2 block">Weight</label>
+                                            <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px]">
+                                                {selectedProfile.weight || '70 kg'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-text-muted text-xs font-bold mb-2 block">Experience</label>
+                                            <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px]">
+                                                {selectedProfile.yearsOfExperience || '1+'} Years
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-text-muted text-xs font-bold mb-2 block">Availability</label>
+                                            <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px]">
+                                                {selectedProfile.availability || 'Available Now'}
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2 md:col-span-2">
+                                            <label className="text-text-muted text-xs font-bold mb-2 block">Languages</label>
+                                            <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px] truncate">
+                                                {selectedProfile.languages?.join(', ') || 'English, Malayalam'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6">
+                                        <label className="text-text-muted text-xs font-bold mb-2 block">About</label>
+                                        <div className="bg-bg rounded-xl border border-border/50 p-4 text-sm font-medium min-h-[100px] text-text-main whitespace-pre-wrap">
+                                            {selectedProfile.bio || 'This professional is ready for exciting new projects and collaborations. Reach out to discuss potential opportunities!'}
+                                        </div>
+                                    </div>
+
+                                    {selectedProfile.skills && selectedProfile.skills.length > 0 && (
+                                        <div className="mt-6">
+                                            <label className="text-text-muted text-xs font-bold mb-3 block">Skills</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedProfile.skills.map(skill => (
+                                                    <span key={skill} className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-bold border border-primary/20">
+                                                        {skill}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-6">
+                                        <label className="text-text-muted text-sm font-bold mb-3 block">Additional Skills</label>
+                                        <div className="bg-bg rounded-xl border border-border/50 p-4 font-medium text-text-main min-h-[56px] flex items-center">
+                                            {selectedProfile.additionalSkills || 'Swimming, Horse Riding, Martial Arts, Dancing'}
+                                        </div>
+                                    </div>
+
+                                    {/* Additional Professional Details */}
+                                    <div className="mt-8 pt-6 border-t border-border/30">
+                                        <h3 className="font-bold text-lg mb-6">More Details</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div>
+                                                <label className="text-text-muted text-sm font-bold mb-3 block">Next Available Date</label>
+                                                <div className="bg-bg rounded-xl border border-border/50 p-4 font-medium text-text-main min-h-[56px] flex items-center">
+                                                    {selectedProfile.availabilityDate || '01/12/2025 to 31/12/2025'}
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
+                                            <div>
+                                                <label className="text-text-muted text-sm font-bold mb-3 block">Projects Type</label>
+                                                <div className="bg-bg rounded-xl border border-border/50 p-4 font-medium text-text-main min-h-[56px] flex items-center">
+                                                    {selectedProfile.projectsType || 'Feature Film, Drama, Web Series'}
+                                                </div>
+                                            </div>
+                                        </div>
 
-                            {/* Footer Identity Reference */}
-                            <div className="p-4 border-t border-border flex justify-between items-center bg-bg-offset/30 px-8">
-                                <p className="text-[9px] font-black text-text-dim uppercase tracking-widest">Profile ID: {selectedProfile.id}</p>
-                                <div className="flex gap-4">
-                                    <button className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">Report Profile</button>
-                                    <button className="text-[9px] font-black text-text-dim uppercase tracking-widest hover:underline">Block User</button>
+                                        <div className="mt-8">
+                                            <label className="text-text-muted text-sm font-bold mb-3 block">Projects Worked On</label>
+                                            <div className="bg-bg rounded-xl border border-border/50 p-4 font-medium text-text-main leading-relaxed min-h-[56px] flex items-center">
+                                                {selectedProfile.projectsWorkedOn || 'Angamaly Diaries, Velipadinte Pusthakam, Pokkiri Simon, Paipin Chuvattile Pranayam, Chekka Chivantha Vaanam'}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-8">
+                                            <label className="text-text-muted text-sm font-bold mb-3 block">Awards and Recognition</label>
+                                            <div className="bg-bg rounded-xl border border-border/50 p-4 font-medium text-text-main leading-relaxed min-h-[56px] flex items-center">
+                                                {selectedProfile.awards || 'Best actor in a Negative role, Best New Face Male, New Sensation in acting'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Portfolio & Links */}
+                                    <div className="mt-8 pt-6 border-t border-border/30">
+                                        <h3 className="text-xl font-bold mb-6 text-primary">Portfolio & Links</h3>
+
+                                        <div>
+                                            {/* Portfolio section */}
+                                            <div>
+                                                <label className="text-text-muted text-sm font-bold mb-4 block uppercase tracking-wider">Portfolio (Images & Videos)</label>
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                                    {[1, 2, 3, 4].map(i => (
+                                                        <div key={i} className="aspect-square bg-bg rounded-2xl border border-border/50 overflow-hidden flex items-center justify-center text-primary/20 hover:text-primary transition-colors cursor-pointer group">
+                                                            <ImageIcon size={32} className="group-hover:scale-110 transition-transform" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Social Links section */}
+                                            <div className="mt-14 pt-4">
+                                                <label className="text-text-muted text-sm font-bold mb-4 block uppercase tracking-wider">Social & Project Links</label>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <a href="#" className="flex items-center gap-4 bg-bg rounded-xl border border-border/50 p-4 hover:border-primary/50 transition-colors group">
+                                                        <div className="w-10 h-10 rounded-lg bg-bg-offset flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                                            <Instagram size={20} className="text-text-muted group-hover:text-primary transition-colors" />
+                                                        </div>
+                                                        <span className="font-medium text-text-muted group-hover:text-text-main transition-colors">Instagram</span>
+                                                    </a>
+                                                    <a href="#" className="flex items-center gap-4 bg-bg rounded-xl border border-border/50 p-4 hover:border-primary/50 transition-colors group">
+                                                        <div className="w-10 h-10 rounded-lg bg-bg-offset flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                                            <Linkedin size={20} className="text-text-muted group-hover:text-primary transition-colors" />
+                                                        </div>
+                                                        <span className="font-medium text-text-muted group-hover:text-text-main transition-colors">LinkedIn</span>
+                                                    </a>
+                                                    <a href="#" className="flex items-center gap-4 bg-bg rounded-xl border border-border/50 p-4 hover:border-primary/50 transition-colors group">
+                                                        <div className="w-10 h-10 rounded-lg bg-bg-offset flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                                            <Youtube size={20} className="text-text-muted group-hover:text-primary transition-colors" />
+                                                        </div>
+                                                        <span className="font-medium text-text-muted group-hover:text-text-main transition-colors">YouTube</span>
+                                                    </a>
+                                                    <a href="#" className="flex items-center gap-4 bg-bg rounded-xl border border-border/50 p-4 hover:border-primary/50 transition-colors group">
+                                                        <div className="w-10 h-10 rounded-lg bg-bg-offset flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                                            <Globe size={20} className="text-text-muted group-hover:text-primary transition-colors" />
+                                                        </div>
+                                                        <span className="font-medium text-text-muted group-hover:text-text-main transition-colors">Previous Works</span>
+                                                    </a>
+                                                </div>
+                                            </div>
+
+                                            {/* CastUp Profile Linked section */}
+                                            <div className="mt-12 bg-bg rounded-xl border border-border/50 p-5 flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                                                    <ExternalLink size={20} className="text-primary" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">CastUp Profile Linked</p>
+                                                    <p className="text-primary text-sm font-medium break-all">/profile/{selectedProfile.id || '1772644890603'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
