@@ -2,7 +2,18 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const AuthContext = createContext(null)
 
-const MOCK_USERS = []
+const MOCK_USERS = [
+    {
+        id: 'u1',
+        name: 'Priya Sharma',
+        role: 'Actor',
+        email: 'priya@example.com',
+        password: 'password123',
+        department: 'Acting',
+        experience: '3-5 years',
+        location: 'Mumbai, India'
+    }
+]
 
 const MOCK_JOBS = []
 
