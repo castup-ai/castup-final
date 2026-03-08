@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from '@/context/AuthContext'
+import { RealAuthProvider as AuthProvider } from '@/context/RealAuthContext'
 import AppLayout from '@/components/layout/AppLayout'
 import AuthModal from '@/components/AuthModal'
 import Landing from '@/pages/Landing'
