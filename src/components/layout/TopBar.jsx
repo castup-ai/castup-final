@@ -1,5 +1,6 @@
 import { MessageSquare, Bell } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/RealAuthContext'
 
 export default function TopBar() {
@@ -28,19 +29,25 @@ export default function TopBar() {
                 borderColor: 'var(--color-border)',
             }}
         >
-            <button
+            <Link
+                to="/contact"
                 className="btn-ghost btn-icon relative"
-                onClick={() => { if (!isAuthenticated) requireAuth() }}
+                onClick={(e) => { 
+                    if (!isAuthenticated) {
+                        e.preventDefault();
+                        requireAuth();
+                    }
+                }}
                 title="Messages"
             >
                 <MessageSquare size={20} />
                 {msgCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white rounded-full"
-                        style={{ background: 'var(--color-primary)', minWidth: '18px', height: '18px' }}>
+                    <span className="absolute -top-1 -right-1 w-4.5 h-4.5 flex items-center justify-center text-[10px] font-bold text-white rounded-full bg-primary"
+                        style={{ minWidth: '18px', height: '18px' }}>
                         {msgCount}
                     </span>
                 )}
-            </button>
+            </Link>
 
             <div className="relative" ref={notifRef}>
                 <button
