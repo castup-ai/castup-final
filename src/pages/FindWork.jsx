@@ -57,7 +57,7 @@ export default function FindWork() {
         state: ''
     })
 
-    const isProfileComplete = user && user.firstName && user.role
+    const isProfileComplete = user && (user.name?.split(" ")[0]) && user.role
 
     // Derived lists for filters
     const uniqueCountries = useMemo(() => [...new Set(allJobs.map(j => j.country).filter(Boolean))].sort(), [allJobs])
@@ -392,7 +392,7 @@ export default function FindWork() {
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-border/10">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black border border-primary/20">
-                                        {job.createdBy?.firstName?.[0]}
+                                        {(job.createdBy?.name?.split(' ')[0])?.[0]}
                                     </div>
                                     <div>
                                         <span className="text-[10px] font-bold text-text-dim uppercase tracking-widest block">Posted By</span>
@@ -405,7 +405,7 @@ export default function FindWork() {
                                                 }
                                             }}
                                         >
-                                            {job.createdBy?.firstName} {job.createdBy?.lastName}
+                                            {(job.createdBy?.name?.split(' ')[0])} {job.createdBy?.lastName}
                                         </span>
                                     </div>
                                 </div>
@@ -482,7 +482,7 @@ export default function FindWork() {
                                                     navigate('/explore', { state: { viewProfileId: selectedJob.createdBy.id, fromJobs: true } });
                                                 }
                                             }}>
-                                            {selectedJob.createdBy?.firstName} {selectedJob.createdBy?.lastName}
+                                            {(selectedJob.createdBy?.name?.split(' ')[0])} {selectedJob.createdBy?.lastName}
                                             <ExternalLink size={12} />
                                         </span>
                                     </div>
@@ -658,7 +658,7 @@ export default function FindWork() {
                                         <div className="flex-1 grid grid-cols-2 gap-3">
                                             <div className="form-group mb-0">
                                                 <label className="text-[10px] font-bold uppercase tracking-wider mb-1 block opacity-60">First Name</label>
-                                                <input value={user?.firstName || ''} readOnly className="bg-bg-offset border-border/50 cursor-not-allowed h-10 text-sm" />
+                                                <input value={(user?.name?.split(" ")[0]) || ''} readOnly className="bg-bg-offset border-border/50 cursor-not-allowed h-10 text-sm" />
                                             </div>
                                             <div className="form-group mb-0">
                                                 <label className="text-[10px] font-bold uppercase tracking-wider mb-1 block opacity-60">Last Name</label>

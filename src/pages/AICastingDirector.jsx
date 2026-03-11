@@ -173,7 +173,7 @@ export default function AICastingDirector() {
                                     >
                                         <div className="flex items-start gap-4">
                                             <div className="relative">
-                                                <div className="avatar avatar-lg">{user.firstName[0]}{user.lastName[0]}</div>
+                                                <div className="avatar avatar-lg">{(user.name?.split(" ")[0])[0]}{user.lastName[0]}</div>
                                                 <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                                                     style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}>
                                                     #{i + 1}
@@ -182,7 +182,7 @@ export default function AICastingDirector() {
                                             <div className="flex-1">
                                                 <div className="flex items-start justify-between">
                                                     <div>
-                                                        <h3 className="font-semibold text-base">{user.firstName} {user.lastName}</h3>
+                                                        <h3 className="font-semibold text-base">{user.name}</h3>
                                                         <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.role} • {user.experience}</p>
                                                         <div className="flex items-center gap-1 text-xs mt-1" style={{ color: 'var(--color-text-dim)' }}>
                                                             <MapPin size={12} /> {user.location}

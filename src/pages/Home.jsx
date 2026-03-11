@@ -22,7 +22,7 @@ export default function Home() {
                 className="mb-8"
             >
                 <h1 className="text-3xl font-bold mb-2">
-                    {isAuthenticated ? `Welcome back, ${user?.firstName}` : 'Welcome to CastUp'} 👋
+                    {isAuthenticated ? `Welcome back, ${(user?.name?.split(" ")[0])}` : 'Welcome to CastUp'} 👋
                 </h1>
                 <p style={{ color: 'var(--color-text-muted)' }}>
                     {isAuthenticated

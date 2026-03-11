@@ -180,7 +180,7 @@ export default function Sidebar() {
                         className="flex items-center gap-3 flex-1 min-w-0 px-3 py-2.5 rounded-lg transition-all duration-200 hover:bg-[var(--color-surface-light)]"
                     >
                         <div className="avatar avatar-sm flex-shrink-0">
-                            {user?.photo ? <img src={user.photo} alt="" /> : (user ? user.firstName?.[0] || 'U' : <User size={14} />)}
+                            {user?.photo ? <img src={user.photo} alt="" /> : (user ? (user.name?.split(" ")[0])?.[0] || 'U' : <User size={14} />)}
                         </div>
                         <AnimatePresence>
                             {!collapsed && (
@@ -191,7 +191,7 @@ export default function Sidebar() {
                                     className="text-left overflow-hidden"
                                 >
                                     <div className="text-sm font-medium truncate" style={{ color: 'var(--color-text)' }}>
-                                        {user ? `${user.firstName} ${user.lastName}` : 'Profile'}
+                                        {user ? `${user.name}` : 'Profile'}
                                     </div>
                                     <div className="text-xs truncate" style={{ color: 'var(--color-text-dim)' }}>
                                         {user ? user.role || 'Complete profile' : 'Sign in'}

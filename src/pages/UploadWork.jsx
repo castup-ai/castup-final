@@ -42,7 +42,7 @@ export default function UploadWork() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            const isProfileComplete = user && user.firstName && user.role
+            const isProfileComplete = user && (user.name?.split(" ")[0]) && user.role
             if (!isProfileComplete) {
                 alert('Kindly complete your profile before uploading work.')
                 navigate('/profile')
@@ -59,7 +59,7 @@ export default function UploadWork() {
         e.preventDefault()
         if (!isAuthenticated) { requireAuth(); return }
 
-        const isProfileComplete = user && user.firstName && user.role
+        const isProfileComplete = user && (user.name?.split(" ")[0]) && user.role
         if (!isProfileComplete) {
             alert('Kindly complete your profile before uploading work.')
             navigate('/profile')
@@ -113,7 +113,7 @@ export default function UploadWork() {
                     <div className="space-y-4">
                         <div className="form-group">
                             <label>Name</label>
-                            <input value={user ? `${user.firstName} ${user.lastName}` : form.name}
+                            <input value={user ? `${user.name}` : form.name}
                                 readOnly={!!user} style={user ? { opacity: 0.7 } : {}}
                                 placeholder="Your full name"
                                 onChange={e => update('name', e.target.value)} />

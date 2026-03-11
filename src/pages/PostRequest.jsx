@@ -45,7 +45,7 @@ export default function PostRequest() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            const isProfileComplete = user && user.firstName && user.role
+            const isProfileComplete = user && (user.name?.split(" ")[0]) && user.role
             if (!isProfileComplete) {
                 alert('Kindly complete your profile before posting a request.')
                 navigate('/profile')
@@ -62,7 +62,7 @@ export default function PostRequest() {
         e.preventDefault()
         if (!isAuthenticated) { requireAuth(); return }
 
-        const isProfileComplete = user && user.firstName && user.role
+        const isProfileComplete = user && (user.name?.split(" ")[0]) && user.role
         if (!isProfileComplete) {
             alert('Kindly complete your profile before posting a request.')
             navigate('/profile')

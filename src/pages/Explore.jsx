@@ -76,7 +76,7 @@ export default function Explore() {
 
     const filtered = allUsers.filter(u => {
         if (user && (u.id === user.id || u.email === user.email)) return false
-        if (search && !`${u.firstName} ${u.lastName} ${u.role} ${u.skills?.join(' ')}`.toLowerCase().includes(search.toLowerCase())) return false
+        if (search && !`${u.name} ${u.role} ${u.skills?.join(' ')}`.toLowerCase().includes(search.toLowerCase())) return false
         if (filters.experience !== 'All' && u.experience !== filters.experience) return false
         if (filters.availability !== 'All' && u.availability !== filters.availability) return false
 
@@ -285,9 +285,9 @@ export default function Explore() {
 
                                     <div className="relative z-10 w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl flex items-center justify-center transform group-hover:scale-105 transition-all duration-500 overflow-hidden">
                                         {user.photo ? (
-                                            <img src={user.photo} alt={user.firstName} className="w-full h-full object-cover" />
+                                            <img src={user.photo} alt={(user.name?.split(" ")[0])} className="w-full h-full object-cover" />
                                         ) : (
-                                            <span className="text-3xl font-black text-primary">{user.firstName?.[0] || 'U'}{user.lastName?.[0] || ''}</span>
+                                            <span className="text-3xl font-black text-primary">{(user.name?.split(" ")[0])?.[0] || 'U'}{user.lastName?.[0] || ''}</span>
                                         )}
                                         <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-accent rounded-full flex items-center justify-center shadow-lg">
                                             <Star size={14} className="text-white fill-current" />
@@ -314,7 +314,7 @@ export default function Explore() {
                                         </div>
 
                                         <h2 className="text-3xl font-black mb-2 tracking-tight group-hover:text-primary transition-colors cursor-pointer">
-                                            {user.firstName} {user.lastName}
+                                            {user.name}
                                         </h2>
                                         <p className="text-sm text-text-dim mb-6 line-clamp-2 leading-relaxed italic opacity-80">
                                             {user.bio || `Professional ${user.role || 'creator'} based in ${user.location}. Experienced in various projects and ready for new collaborations.`}
@@ -421,13 +421,13 @@ export default function Explore() {
                                                 <img src={selectedProfile.photo} className="w-full h-full object-cover" alt="Profile" />
                                             ) : (
                                                 <div className="w-full h-full bg-primary/10 text-primary flex items-center justify-center text-3xl font-black">
-                                                    {selectedProfile.firstName?.[0] || 'U'}
+                                                    {(selectedProfile.name?.split(' ')[0])?.[0] || 'U'}
                                                 </div>
                                             )}
                                         </div>
 
                                         <div className="flex-1 text-center md:text-left">
-                                            <h3 className="text-xl font-bold">{selectedProfile.firstName} {selectedProfile.lastName}</h3>
+                                            <h3 className="text-xl font-bold">{(selectedProfile.name?.split(' ')[0])} {(selectedProfile.name?.split(' ').slice(1).join(' '))}</h3>
                                             <p className="text-primary font-medium mt-1">{selectedProfile.role || 'Professional'}</p>
                                             <p className="text-text-muted text-sm mt-2 flex items-center justify-center md:justify-start gap-1">
                                                 <MapPin size={14} /> {selectedProfile.location || 'Location not specified'}
