@@ -9,6 +9,7 @@ export function RealAuthProvider({ children }) {
     const [token, setToken] = useState(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [allUsers, setAllUsers] = useState([]);
 
     // We keep jobs locally for now or if we implement a job service we can swap it later
     const [registeredJobs, setRegisteredJobs] = useState(() => {
@@ -38,6 +39,13 @@ export function RealAuthProvider({ children }) {
                     localStorage.removeItem('castup_auth_real');
                 }
             }
+
+            // Fetch generic public users list for Explore
+            const pubUsers = await authService.getAllUsers();
+            if (pubUsers.success && pubUsers.data) {
+                setAllUsers(pubUsers.data);
+            }
+            
             setLoading(false);
         };
         initAuth();
@@ -124,7 +132,7 @@ export function RealAuthProvider({ children }) {
             isAuthenticated: !!user,
             loading,
             showAuthModal, setShowAuthModal,
-            allUsers: [], // Optional: Provide logic if needed to fetch all users
+            allUsers,
             allJobs: registeredJobs,
             addJob,
             deleteJob

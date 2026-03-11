@@ -47,5 +47,17 @@ export const authService = {
                 error: error.response?.data?.error || 'Failed to update profile'
             };
         }
+    },
+
+    getAllUsers: async () => {
+        try {
+            const response = await api.get('/users');
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.error || 'Failed to fetch users'
+            };
+        }
     }
 };
