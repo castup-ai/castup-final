@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
+import api from '../services/api'
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('')
@@ -15,21 +16,15 @@ export default function ForgotPassword() {
         setError('')
 
         try {
-            const response = await fetch('http://localhost:5000/api/forgot-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            })
+            const response = await api.post('/auth/forgot-password', { email });
 
-            const data = await response.json()
-
-            if (response.ok) {
+            if (response.data.success) {
                 setSubmitted(true)
             } else {
-                setError(data.error || 'Failed to send reset link.')
+                setError(response.data.error || 'Failed to send reset link.')
             }
         } catch (err) {
-            setError('Could not connect to the server. Make sure the backend is running on port 5000.')
+            setError(err.response?.data?.error || 'Could not connect to the server. Please try again.')
         } finally {
             setLoading(false)
         }
