@@ -15,7 +15,7 @@ export const authService = {
 
     register: async (userData) => {
         try {
-            const response = await api.post('/auth/register', userData);
+            const response = await api.post('/auth/signup', userData);
             return { success: true, data: response.data };
         } catch (error) {
             return {

@@ -34,10 +34,10 @@ export default function Register() {
         setLoading(true)
         try {
             const result = await register({
-                firstName: form.firstName,
-                lastName: form.lastName,
+                name: `${form.firstName} ${form.lastName}`.trim(),
                 email: form.email,
                 password: form.password,
+                department: 'Acting', 
                 country: form.country,
                 phone: form.phone
             })
