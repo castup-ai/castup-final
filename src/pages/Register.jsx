@@ -34,11 +34,10 @@ export default function Register() {
         setLoading(true)
         try {
             const result = await register({
-                name: `${form.firstName} ${form.lastName}`.trim(),
+                firstName: form.firstName,
+                lastName: form.lastName,
                 email: form.email,
                 password: form.password,
-                // Passing additional fields in case the backend needs them
-                department: 'Not Specified', 
                 country: form.country,
                 phone: form.phone
             })
