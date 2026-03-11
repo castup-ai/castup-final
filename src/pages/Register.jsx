@@ -41,7 +41,7 @@ export default function Register() {
                 country: form.country,
                 phone: form.phone
             })
-            if (result.success) navigate('/home')
+            if (result.success) navigate('/profile?edit=true')
             else setError(result.error || 'Registration failed. Try again.')
         } catch (err) {
             setError('Registration failed due to a network error.')

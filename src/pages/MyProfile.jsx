@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
 import {
@@ -31,7 +32,13 @@ const availabilityOptions = ['Immediately', 'Next Week', 'Next Month', 'Not Avai
 
 export default function MyProfile() {
     const { user, updateProfile } = useAuth()
-    const [editing, setEditing] = useState(false)
+    const location = useLocation()
+    
+    // Check URL parameters for auto-edit mode (e.g., redirect from signup)
+    const [editing, setEditing] = useState(() => {
+        const params = new URLSearchParams(location.search)
+        return params.get('edit') === 'true'
+    })
     const [saved, setSaved] = useState(false)
     const [form, setForm] = useState({
         firstName: '', lastName: '', email: '', phone: '', country: '',
