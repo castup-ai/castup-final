@@ -376,17 +376,40 @@ export default function MyProfile() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {portfolio.media.map(project => (
                             <div key={project.id || project.title} className="card overflow-hidden flex flex-col group cursor-pointer hover:shadow-lg transition-all duration-300">
-                                {/* Thumbnail Mock (Gradient instead of real image if none available) */}
-                                <div className="aspect-video w-full bg-gradient-to-br from-indigo-900/40 to-purple-900/20 relative flex items-center justify-center p-4">
-                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    {project.files && project.files.length > 0 ? (
-                                        <div className="text-center z-10">
-                                            <div className="bg-black/50 backdrop-blur-md rounded-full px-3 py-1.5 inline-flex items-center gap-1.5 text-xs text-white">
-                                                <ImageIcon size={12} /> {project.files.length} Attachments
+                                {/* Thumbnail or Real Media */}
+                                <div className="aspect-video w-full bg-black relative flex items-center justify-center overflow-hidden group/media">
+                                    {project.files && project.files.length > 0 && project.files[0].data ? (
+                                        project.files[0].type?.startsWith('video/') ? (
+                                            <video 
+                                                src={project.files[0].data} 
+                                                className="w-full h-full object-cover" 
+                                                controls
+                                                controlsList="nodownload"
+                                                preload="metadata"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <img 
+                                                src={project.files[0].data} 
+                                                alt={project.title} 
+                                                className="w-full h-full object-cover group-hover/media:scale-105 transition-transform duration-500"
+                                                loading="lazy"
+                                            />
+                                        )
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-indigo-900/40 to-purple-900/20 flex flex-col items-center justify-center">
+                                            <Film size={32} className="opacity-20 text-white mb-2" />
+                                            <span className="text-xs text-white/40">No preview</span>
+                                        </div>
+                                    )}
+
+                                    {/* Multiple Attachments Badge */}
+                                    {project.files && project.files.length > 1 && (
+                                        <div className="absolute top-2 right-2 z-10 pointer-events-none">
+                                            <div className="bg-black/60 backdrop-blur-md rounded-full px-2 py-1 inline-flex items-center gap-1.5 text-[10px] font-medium text-white shadow">
+                                                <ImageIcon size={10} /> +{project.files.length - 1}
                                             </div>
                                         </div>
-                                    ) : (
-                                        <Film size={32} className="opacity-20 text-white" />
                                     )}
                                 </div>
                                 <div className="p-4 flex-1 flex flex-col">

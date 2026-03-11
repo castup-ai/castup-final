@@ -56,6 +56,13 @@ export default function UploadWork() {
         }
     }, [isAuthenticated, user, navigate, requireAuth])
 
+    const fileToBase64 = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = error => reject(error)
+    })
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!isAuthenticated) { requireAuth(); return }
@@ -78,12 +85,13 @@ export default function UploadWork() {
         setIsLoading(true)
 
         try {
-            // Extract lightweight metadata for files instead of trying to upload massive raw binaries blindly
-            const filesMeta = form.files ? Array.from(form.files).map(f => ({
+            // Convert files to Base64 data strings so they can be securely saved in the database
+            const filesMeta = form.files ? await Promise.all(Array.from(form.files).map(async f => ({
                 name: f.name,
                 size: f.size,
-                type: f.type
-            })) : []
+                type: f.type,
+                data: await fileToBase64(f)
+            }))) : []
 
             await api.post('/portfolios/media', {
                 title: form.title,
