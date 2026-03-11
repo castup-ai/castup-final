@@ -18,7 +18,7 @@ export default function Register() {
 
     const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
 
@@ -32,19 +32,23 @@ export default function Register() {
         }
 
         setLoading(true)
-        setTimeout(() => {
-            const result = register({
-                firstName: form.firstName,
-                lastName: form.lastName,
-                country: form.country,
-                phone: form.phone,
+        try {
+            const result = await register({
+                name: `${form.firstName} ${form.lastName}`.trim(),
                 email: form.email,
                 password: form.password,
+                // Passing additional fields in case the backend needs them
+                department: 'Not Specified', 
+                country: form.country,
+                phone: form.phone
             })
             if (result.success) navigate('/home')
             else setError(result.error || 'Registration failed. Try again.')
+        } catch (err) {
+            setError('Registration failed due to a network error.')
+        } finally {
             setLoading(false)
-        }, 600)
+        }
     }
 
     return (
