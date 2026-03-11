@@ -6,28 +6,31 @@ export const getUsers = async (req, res) => {
         const { department, search, limit = 50 } = req.query;
 
         let query = `
-            SELECT u.id, u.name, u.email, u.department, u.profile_picture, u.created_at,
-                   p.bio, p.skills
-            FROM users u
-            LEFT JOIN portfolios p ON u.id = p.user_id
+            SELECT id, name, email, department, country, phone, 
+                   role, category, experience, availability, location, 
+                   languages, age, gender, height, weight, next_available as "nextAvailable", 
+                   bio, years_of_experience as "yearsOfExperience", awards, skills, 
+                   portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
+                   profile_picture as "profilePicture", created_at as "createdAt"
+            FROM users
             WHERE 1=1
         `;
         const params = [];
         let paramCount = 1;
 
         if (department) {
-            query += ` AND u.department = $${paramCount}`;
+            query += ` AND department = $${paramCount}`;
             params.push(department);
             paramCount++;
         }
 
         if (search) {
-            query += ` AND (u.name ILIKE $${paramCount} OR u.email ILIKE $${paramCount})`;
+            query += ` AND (name ILIKE $${paramCount} OR email ILIKE $${paramCount})`;
             params.push(`%${search}%`);
             paramCount++;
         }
 
-        query += ` ORDER BY u.created_at DESC LIMIT $${paramCount}`;
+        query += ` ORDER BY created_at DESC LIMIT $${paramCount}`;
         params.push(limit);
 
         const result = await pool.query(query, params);
@@ -39,17 +42,20 @@ export const getUsers = async (req, res) => {
     }
 };
 
-// Get user by ID
+// Get user by ID (also maps extended fields)
 export const getUserById = async (req, res) => {
     try {
         const { userId } = req.params;
 
         const result = await pool.query(
-            `SELECT u.id, u.name, u.email, u.department, u.profile_picture, u.created_at,
-                    p.bio, p.experience, p.skills, p.media, p.external_links
-             FROM users u
-             LEFT JOIN portfolios p ON u.id = p.user_id
-             WHERE u.id = $1`,
+            `SELECT id, name, email, department, country, phone, 
+                   role, category, experience, availability, location, 
+                   languages, age, gender, height, weight, next_available as "nextAvailable", 
+                   bio, years_of_experience as "yearsOfExperience", awards, skills, 
+                   portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
+                   profile_picture as "profilePicture", created_at as "createdAt"
+             FROM users
+             WHERE id = $1`,
             [userId]
         );
 
@@ -64,44 +70,65 @@ export const getUserById = async (req, res) => {
     }
 };
 
-// Update user profile
+// Update user profile with mass dynamic fields
 export const updateProfile = async (req, res) => {
     try {
-        const { name, department, profilePicture } = req.body;
+        const body = req.body;
+        
+        // Define mapping between JS camelCase body fields and SQL snake_case columns
+        const fieldMap = {
+            name: 'name', 
+            department: 'department', 
+            country: 'country',
+            phone: 'phone',
+            role: 'role', 
+            category: 'category', 
+            experience: 'experience', 
+            availability: 'availability', 
+            location: 'location', 
+            languages: 'languages', 
+            age: 'age', 
+            gender: 'gender', 
+            height: 'height', 
+            weight: 'weight', 
+            nextAvailable: 'next_available', 
+            bio: 'bio', 
+            yearsOfExperience: 'years_of_experience', 
+            awards: 'awards', 
+            skills: 'skills', 
+            portfolioLink: 'portfolio_link', 
+            socialMedia: 'social_media', 
+            projectType: 'project_type',
+            profilePicture: 'profile_picture' // For backward compatibility if used later
+        };
 
-        console.log('📥 Update Profile Request:', {
-            userId: req.userId,
-            hasName: !!name,
-            hasDepartment: !!department,
-            hasProfilePicture: !!profilePicture,
-            profilePictureLength: profilePicture?.length || 0
-        });
-
-        // Build dynamic update query based on what's provided
         const updates = [];
         const values = [];
         let paramCount = 1;
 
-        if (name !== undefined) {
-            updates.push(`name = $${paramCount}`);
-            values.push(name);
-            paramCount++;
+        // Auto-generate SQL updates based on provided fields
+        for (const [jsField, sqlCol] of Object.entries(fieldMap)) {
+            if (body[jsField] !== undefined) {
+                updates.push(`${sqlCol} = $${paramCount}`);
+                values.push(body[jsField] === '' ? null : body[jsField]); // Empty strings normally become NULL
+                paramCount++;
+            }
         }
-
-        if (department !== undefined) {
-            updates.push(`department = $${paramCount}`);
-            values.push(department);
-            paramCount++;
-        }
-
-        if (profilePicture !== undefined) {
-            updates.push(`profile_picture = $${paramCount}`);
-            values.push(profilePicture);
-            paramCount++;
+        
+        // Handle standalone profile_picture if 'photo' was passed correctly
+        if (body.photo !== undefined) {
+             updates.push(`profile_picture = $${paramCount}`);
+             values.push(body.photo);
+             paramCount++;
         }
 
         // Always update the timestamp
         updates.push(`updated_at = CURRENT_TIMESTAMP`);
+        
+        // Ensure there is at least something to update
+        if (updates.length === 1) { // Only updated_at is there
+             return res.status(400).json({ error: 'No valid fields provided for update' });
+        }
 
         // Add userId as last parameter
         values.push(req.userId);
@@ -110,21 +137,19 @@ export const updateProfile = async (req, res) => {
             UPDATE users 
             SET ${updates.join(', ')}
             WHERE id = $${paramCount}
-            RETURNING id, email, name, department, profile_picture
+            RETURNING id, name, email, department, country, phone, 
+                   role, category, experience, availability, location, 
+                   languages, age, gender, height, weight, next_available as "nextAvailable", 
+                   bio, years_of_experience as "yearsOfExperience", awards, skills, 
+                   portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
+                   profile_picture as "profilePicture", created_at as "createdAt"
         `;
-
-        console.log('🔄 Executing query with', updates.length, 'updates');
 
         const result = await pool.query(query, values);
 
-        console.log('✅ Profile updated successfully:', {
-            userId: result.rows[0].id,
-            hasProfilePicture: !!result.rows[0].profile_picture
-        });
-
-        res.json({ success: true, user: result.rows[0] });
+        res.json({ success: true, data: result.rows[0] });
     } catch (error) {
         console.error('❌ Update profile error:', error);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ error: 'Server error: ' + error.message });
     }
 };
