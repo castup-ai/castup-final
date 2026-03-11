@@ -84,3 +84,68 @@ export const getMyPortfolio = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
+
+// Add project/media to portfolio (From UploadWork.jsx)
+export const addPortfolioMedia = async (req, res) => {
+    try {
+        const { title, type, description, castCrew, files } = req.body;
+
+        // Ensure portfolio exists first
+        let existing = await pool.query(
+            'SELECT id, media FROM portfolios WHERE user_id = $1',
+            [req.userId]
+        );
+
+        let currentMedia = [];
+        if (existing.rows.length === 0) {
+            // Create empty portfolio
+            const insertResult = await pool.query(
+                `INSERT INTO portfolios (user_id, bio, experience, skills, media, external_links) 
+                 VALUES ($1, '', '[]', '{}', '[]', '{}') 
+                 RETURNING id, media`,
+                [req.userId]
+            );
+            currentMedia = insertResult.rows[0].media || [];
+        } else {
+            currentMedia = existing.rows[0].media || [];
+            // Handle cases where media might not be an array
+            if (!Array.isArray(currentMedia)) {
+                try {
+                    currentMedia = typeof currentMedia === 'string' ? JSON.parse(currentMedia) : [];
+                    if (!Array.isArray(currentMedia)) currentMedia = [];
+                } catch(e) {
+                    currentMedia = [];
+                }
+            }
+        }
+
+        const newProject = {
+            id: crypto.randomUUID(),
+            title,
+            type,
+            description,
+            castCrew,
+            files: files || [],
+            createdAt: new Date().toISOString()
+        };
+
+        currentMedia.unshift(newProject); // put newest at top
+
+        const result = await pool.query(
+            `UPDATE portfolios 
+             SET media = $1, updated_at = CURRENT_TIMESTAMP
+             WHERE user_id = $2
+             RETURNING *`,
+            [JSON.stringify(currentMedia), req.userId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Project uploaded successfully',
+            portfolio: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Add portfolio media error:', error);
+        res.status(500).json({ error: 'Server error saving work' });
+    }
+};

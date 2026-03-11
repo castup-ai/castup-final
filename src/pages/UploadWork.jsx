@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
-import { Upload, Film, CheckCircle, X, Trash2, FileText } from 'lucide-react'
+import { Upload, Film, CheckCircle, X, Trash2, FileText, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import api from '@/services/api'
 
 const projectTypes = ['Feature Film', 'Short Film', 'Web Series', 'Documentary', 'Music Video', 'Commercial', 'Ad Film', 'Other']
 
@@ -31,6 +32,7 @@ export default function UploadWork() {
     const { isAuthenticated, requireAuth, user } = useAuth()
     const navigate = useNavigate()
     const [submitted, setSubmitted] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
     const initialForm = {
         title: '', type: '', description: '', castCrew: '', files: null
     }
@@ -54,7 +56,7 @@ export default function UploadWork() {
         }
     }, [isAuthenticated, user, navigate, requireAuth])
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
         if (!isAuthenticated) { requireAuth(); return }
 
@@ -68,12 +70,35 @@ export default function UploadWork() {
         const requiredFields = ['title', 'type', 'description', 'castCrew']
         const missing = requiredFields.filter(f => !form[f])
 
-        if (missing.length > 0 || !form.files || form.files.length === 0) {
-            alert('Please complete all fields and upload at least one file before submitting.')
+        if (missing.length > 0) {
+            alert('Please complete all required project details before submitting.')
             return
         }
 
-        setSubmitted(true)
+        setIsLoading(true)
+
+        try {
+            // Extract lightweight metadata for files instead of trying to upload massive raw binaries blindly
+            const filesMeta = form.files ? Array.from(form.files).map(f => ({
+                name: f.name,
+                size: f.size,
+                type: f.type
+            })) : []
+
+            await api.post('/portfolios/media', {
+                title: form.title,
+                type: form.type,
+                description: form.description,
+                castCrew: form.castCrew,
+                files: filesMeta
+            })
+            setSubmitted(true)
+        } catch (error) {
+            console.error('Error uploading work:', error)
+            alert('Encountered an error saving your project to your portfolio. Please try again.')
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     if (submitted) {
@@ -186,11 +211,12 @@ export default function UploadWork() {
 
                 {/* Actions */}
                 <div className="flex gap-3 justify-end">
-                    <button type="button" className="btn btn-secondary" onClick={resetForm}>
+                    <button type="button" className="btn btn-secondary" onClick={resetForm} disabled={isLoading}>
                         <X size={16} /> Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary">
-                        <Upload size={16} /> Upload
+                    <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                        {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} 
+                        {isLoading ? 'Uploading...' : 'Upload'}
                     </button>
                 </div>
             </form>

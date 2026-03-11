@@ -4,8 +4,9 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
 import {
     User, Save, X, Camera, MapPin, Calendar, Award, Globe,
-    Briefcase, Languages, Edit3, CheckCircle, Trash2
+    Briefcase, Languages, Edit3, CheckCircle, Trash2, Film, Image as ImageIcon
 } from 'lucide-react'
+import api from '@/services/api'
 
 const ARTIST_ROLES = [
     'Actor', 'Actress', 'Child Artist', 'Female Model', 'Female Singer',
@@ -40,6 +41,7 @@ export default function MyProfile() {
         return params.get('edit') === 'true'
     })
     const [saved, setSaved] = useState(false)
+    const [portfolio, setPortfolio] = useState(null)
     const [form, setForm] = useState({
         firstName: '', lastName: '', email: '', phone: '', country: '',
         role: '', category: 'Artist', experience: '', availability: '', location: '',
@@ -69,6 +71,19 @@ export default function MyProfile() {
                 socialMedia: user.socialMedia ? JSON.stringify(user.socialMedia) : '',
                 projectType: user.projectType || '', photo: user.photo || null
             })
+            
+            // Fetch Portfolio Media
+            const fetchPortfolio = async () => {
+                try {
+                    const res = await api.get('/portfolios/me')
+                    if (res.data?.success && res.data.portfolio) {
+                        setPortfolio(res.data.portfolio)
+                    }
+                } catch(e) {
+                    console.error("Failed to load portfolio works", e)
+                }
+            }
+            fetchPortfolio()
         }
     }, [user, editing])
 
@@ -340,6 +355,55 @@ export default function MyProfile() {
                             : <p className="text-sm py-2">{user.portfolioLink ? <a href={user.portfolioLink} target="_blank" style={{ color: 'var(--color-primary-light)' }}>{user.portfolioLink}</a> : '—'}</p>}
                     </div>
                 </div>
+            </motion.div>
+
+            {/* My Works / Projects Grid */}
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="mb-12">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Film size={18} style={{ color: 'var(--color-secondary)' }} /> My Works
+                </h3>
+                
+                {(!portfolio?.media || portfolio.media.length === 0) ? (
+                    <div className="card p-8 text-center border-dashed">
+                        <div className="avatar avatar-lg mx-auto mb-3" style={{ background: 'var(--color-bg-offset)', color: 'var(--color-text-dim)' }}>
+                            <ImageIcon size={24} />
+                        </div>
+                        <h4 className="font-semibold mb-1">No Projects Yet</h4>
+                        <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>Upload videos and images to showcase your best work on your profile.</p>
+                        <a href="/upload-work" className="btn btn-primary btn-sm mx-auto w-max">Upload Work</a>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {portfolio.media.map(project => (
+                            <div key={project.id || project.title} className="card overflow-hidden flex flex-col group cursor-pointer hover:shadow-lg transition-all duration-300">
+                                {/* Thumbnail Mock (Gradient instead of real image if none available) */}
+                                <div className="aspect-video w-full bg-gradient-to-br from-indigo-900/40 to-purple-900/20 relative flex items-center justify-center p-4">
+                                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    {project.files && project.files.length > 0 ? (
+                                        <div className="text-center z-10">
+                                            <div className="bg-black/50 backdrop-blur-md rounded-full px-3 py-1.5 inline-flex items-center gap-1.5 text-xs text-white">
+                                                <ImageIcon size={12} /> {project.files.length} Attachments
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <Film size={32} className="opacity-20 text-white" />
+                                    )}
+                                </div>
+                                <div className="p-4 flex-1 flex flex-col">
+                                    <p className="text-[10px] font-bold tracking-wider uppercase mb-1" style={{ color: 'var(--color-secondary)' }}>{project.type}</p>
+                                    <h4 className="font-semibold leading-tight line-clamp-1 mb-2">{project.title}</h4>
+                                    <p className="text-xs line-clamp-2 mb-3 flex-1" style={{ color: 'var(--color-text-dim)' }}>{project.description}</p>
+                                    
+                                    <div className="pt-3 mt-auto border-t border-border flex items-center justify-between">
+                                        <div className="text-[10px]" style={{ color: 'var(--color-text-dim)' }}>
+                                            {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </motion.div>
         </div>
     )
