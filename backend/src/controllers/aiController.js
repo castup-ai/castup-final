@@ -16,7 +16,7 @@ export const chat = async (req, res) => {
         }
 
         // Get the model
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         // System instructions to guide the AI's persona
         const systemPrompt = `You are CastUp's AI Assistant, an intelligent cinema industry companion. 
