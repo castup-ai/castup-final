@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/RealAuthContext'
 import { Video, Search, Sparkles, Filter, MapPin, Star, Mail, MessageSquare, ChevronRight } from 'lucide-react'
 
 const ageRanges = ['Any', '18-25', '26-35', '36-45', '46+']

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/RealAuthContext'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
     Search, Filter, X, Mail, MessageSquare, Share2,

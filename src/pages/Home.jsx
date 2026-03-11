@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Compass, FileText, Briefcase, Upload, ArrowRight, TrendingUp, Users, Film } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/RealAuthContext'
 
 const pathways = [
     { path: '/explore', label: 'Explore Talent', desc: 'Discover professionals by role, location & skills', icon: Compass, color: '#7c3aed' },

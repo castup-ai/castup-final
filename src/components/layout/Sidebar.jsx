@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/RealAuthContext'
 import {
     Home, Compass, FileText, Briefcase, Upload,
     Bot, MapPin, Video, Phone, User, ChevronLeft, ChevronRight, Sparkles, LogOut

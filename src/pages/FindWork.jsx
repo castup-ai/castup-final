@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/RealAuthContext'
 import {
     Briefcase, MapPin, Calendar, Clock, DollarSign, Share2, X,
     User, ChevronRight, CheckCircle, AlertCircle, Search, Sliders,
