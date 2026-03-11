@@ -74,22 +74,27 @@ export default function MyProfile() {
 
     const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (form.age && Number(form.age) <= 0) {
             alert("Age cannot be negative or zero.");
             return;
         }
-        updateProfile({
+        const result = await updateProfile({
             ...form,
             name: `${form.firstName} ${form.lastName}`.trim(),
             languages: form.languages.split(',').map(l => l.trim()).filter(Boolean),
             skills: form.skills.split(',').map(s => s.trim()).filter(Boolean),
             age: form.age ? Number(form.age) : null,
             yearsOfExperience: form.yearsOfExperience ? Number(form.yearsOfExperience) : 0,
-        })
-        setSaved(true)
-        setEditing(false)
-        setTimeout(() => setSaved(false), 3000)
+        });
+        
+        if (result.success) {
+            setSaved(true);
+            setEditing(false);
+            setTimeout(() => setSaved(false), 3000);
+        } else {
+            alert(`Error saving profile: \${result.error || 'Unknown error. Check backend logs.'}`);
+        }
     }
 
     if (!user) return (
