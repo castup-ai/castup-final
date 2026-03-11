@@ -1,27 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Bot, Send, User, Sparkles } from 'lucide-react'
-
-const AI_RESPONSES = {
-    greet: "Hello! I'm CastUp's AI Assistant. I can help you with:\n\n• Finding the right talent for your project\n• Tips on improving your profile\n• Understanding industry standards\n• Answering cinema-related questions\n\nHow can I help you today?",
-    talent: "Based on the current talent pool, I'd recommend checking the Explore page with filters set to your specific needs. You can filter by role, experience level, availability, and location to find the perfect match for your project.",
-    profile: "Here are some tips to improve your profile:\n\n1. Add a professional headshot\n2. List all your skills and specializations\n3. Include your recent works with descriptions\n4. Add portfolio links (YouTube/Vimeo)\n5. Keep your availability status updated\n6. Write a compelling bio highlighting your unique strengths",
-    rates: "Industry rates vary by role and experience:\n\n• Beginner actors: ₹5,000 - ₹15,000/day\n• Experienced actors: ₹25,000 - ₹1,00,000/day\n• Cinematographers: ₹15,000 - ₹50,000/day\n• Directors: Project-based, typically 5-15% of budget\n• Editors: ₹10,000 - ₹30,000/day\n\nThese are approximate ranges and can vary by region and project scale.",
-    default: "That's a great question! While I'm a demo AI assistant, in the full version I'd be able to provide detailed insights on cinema industry trends, talent recommendations, and project planning advice. Feel free to ask about talent, profiles, or industry rates!"
-}
-
-function getAIResponse(msg) {
-    const lower = msg.toLowerCase()
-    if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) return AI_RESPONSES.greet
-    if (lower.includes('talent') || lower.includes('find') || lower.includes('actor') || lower.includes('crew')) return AI_RESPONSES.talent
-    if (lower.includes('profile') || lower.includes('improve') || lower.includes('tips')) return AI_RESPONSES.profile
-    if (lower.includes('rate') || lower.includes('pay') || lower.includes('salary') || lower.includes('cost')) return AI_RESPONSES.rates
-    return AI_RESPONSES.default
-}
+import api from '@/services/api'
 
 export default function AIAssistant() {
     const [messages, setMessages] = useState([
-        { role: 'ai', content: AI_RESPONSES.greet, time: new Date() }
+        { role: 'ai', content: "Hello! I'm CastUp's AI Assistant. I can help you find talent, prepare for auditions, or answer industry questions. How can I help you today?", time: new Date() }
     ])
     const [input, setInput] = useState('')
     const [typing, setTyping] = useState(false)
@@ -31,18 +15,31 @@ export default function AIAssistant() {
         endRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!input.trim()) return
         const userMsg = { role: 'user', content: input, time: new Date() }
-        setMessages(prev => [...prev, userMsg])
+        const currentMessages = [...messages, userMsg];
+        setMessages(currentMessages)
         setInput('')
         setTyping(true)
 
-        setTimeout(() => {
-            const response = getAIResponse(input)
-            setMessages(prev => [...prev, { role: 'ai', content: response, time: new Date() }])
+        try {
+            const res = await api.post('/ai/chat', {
+                message: input,
+                // Pass history excluding the very first greeting if preferred, but we can pass all
+                history: currentMessages.map(m => ({ role: m.role, content: m.content }))
+            })
+            if (res.data?.success) {
+                setMessages(prev => [...prev, { role: 'ai', content: res.data.response, time: new Date() }])
+            } else {
+                setMessages(prev => [...prev, { role: 'ai', content: "I'm sorry, I'm having trouble connecting right now.", time: new Date() }])
+            }
+        } catch (error) {
+            console.error("AI chat error:", error)
+            setMessages(prev => [...prev, { role: 'ai', content: "I'm offline at the moment. Please check your internet or try again later.", time: new Date() }])
+        } finally {
             setTyping(false)
-        }, 1000 + Math.random() * 1000)
+        }
     }
 
     return (
