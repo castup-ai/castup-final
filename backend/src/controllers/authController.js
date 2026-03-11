@@ -96,7 +96,7 @@ export const login = async (req, res) => {
 export const getCurrentUser = async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, email, name, department, profile_picture, created_at FROM users WHERE id = $1',
+            'SELECT id, email, name, department, profile_picture as photo, created_at FROM users WHERE id = $1',
             [req.userId]
         );
 

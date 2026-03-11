@@ -11,7 +11,7 @@ export const getUsers = async (req, res) => {
                    languages, age, gender, height, weight, next_available as "nextAvailable", 
                    bio, years_of_experience as "yearsOfExperience", awards, skills, 
                    portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
-                   profile_picture as "profilePicture", created_at as "createdAt"
+                   profile_picture as "photo", created_at as "createdAt"
             FROM users
             WHERE 1=1
         `;
@@ -53,7 +53,7 @@ export const getUserById = async (req, res) => {
                    languages, age, gender, height, weight, next_available as "nextAvailable", 
                    bio, years_of_experience as "yearsOfExperience", awards, skills, 
                    portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
-                   profile_picture as "profilePicture", created_at as "createdAt"
+                   profile_picture as "photo", created_at as "createdAt"
              FROM users
              WHERE id = $1`,
             [userId]
@@ -79,7 +79,7 @@ export const getProfile = async (req, res) => {
                    languages, age, gender, height, weight, next_available as "nextAvailable", 
                    bio, years_of_experience as "yearsOfExperience", awards, skills, 
                    portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
-                   profile_picture as "profilePicture", created_at as "createdAt"
+                   profile_picture as "photo", created_at as "createdAt"
              FROM users
              WHERE id = $1`,
             [req.userId]
@@ -168,7 +168,7 @@ export const updateProfile = async (req, res) => {
                    languages, age, gender, height, weight, next_available as "nextAvailable", 
                    bio, years_of_experience as "yearsOfExperience", awards, skills, 
                    portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
-                   profile_picture as "profilePicture", created_at as "createdAt"
+                   profile_picture as "photo", created_at as "createdAt"
         `;
 
         const result = await pool.query(query, values);
