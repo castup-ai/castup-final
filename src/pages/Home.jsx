@@ -11,7 +11,36 @@ const pathways = [
 ]
 
 export default function Home() {
-    const { user, isAuthenticated } = useAuth()
+    const { user, isAuthenticated, allUsers } = useAuth()
+
+    const getTimeAgo = (dateStr) => {
+        if (!dateStr) return 'Recently';
+        const seconds = Math.floor((new Date() - new Date(dateStr)) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " years ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " months ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " days ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " hours ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " minutes ago";
+        return Math.floor(seconds) + " seconds ago";
+    };
+
+    const recentActivity = (allUsers || [])
+        .filter(u => u.createdAt)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 3)
+        .map(u => ({
+            text: `New ${u.role || (u.category === 'Crew' ? 'crew member' : 'talent')} joined: ${u.name}${u.location ? ` from ${u.location}` : ''}`,
+            time: getTimeAgo(u.createdAt)
+        }));
+
+    if (recentActivity.length === 0) {
+        recentActivity.push({ text: 'Welcome to CastUp!', time: 'Just now' });
+    }
 
     return (
         <div className="max-w-5xl mx-auto">
@@ -107,11 +136,7 @@ export default function Home() {
             >
                 <h2 className="section-title">Recent on CastUp</h2>
                 <div className="space-y-3">
-                    {[
-                        { text: 'New crew call posted: "Independent Feature Film - Drama"', time: '2 hours ago' },
-                        { text: 'Priya Sharma updated their portfolio', time: '5 hours ago' },
-                        { text: 'New talent joined from Chennai', time: '1 day ago' },
-                    ].map((activity, i) => (
+                    {recentActivity.map((activity, i) => (
                         <div key={i} className="card p-4 flex items-center justify-between">
                             <span className="text-sm">{activity.text}</span>
                             <span className="text-xs whitespace-nowrap ml-4" style={{ color: 'var(--color-text-dim)' }}>{activity.time}</span>
