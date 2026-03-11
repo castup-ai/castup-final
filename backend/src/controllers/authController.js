@@ -6,7 +6,7 @@ import { generateToken, generateRefreshToken } from '../utils/jwt.js';
 // Signup
 export const signup = async (req, res) => {
     try {
-        const { email, password, name, department } = req.body;
+        const { email, password, name, department, country, phone } = req.body;
 
         // Check if user exists
         const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -19,10 +19,10 @@ export const signup = async (req, res) => {
 
         // Create user
         const result = await pool.query(
-            `INSERT INTO users (email, password_hash, name, department) 
-             VALUES ($1, $2, $3, $4) 
-             RETURNING id, email, name, department, created_at`,
-            [email, passwordHash, name, department]
+            `INSERT INTO users (email, password_hash, name, department, country, phone) 
+             VALUES ($1, $2, $3, $4, $5, $6) 
+             RETURNING id, email, name, department, country, phone, created_at`,
+            [email, passwordHash, name, department, country, phone]
         );
 
         const user = result.rows[0];
@@ -38,7 +38,9 @@ export const signup = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                department: user.department
+                department: user.department,
+                country: user.country,
+                phone: user.phone
             },
             token,
             refreshToken

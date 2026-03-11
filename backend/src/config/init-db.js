@@ -11,6 +11,8 @@ export const initializeDatabase = async () => {
                 password_hash VARCHAR(255),
                 name VARCHAR(255) NOT NULL,
                 department VARCHAR(100),
+                country VARCHAR(100),
+                phone VARCHAR(50),
                 auth_provider VARCHAR(50) DEFAULT 'local',
                 profile_picture TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
