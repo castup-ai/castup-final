@@ -377,12 +377,13 @@ export default function MyProfile() {
                         {portfolio.media.map(project => (
                             <div key={project.id || project.title} className="card overflow-hidden flex flex-col group cursor-pointer hover:shadow-lg transition-all duration-300">
                                 {/* Thumbnail or Real Media */}
-                                <div className="aspect-video w-full bg-black relative flex items-center justify-center overflow-hidden group/media">
+                                {/* Thumbnail or Real Media */}
+                                <div className="w-full bg-black relative flex items-center justify-center overflow-hidden group/media">
                                     {project.files && project.files.length > 0 && project.files[0].data ? (
                                         project.files[0].type?.startsWith('video/') ? (
                                             <video 
                                                 src={project.files[0].data} 
-                                                className="w-full h-full object-cover" 
+                                                className="w-full h-auto max-h-[600px] object-contain" 
                                                 controls
                                                 controlsList="nodownload"
                                                 preload="metadata"
@@ -392,12 +393,12 @@ export default function MyProfile() {
                                             <img 
                                                 src={project.files[0].data} 
                                                 alt={project.title} 
-                                                className="w-full h-full object-cover group-hover/media:scale-105 transition-transform duration-500"
+                                                className="w-full h-auto max-h-[600px] object-contain group-hover/media:scale-105 transition-transform duration-500"
                                                 loading="lazy"
                                             />
                                         )
                                     ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-indigo-900/40 to-purple-900/20 flex flex-col items-center justify-center">
+                                        <div className="aspect-video w-full h-full bg-gradient-to-br from-indigo-900/40 to-purple-900/20 flex flex-col items-center justify-center">
                                             <Film size={32} className="opacity-20 text-white mb-2" />
                                             <span className="text-xs text-white/40">No preview</span>
                                         </div>
