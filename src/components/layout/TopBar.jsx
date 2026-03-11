@@ -1,5 +1,5 @@
 import { MessageSquare, Bell } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/context/RealAuthContext'
 
 export default function TopBar() {
@@ -7,6 +7,17 @@ export default function TopBar() {
     const [msgCount] = useState(0)
     const [notifCount, setNotifCount] = useState(1)
     const [showNotifs, setShowNotifs] = useState(false)
+    const notifRef = useRef(null)
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (notifRef.current && !notifRef.current.contains(event.target)) {
+                setShowNotifs(false)
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [notifRef]);
 
     return (
         <header
@@ -31,7 +42,7 @@ export default function TopBar() {
                 )}
             </button>
 
-            <div className="relative">
+            <div className="relative" ref={notifRef}>
                 <button
                     className="btn-ghost btn-icon relative"
                     onClick={() => {
@@ -50,8 +61,8 @@ export default function TopBar() {
                 </button>
 
                 {showNotifs && isAuthenticated && (
-                    <div className="absolute right-0 mt-2 w-72 rounded-xl shadow-xl border border-border z-50 overflow-hidden" 
-                         style={{ background: 'var(--color-bg-offset)', borderColor: 'var(--color-border)' }}>
+                    <div className="absolute right-0 mt-2 w-72 rounded-xl shadow-xl border z-50 overflow-hidden" 
+                         style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}>
                         <div className="p-3 border-b flex justify-between items-center" style={{ borderColor: 'var(--color-border)' }}>
                             <h3 className="font-semibold text-sm">Notifications</h3>
                             {notifCount > 0 && (
