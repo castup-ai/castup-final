@@ -32,7 +32,6 @@ export default function UploadWork() {
     const navigate = useNavigate()
     const [submitted, setSubmitted] = useState(false)
     const initialForm = {
-        name: '', category: '', subcategory: '', age: '', gender: '', email: '',
         title: '', type: '', description: '', castCrew: '', files: null
     }
     const [form, setForm] = useState(initialForm)
@@ -66,7 +65,7 @@ export default function UploadWork() {
             return
         }
 
-        const requiredFields = ['category', 'subcategory', 'age', 'gender', 'title', 'type', 'description', 'castCrew']
+        const requiredFields = ['title', 'type', 'description', 'castCrew']
         const missing = requiredFields.filter(f => !form[f])
 
         if (missing.length > 0 || !form.files || form.files.length === 0) {
@@ -104,60 +103,7 @@ export default function UploadWork() {
             </motion.div>
 
             <form onSubmit={handleSubmit}>
-                {/* Personal Info */}
-                <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                    className="card p-6 mb-6">
-                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <Upload size={18} style={{ color: 'var(--color-primary-light)' }} /> Your Details
-                    </h2>
-                    <div className="space-y-4">
-                        <div className="form-group">
-                            <label>Name</label>
-                            <input value={user ? `${user.name}` : form.name}
-                                readOnly={!!user} style={user ? { opacity: 0.7 } : {}}
-                                placeholder="Your full name"
-                                onChange={e => update('name', e.target.value)} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="form-group">
-                                <label>Category</label>
-                                <select required value={form.category} onChange={e => setForm(prev => ({ ...prev, category: e.target.value, subcategory: '' }))}>
-                                    <option value="">Choose a category</option>
-                                    <option value="Artist">Artist</option>
-                                    <option value="Crew">Crew</option>
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label>Subcategory / Role *</label>
-                                <select required value={form.subcategory} onChange={e => update('subcategory', e.target.value)}>
-                                    <option value="">Select role</option>
-                                    {(form.category === 'Crew' ? CREW_ROLES : ARTIST_ROLES).map(c => <option key={c}>{c}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="form-group">
-                                <label>Age *</label>
-                                <input required type="number" placeholder="Age" min="0" value={form.age}
-                                    onChange={e => update('age', e.target.value)} />
-                            </div>
-                            <div className="form-group">
-                                <label>Gender *</label>
-                                <select required value={form.gender} onChange={e => update('gender', e.target.value)}>
-                                    <option value="">Select</option>
-                                    <option>Male</option><option>Female</option><option>Other</option>
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label>Email</label>
-                                <input type="email" value={user?.email || form.email}
-                                    readOnly={!!user} style={user ? { opacity: 0.7 } : {}}
-                                    placeholder="your@email.com"
-                                    onChange={e => update('email', e.target.value)} />
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
+
 
                 {/* Project Details */}
                 <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
