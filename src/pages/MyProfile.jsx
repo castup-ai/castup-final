@@ -44,8 +44,12 @@ export default function MyProfile() {
 
     useEffect(() => {
         if (user && !editing) {
+            const nameParts = (user.name || '').split(' ');
+            const firstName = nameParts.length > 0 ? nameParts[0] : '';
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+            
             setForm({
-                firstName: user.firstName || '', lastName: user.lastName || '',
+                firstName: firstName, lastName: lastName,
                 email: user.email || '', phone: user.phone || '', country: user.country || '',
                 role: user.role || '', category: user.category || (CREW_ROLES.includes(user.role) ? 'Crew' : 'Artist'),
                 experience: user.experience || '',
@@ -70,6 +74,7 @@ export default function MyProfile() {
         }
         updateProfile({
             ...form,
+            name: `${form.firstName} ${form.lastName}`.trim(),
             languages: form.languages.split(',').map(l => l.trim()).filter(Boolean),
             skills: form.skills.split(',').map(s => s.trim()).filter(Boolean),
             age: form.age ? Number(form.age) : null,
@@ -124,8 +129,8 @@ export default function MyProfile() {
                     <div className="relative">
                         <div className="avatar avatar-xl">
                             {user.photo
-                                ? <img src={user.photo} alt={user.firstName} />
-                                : <>{user.firstName?.[0]}{user.lastName?.[0]}</>
+                                ? <img src={user.photo} alt={user.name} />
+                                : <>{(user.name || 'User').substring(0, 2).toUpperCase()}</>
                             }
                         </div>
                         {editing && (
@@ -182,7 +187,7 @@ export default function MyProfile() {
                             </div>
                         ) : (
                             <>
-                                <h2 className="text-xl font-bold">{user.firstName} {user.lastName}</h2>
+                                <h2 className="text-xl font-bold">{user.name}</h2>
                                 <p style={{ color: 'var(--color-text-muted)' }}>{user.role || 'Complete your profile'}</p>
                                 <div className="flex items-center gap-1 text-sm mt-1" style={{ color: 'var(--color-text-dim)' }}>
                                     <MapPin size={14} /> {user.location || 'Location not set'}
