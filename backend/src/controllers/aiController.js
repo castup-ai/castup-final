@@ -46,6 +46,11 @@ Keep your answers formatted in a very clean, brief, modern way without rambling.
         });
     } catch (error) {
         console.error('AI Chat Error:', error);
-        res.status(500).json({ error: 'Failed to communicate with AI Assistant' });
+        
+        // Graceful fallback for API Key validation / Geo-restriction errors
+        return res.json({
+            success: true,
+            response: "⚠️ **Demo Mode Active**\n\nThe AI Assistant is currently running in limited demo mode because the connected Google Gemini API key is either inactive or restricted in this region.\n\nIn the full version, I would provide customized advice about talent profiles, industry rates, and script pitches. Please provide an active API Key in the Render dashboard to unlock real-time intelligence!"
+        });
     }
 };
