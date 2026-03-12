@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
 import {
     User, Save, X, Camera, MapPin, Calendar, Award, Globe,
-    Briefcase, Languages, Edit3, CheckCircle, Trash2, Film, Image as ImageIcon
+    Briefcase, Languages, Edit3, CheckCircle, Trash2, Film, Image as ImageIcon,
+    Play, ZoomIn, Upload, ChevronLeft, ChevronRight
 } from 'lucide-react'
 import api from '@/services/api'
+
+const PROJECT_TYPES = [
+    'Feature Film', 'Short Film', 'Web Series', 'Documentary',
+    'Music Video', 'Commercial', 'Ad Film', 'Corporate Video', 'Other'
+]
 
 const ARTIST_ROLES = [
     'Actor', 'Actress', 'Child Artist', 'Female Model', 'Female Singer',
@@ -34,6 +40,7 @@ const availabilityOptions = ['Immediately', 'Next Week', 'Next Month', 'Not Avai
 export default function MyProfile() {
     const { user, updateProfile } = useAuth()
     const location = useLocation()
+    const navigate = useNavigate()
     
     // Check URL parameters for auto-edit mode (e.g., redirect from signup)
     const [editing, setEditing] = useState(() => {
@@ -42,6 +49,7 @@ export default function MyProfile() {
     })
     const [saved, setSaved] = useState(false)
     const [portfolio, setPortfolio] = useState(null)
+    const [lightbox, setLightbox] = useState(null) // { project, fileIndex }
     const [form, setForm] = useState({
         firstName: '', lastName: '', email: '', phone: '', country: '',
         role: '', category: 'Artist', experience: '', availability: '', location: '',
@@ -280,13 +288,25 @@ export default function MyProfile() {
                     </div>
                     <div className="form-group">
                         <label>Project Type</label>
-                        {editing ? <input value={form.projectType} onChange={e => update('projectType', e.target.value)} placeholder="e.g. Feature Film" />
-                            : <div className="text-sm font-medium py-2">{user.projectType || '—'}</div>}
+                        {editing ? (
+                            <select value={form.projectType} onChange={e => update('projectType', e.target.value)}>
+                                <option value="">Select Project Type</option>
+                                {PROJECT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                        ) : <div className="text-sm font-medium py-2">{user.projectType || '—'}</div>}
                     </div>
                     <div className="form-group">
                         <label>Next Available Date</label>
                         {editing ? <input type="date" value={form.nextAvailable} onChange={e => update('nextAvailable', e.target.value)} />
-                            : <div className="text-sm font-medium py-2">{user.nextAvailable || '—'}</div>}
+                            : (
+                                <div className="py-2">
+                                    {user.nextAvailable ? (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--color-primary-light)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                                            <Calendar size={12} /> {new Date(user.nextAvailable).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                        </span>
+                                    ) : <span className="text-sm" style={{ color: 'var(--color-text-dim)' }}>—</span>}
+                                </div>
+                            )}
                     </div>
                 </div>
                 <div className="form-group mt-4">
@@ -359,9 +379,17 @@ export default function MyProfile() {
 
             {/* My Works / Projects Grid */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="mb-12">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <Film size={18} style={{ color: 'var(--color-secondary)' }} /> My Works
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold flex items-center gap-2">
+                        <Film size={18} style={{ color: 'var(--color-secondary)' }} /> My Works
+                    </h3>
+                    <button
+                        onClick={() => navigate('/upload-work')}
+                        className="btn btn-primary btn-sm flex items-center gap-1.5"
+                    >
+                        <Upload size={14} /> Upload Work
+                    </button>
+                </div>
                 
                 {(!portfolio?.media || portfolio.media.length === 0) ? (
                     <div className="card p-8 text-center border-dashed">
@@ -370,43 +398,53 @@ export default function MyProfile() {
                         </div>
                         <h4 className="font-semibold mb-1">No Projects Yet</h4>
                         <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>Upload videos and images to showcase your best work on your profile.</p>
-                        <a href="/upload-work" className="btn btn-primary btn-sm mx-auto w-max">Upload Work</a>
+                        <button onClick={() => navigate('/upload-work')} className="btn btn-primary btn-sm mx-auto">Upload Work</button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {portfolio.media.map(project => (
-                            <div key={project.id || project.title} className="card overflow-hidden flex flex-col group cursor-pointer hover:shadow-lg transition-all duration-300">
-                                {/* Thumbnail or Real Media */}
-                                {/* Thumbnail or Real Media */}
-                                <div className="w-full bg-black relative flex items-center justify-center overflow-hidden group/media">
+                        {portfolio.media.map((project, pi) => (
+                            <div
+                                key={project.id || project.title}
+                                className="card overflow-hidden flex flex-col group cursor-pointer hover:shadow-lg transition-all duration-300"
+                                onClick={() => setLightbox({ project, fileIndex: 0 })}
+                            >
+                                {/* Thumbnail */}
+                                <div className="w-full bg-black relative flex items-center justify-center overflow-hidden" style={{ minHeight: '180px', maxHeight: '260px' }}>
                                     {project.files && project.files.length > 0 && project.files[0].data ? (
                                         project.files[0].type?.startsWith('video/') ? (
-                                            <video 
-                                                src={project.files[0].data} 
-                                                className="w-full h-auto max-h-[600px] object-contain" 
-                                                controls
-                                                controlsList="nodownload"
-                                                preload="metadata"
-                                                loading="lazy"
-                                            />
+                                            <div className="relative w-full h-full flex items-center justify-center">
+                                                <video
+                                                    src={project.files[0].data}
+                                                    className="w-full h-auto max-h-[260px] object-contain"
+                                                    preload="metadata"
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/10 transition-all">
+                                                    <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-xl">
+                                                        <Play size={20} className="text-primary ml-1" />
+                                                    </div>
+                                                </div>
+                                            </div>
                                         ) : (
-                                            <img 
-                                                src={project.files[0].data} 
-                                                alt={project.title} 
-                                                className="w-full h-auto max-h-[600px] object-contain group-hover/media:scale-105 transition-transform duration-500"
-                                                loading="lazy"
-                                            />
+                                            <div className="relative w-full">
+                                                <img
+                                                    src={project.files[0].data}
+                                                    alt={project.title}
+                                                    className="w-full h-auto max-h-[260px] object-contain group-hover:scale-105 transition-transform duration-500"
+                                                    loading="lazy"
+                                                />
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-black/20">
+                                                    <ZoomIn size={28} className="text-white drop-shadow-lg" />
+                                                </div>
+                                            </div>
                                         )
                                     ) : (
-                                        <div className="aspect-video w-full h-full bg-gradient-to-br from-indigo-900/40 to-purple-900/20 flex flex-col items-center justify-center">
+                                        <div className="w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900/40 to-purple-900/20" style={{ height: '180px' }}>
                                             <Film size={32} className="opacity-20 text-white mb-2" />
                                             <span className="text-xs text-white/40">No preview</span>
                                         </div>
                                     )}
-
-                                    {/* Multiple Attachments Badge */}
                                     {project.files && project.files.length > 1 && (
-                                        <div className="absolute top-2 right-2 z-10 pointer-events-none">
+                                        <div className="absolute top-2 right-2 z-10">
                                             <div className="bg-black/60 backdrop-blur-md rounded-full px-2 py-1 inline-flex items-center gap-1.5 text-[10px] font-medium text-white shadow">
                                                 <ImageIcon size={10} /> +{project.files.length - 1}
                                             </div>
@@ -417,11 +455,11 @@ export default function MyProfile() {
                                     <p className="text-[10px] font-bold tracking-wider uppercase mb-1" style={{ color: 'var(--color-secondary)' }}>{project.type}</p>
                                     <h4 className="font-semibold leading-tight line-clamp-1 mb-2">{project.title}</h4>
                                     <p className="text-xs line-clamp-2 mb-3 flex-1" style={{ color: 'var(--color-text-dim)' }}>{project.description}</p>
-                                    
                                     <div className="pt-3 mt-auto border-t border-border flex items-center justify-between">
                                         <div className="text-[10px]" style={{ color: 'var(--color-text-dim)' }}>
                                             {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ''}
                                         </div>
+                                        <span className="text-[10px] font-bold text-primary opacity-60">Tap to open</span>
                                     </div>
                                 </div>
                             </div>
@@ -429,6 +467,70 @@ export default function MyProfile() {
                     </div>
                 )}
             </motion.div>
+
+            {/* Lightbox Modal */}
+            <AnimatePresence>
+                {lightbox && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        style={{ background: 'rgba(0,0,0,0.92)' }}
+                        onClick={() => setLightbox(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="relative max-w-4xl w-full"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Close Button */}
+                            <button
+                                onClick={() => setLightbox(null)}
+                                className="absolute -top-12 right-0 text-white/70 hover:text-white flex items-center gap-2 text-sm font-bold"
+                            >
+                                <X size={18} /> Close
+                            </button>
+
+                            {/* Media Viewer */}
+                            <div className="rounded-2xl overflow-hidden bg-black flex items-center justify-center" style={{ minHeight: '300px', maxHeight: '70vh' }}>
+                                {(() => {
+                                    const file = lightbox.project.files?.[lightbox.fileIndex]
+                                    if (!file?.data) return (
+                                        <div className="text-white/30 text-sm p-12">No media to display</div>
+                                    )
+                                    return file.type?.startsWith('video/') ? (
+                                        <video src={file.data} controls autoPlay className="max-w-full max-h-[70vh] object-contain" style={{ width: '100%' }} />
+                                    ) : (
+                                        <img src={file.data} alt={lightbox.project.title} className="max-w-full max-h-[70vh] object-contain" />
+                                    )
+                                })()}
+                            </div>
+
+                            {/* Navigation for multiple files */}
+                            {lightbox.project.files && lightbox.project.files.length > 1 && (
+                                <div className="flex items-center justify-center gap-4 mt-4">
+                                    <button
+                                        onClick={() => setLightbox(prev => ({ ...prev, fileIndex: Math.max(0, prev.fileIndex - 1) }))}
+                                        disabled={lightbox.fileIndex === 0}
+                                        className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white disabled:opacity-30"
+                                    ><ChevronLeft size={20} /></button>
+                                    <span className="text-white/60 text-sm">{lightbox.fileIndex + 1} / {lightbox.project.files.length}</span>
+                                    <button
+                                        onClick={() => setLightbox(prev => ({ ...prev, fileIndex: Math.min(lightbox.project.files.length - 1, prev.fileIndex + 1) }))}
+                                        disabled={lightbox.fileIndex === lightbox.project.files.length - 1}
+                                        className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white disabled:opacity-30"
+                                    ><ChevronRight size={20} /></button>
+                                </div>
+                            )}
+
+                            {/* Info Row */}
+                            <div className="mt-4 text-center">
+                                <h3 className="text-white font-bold text-lg">{lightbox.project.title}</h3>
+                                <p className="text-white/50 text-sm mt-1">{lightbox.project.description}</p>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

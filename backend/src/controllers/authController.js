@@ -1,7 +1,32 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import pool from '../config/database.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
+
+// Email transporter (Gmail SMTP)
+const createTransporter = () => nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.SMTP_USER || 'castup4862446@gmail.com',
+        pass: process.env.SMTP_PASS // Gmail App Password
+    }
+});
+
+const sendEmail = async ({ to, subject, html }) => {
+    try {
+        const transporter = createTransporter();
+        await transporter.sendMail({
+            from: `"CastUp" <${process.env.SMTP_USER || 'castup4862446@gmail.com'}>`,
+            to, subject, html
+        });
+        console.log(`✅ Email sent to ${to}`);
+        return true;
+    } catch (err) {
+        console.error('❌ Email send failed:', err.message);
+        return false;
+    }
+};
 
 // Signup
 export const signup = async (req, res) => {
@@ -144,16 +169,27 @@ export const forgotPassword = async (req, res) => {
             [user.id, token, expiresAt]
         );
 
-        // TODO: Send email with reset link
-        // For now, log to console (replace with email service in production)
-        const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
-        console.log('\n========================================');
-        console.log('PASSWORD RESET REQUEST');
-        console.log('========================================');
-        console.log(`User: ${user.name} (${user.email})`);
-        console.log(`Reset Link: ${resetUrl}`);
-        console.log(`Expires: ${expiresAt.toLocaleString()}`);
-        console.log('========================================\n');
+        // Generate reset link
+        const resetUrl = `${process.env.CLIENT_URL || 'https://castup-frontend.vercel.app'}/reset-password/${token}`;
+        console.log('Reset URL generated:', resetUrl);
+
+        // Send password reset email
+        await sendEmail({
+            to: user.email,
+            subject: 'CastUp - Reset Your Password',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #13111c; color: #e2e8f0; border-radius: 12px;">
+                    <h1 style="color: #7c3aed; font-size: 28px; margin-bottom: 8px;">CastUp</h1>
+                    <h2 style="font-size: 20px; margin-bottom: 16px;">Password Reset Request</h2>
+                    <p style="color: #94a3b8;">Hi <strong style="color: #e2e8f0;">${user.name}</strong>,</p>
+                    <p style="color: #94a3b8;">We received a request to reset your password. Click the button below to create a new password:</p>
+                    <a href="${resetUrl}" style="display: inline-block; margin: 24px 0; padding: 14px 32px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Reset My Password</a>
+                    <p style="color: #64748b; font-size: 14px;">This link will expire in <strong>15 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.</p>
+                    <hr style="border-color: #334155; margin: 24px 0;" />
+                    <p style="color: #475569; font-size: 12px;">© 2025 CastUp. Your cinema industry companion.</p>
+                </div>
+            `
+        });
 
         res.json({
             success: true,

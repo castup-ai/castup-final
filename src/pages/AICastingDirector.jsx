@@ -29,11 +29,50 @@ const CREW_ROLES = [
 
 export default function AICastingDirector() {
     const { allUsers } = useAuth()
+    const [description, setDescription] = useState('')
     const [criteria, setCriteria] = useState({
         category: 'All', role: 'All', experience: '', ageRange: 'Any', gender: 'Any', skills: '', location: ''
     })
     const [results, setResults] = useState(null)
     const [searching, setSearching] = useState(false)
+
+    // Parse natural language description to auto-fill filters
+    const parseDescription = () => {
+        if (!description.trim()) return
+        const desc = description.toLowerCase()
+        const newCriteria = { ...criteria }
+
+        // Detect category
+        if (desc.includes('actor') || desc.includes('actress') || desc.includes('model') || desc.includes('singer')) {
+            newCriteria.category = 'Artist'
+            if (desc.includes('actress') || (desc.includes('female') && desc.includes('actor'))) newCriteria.role = 'Actress'
+            else if (desc.includes('actor') || (desc.includes('male') && desc.includes('actor'))) newCriteria.role = 'Actor'
+            else if (desc.includes('model')) newCriteria.role = desc.includes('female') ? 'Female Model' : 'Male Model'
+        } else if (desc.includes('director') || desc.includes('cinematograph') || desc.includes('editor') || desc.includes('crew')) {
+            newCriteria.category = 'Crew'
+            if (desc.includes('music director')) newCriteria.role = 'Music Director'
+            else if (desc.includes('art director')) newCriteria.role = 'Art Director'
+            else if (desc.includes('director')) newCriteria.role = 'Director'
+            else if (desc.includes('editor')) newCriteria.role = 'Editor'
+        }
+
+        // Detect gender
+        if (desc.includes('female') || desc.includes('woman') || desc.includes('girl')) newCriteria.gender = 'Female'
+        else if (desc.includes('male') || desc.includes('man') || desc.includes('boy')) newCriteria.gender = 'Male'
+
+        // Detect age range
+        if (desc.includes('18-25') || desc.includes('young') || desc.includes('teen')) newCriteria.ageRange = '18-25'
+        else if (desc.includes('26-35') || desc.includes('mid')) newCriteria.ageRange = '26-35'
+        else if (desc.includes('36-45') || desc.includes('mature')) newCriteria.ageRange = '36-45'
+        else if (desc.includes('46') || desc.includes('senior') || desc.includes('elder')) newCriteria.ageRange = '46+'
+
+        // Detect experience
+        if (desc.includes('beginner') || desc.includes('fresher') || desc.includes('new')) newCriteria.experience = 'Beginner'
+        else if (desc.includes('intermediate') || desc.includes('some experience')) newCriteria.experience = 'Intermediate'
+        else if (desc.includes('expert') || desc.includes('experienced') || desc.includes('professional')) newCriteria.experience = 'Expert'
+
+        setCriteria(newCriteria)
+    }
 
     const handleSearch = () => {
         setSearching(true)
@@ -70,8 +109,30 @@ export default function AICastingDirector() {
                     <Video size={22} style={{ color: 'var(--color-accent)' }} /> AI Casting Director
                 </h1>
                 <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                    Describe your ideal cast member and let AI find the best matches
+                    Describe your ideal cast member or use filters to find matches
                 </p>
+            </motion.div>
+
+            {/* Natural Language Description Box */}
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                className="card p-5 mb-5">
+                <h2 className="text-base font-semibold mb-3 flex items-center gap-2">
+                    <Sparkles size={16} style={{ color: 'var(--color-accent)' }} /> Describe Your Casting Need
+                </h2>
+                <textarea
+                    rows={3}
+                    className="w-full"
+                    placeholder="e.g. I need an experienced female actress between 26-35 years old, based in Mumbai, who speaks Hindi and English fluently for a feature film..."
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                />
+                <button
+                    className="btn btn-secondary btn-sm mt-3"
+                    onClick={parseDescription}
+                    disabled={!description.trim()}
+                >
+                    <Sparkles size={14} /> Auto-fill Filters from Description
+                </button>
             </motion.div>
 
             {/* Criteria */}

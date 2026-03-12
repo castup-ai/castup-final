@@ -16,12 +16,10 @@ export default function Login() {
         e.preventDefault()
         setError('')
         setLoading(true)
-        setTimeout(() => {
-            const result = login(form.email, form.password)
-            if (result.success) navigate('/home')
-            else setError(result.error || 'Invalid email or password. Try: priya@example.com / password123')
-            setLoading(false)
-        }, 600)
+        const result = await login(form.email, form.password)
+        if (result.success) navigate('/home')
+        else setError(result.error || 'Invalid email or password')
+        setLoading(false)
     }
 
     return (

@@ -33,7 +33,7 @@ const CREW_ROLES = [
 const PROJECT_TYPES = ['Feature Film', 'Short Film', 'Web Series', 'Documentary', 'Music Video', 'Commercial', 'Ad Film', 'Corporate Video', 'Other']
 
 export default function FindWork() {
-    const { allJobs, isAuthenticated, requireAuth, user, deleteJob } = useAuth()
+    const { allJobs, isAuthenticated, requireAuth, user, deleteJob, appliedJobs, applyForJob } = useAuth()
     const navigate = useNavigate()
     const [selectedJob, setSelectedJob] = useState(null)
     const [showApply, setShowApply] = useState(false)
@@ -97,6 +97,12 @@ export default function FindWork() {
     const handleApply = (e) => {
         e.preventDefault()
 
+        // Check if already applied
+        if (selectedJob && appliedJobs.includes(selectedJob.id)) {
+            alert('You have already applied for this job!');
+            return;
+        }
+
         // Validation for mandatory fields
         const requiredFields = [
             { key: 'role', label: 'Role' },
@@ -114,27 +120,20 @@ export default function FindWork() {
         });
 
         const isAgeInvalid = applyForm.age && parseInt(applyForm.age) <= 0;
-
-        // Add portfolio check
         const hasPortfolio = applyForm.portfolioFiles && applyForm.portfolioFiles.length > 0;
 
         if (missing.length > 0 || !hasPortfolio || isAgeInvalid) {
-            if (isAgeInvalid) {
-                alert("Age cannot be negative or zero.");
-                return;
-            }
+            if (isAgeInvalid) { alert("Age cannot be negative or zero."); return; }
             let message = "Kindly provide your ";
-            if (missing.length > 0) {
-                message += missing.map(f => f.label).join(', ');
-            }
-            if (!hasPortfolio) {
-                message += (missing.length > 0 ? " and " : "") + "upload your Images and Videos";
-            }
+            if (missing.length > 0) message += missing.map(f => f.label).join(', ');
+            if (!hasPortfolio) message += (missing.length > 0 ? " and " : "") + "upload your Images and Videos";
             message += " before applying.";
             alert(message);
             return;
         }
 
+        // Record application
+        if (selectedJob) applyForJob(selectedJob.id);
         setApplied(true)
         setShowApply(false)
     }
@@ -418,17 +417,23 @@ export default function FindWork() {
                                         <Eye size={16} /> Details
                                     </button>
                                     {(!user || !job.createdBy || user.id !== job.createdBy.id) && (
-                                        <button
-                                            onClick={() => {
-                                                if (!isAuthenticated) { requireAuth(); return }
-                                                if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile'); return }
-                                                setSelectedJob(job);
-                                                setShowApply(true);
-                                            }}
-                                            className="h-12 px-8 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 shadow-xl shadow-primary/20 flex items-center justify-center gap-2 flex-1 sm:flex-initial"
-                                        >
-                                            <ArrowRight size={16} /> Apply Now
-                                        </button>
+                                        appliedJobs.includes(job.id) ? (
+                                            <div className="h-12 px-6 rounded-xl bg-success/10 text-success border border-success/30 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 flex-1 sm:flex-initial">
+                                                <CheckCircle size={16} /> Applied
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => {
+                                                    if (!isAuthenticated) { requireAuth(); return }
+                                                    if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile'); return }
+                                                    setSelectedJob(job);
+                                                    setShowApply(true);
+                                                }}
+                                                className="h-12 px-8 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 shadow-xl shadow-primary/20 flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+                                            >
+                                                <ArrowRight size={16} /> Apply Now
+                                            </button>
+                                        )
                                     )}
                                 </div>
                             </div>
@@ -563,10 +568,23 @@ export default function FindWork() {
                                             <span className="font-bold opacity-40 block text-[10px] uppercase tracking-wider">Attached Documents</span>
                                             <div className="flex flex-wrap gap-2">
                                                 {selectedJob.documents.map((doc, idx) => (
-                                                    <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-xs font-bold text-primary">
-                                                        <FileText size={14} />
-                                                        <span className="truncate max-w-[150px]">{doc.name}</span>
-                                                    </div>
+                                                    doc.url ? (
+                                                        <a
+                                                            key={idx}
+                                                            href={doc.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+                                                        >
+                                                            <FileText size={14} /> {doc.name || `Document ${idx + 1}`}
+                                                            <ExternalLink size={10} />
+                                                        </a>
+                                                    ) : (
+                                                        <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-xs font-bold text-primary">
+                                                            <FileText size={14} />
+                                                            <span className="truncate max-w-[150px]">{doc.name || `Document ${idx + 1}`}</span>
+                                                        </div>
+                                                    )
                                                 ))}
                                             </div>
                                         </div>
@@ -583,16 +601,22 @@ export default function FindWork() {
                                     Cancel
                                 </button>
                                 {(!user || !selectedJob.createdBy || user.id !== selectedJob.createdBy.id) && (
-                                    <button
-                                        className="h-12 px-10 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest flex-[1.5] transition-all hover:scale-[1.02] shadow-xl shadow-primary/20"
-                                        onClick={() => {
-                                            if (!isAuthenticated) { requireAuth(); return }
-                                            if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile'); return }
-                                            setShowApply(true)
-                                        }}
-                                    >
-                                        Apply Now
-                                    </button>
+                                    appliedJobs.includes(selectedJob.id) ? (
+                                        <div className="h-12 px-10 rounded-xl bg-success/10 text-success border border-success/30 text-sm font-bold flex-[1.5] flex items-center justify-center gap-2">
+                                            <CheckCircle size={16} /> Already Applied
+                                        </div>
+                                    ) : (
+                                        <button
+                                            className="h-12 px-10 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest flex-[1.5] transition-all hover:scale-[1.02] shadow-xl shadow-primary/20"
+                                            onClick={() => {
+                                                if (!isAuthenticated) { requireAuth(); return }
+                                                if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile'); return }
+                                                setShowApply(true)
+                                            }}
+                                        >
+                                            Apply Now
+                                        </button>
+                                    )
                                 )}
                             </div>
                         </motion.div>

@@ -11,6 +11,18 @@ export function RealAuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [allUsers, setAllUsers] = useState([]);
 
+    // Notifications system
+    const [notifications, setNotifications] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('castup_notifications') || '[]'); }
+        catch { return []; }
+    });
+
+    // Track applied jobs per user (prevent duplicate applications)
+    const [appliedJobs, setAppliedJobs] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('castup_applied_jobs') || '[]'); }
+        catch { return []; }
+    });
+
     // We keep jobs locally for now or if we implement a job service we can swap it later
     const [registeredJobs, setRegisteredJobs] = useState(() => {
         try {
@@ -107,6 +119,44 @@ export function RealAuthProvider({ children }) {
         return { success: true }
     }
 
+    const addNotification = (notif) => {
+        const newNotif = { id: Date.now(), ...notif, timestamp: new Date().toISOString(), read: false };
+        setNotifications(prev => {
+            const updated = [newNotif, ...prev].slice(0, 50); // keep last 50
+            localStorage.setItem('castup_notifications', JSON.stringify(updated));
+            return updated;
+        });
+    };
+
+    const markAllRead = () => {
+        setNotifications(prev => {
+            const updated = prev.map(n => ({ ...n, read: true }));
+            localStorage.setItem('castup_notifications', JSON.stringify(updated));
+            return updated;
+        });
+    };
+
+    const applyForJob = (jobId) => {
+        setAppliedJobs(prev => {
+            if (prev.includes(jobId)) return prev;
+            const updated = [...prev, jobId];
+            localStorage.setItem('castup_applied_jobs', JSON.stringify(updated));
+            return updated;
+        });
+        // Notify the job creator
+        const job = registeredJobs.find(j => j.id === jobId);
+        if (job && user) {
+            // Notification for the current user (applicant confirmation)
+            addNotification({
+                type: 'applied',
+                title: 'Application Submitted',
+                message: `You applied for "${job.title}"`,
+                jobId
+            });
+        }
+        return { success: true };
+    };
+
     const updateProfile = async (data) => {
         const { success, data: updatedUser, error } = await authService.updateProfile(data);
 
@@ -135,7 +185,12 @@ export function RealAuthProvider({ children }) {
             allUsers,
             allJobs: registeredJobs,
             addJob,
-            deleteJob
+            deleteJob,
+            notifications,
+            addNotification,
+            markAllRead,
+            appliedJobs,
+            applyForJob
         }}>
             {!loading && children}
         </RealAuthContext.Provider>

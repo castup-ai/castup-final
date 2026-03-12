@@ -16,6 +16,7 @@ import MyProfile from '@/pages/MyProfile'
 import AIAssistant from '@/pages/AIAssistant'
 import AILocationTracker from '@/pages/AILocationTracker'
 import AICastingDirector from '@/pages/AICastingDirector'
+import AdminDashboard from '@/pages/AdminDashboard'
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="/ai-assistant" element={<AIAssistant />} />
             <Route path="/ai-location" element={<AILocationTracker />} />
             <Route path="/ai-casting" element={<AICastingDirector />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Route>
 
           {/* Fallback */}

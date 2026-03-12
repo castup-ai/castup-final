@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, Search, Users, Film, Navigation, Star } from 'lucide-react'
+import { MapPin, Search, Users, Film, Navigation, Star, Sparkles } from 'lucide-react'
 
 const MOCK_LOCATIONS = [
     {
@@ -31,11 +31,16 @@ const MOCK_LOCATIONS = [
 
 export default function AILocationTracker() {
     const [search, setSearch] = useState('')
+    const [description, setDescription] = useState('')
     const [selected, setSelected] = useState(null)
 
-    const filtered = MOCK_LOCATIONS.filter(l =>
-        !search || l.name.toLowerCase().includes(search.toLowerCase()) || l.region.toLowerCase().includes(search.toLowerCase())
-    )
+    const filtered = MOCK_LOCATIONS.filter(l => {
+        const term = search || description
+        return !term || l.name.toLowerCase().includes(term.toLowerCase()) ||
+            l.region.toLowerCase().includes(term.toLowerCase()) ||
+            l.topRoles.some(r => r.toLowerCase().includes(term.toLowerCase())) ||
+            l.popularStudios.some(s => s.toLowerCase().includes(term.toLowerCase()))
+    })
 
     return (
         <div className="max-w-5xl mx-auto">
@@ -48,11 +53,39 @@ export default function AILocationTracker() {
                 </p>
             </motion.div>
 
-            {/* Search */}
+            {/* Location Description Search (like Google Maps) */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                className="card p-5 mb-5">
+                <h2 className="text-sm font-bold mb-2 flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+                    <Sparkles size={14} style={{ color: 'var(--color-accent)' }} /> Describe the Location You're Looking For
+                </h2>
+                <div className="flex gap-3">
+                    <textarea
+                        rows={2}
+                        className="flex-1"
+                        placeholder="e.g. A busy city with many Bollywood studios and actors available immediately in Western India..."
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                    />
+                    <button
+                        className="btn btn-secondary btn-sm self-end"
+                        onClick={() => { setSearch(description) }}
+                        disabled={!description.trim()}
+                    >
+                        <Search size={14} /> Search
+                    </button>
+                </div>
+                {description && (
+                    <button className="text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}
+                        onClick={() => { setDescription(''); setSearch('') }}>Clear search</button>
+                )}
+            </motion.div>
+
+            {/* Quick Search */}
             <div className="relative mb-6">
                 <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-dim)' }} />
-                <input className="pl-10" placeholder="Search locations..." value={search}
-                    onChange={e => setSearch(e.target.value)} />
+                <input className="pl-10" placeholder="Quick search by city or state..." value={search}
+                    onChange={e => { setSearch(e.target.value); setDescription('') }} />
             </div>
 
             {/* Map placeholder + Location cards */}
