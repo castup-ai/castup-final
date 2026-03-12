@@ -8,8 +8,8 @@ import { generateToken, generateRefreshToken } from '../utils/jwt.js';
 const createTransporter = () => nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.SMTP_USER || 'castup4862446@gmail.com',
-        pass: process.env.SMTP_PASS // Gmail App Password
+        user: process.env.SMTP_USER || 'castupaiapp@gmail.com',
+        pass: process.env.SMTP_PASS
     }
 });
 
@@ -17,7 +17,7 @@ const sendEmail = async ({ to, subject, html }) => {
     try {
         const transporter = createTransporter();
         await transporter.sendMail({
-            from: `"CastUp" <${process.env.SMTP_USER || 'castup4862446@gmail.com'}>`,
+            from: `"CastUp" <${process.env.SMTP_USER || 'castupaiapp@gmail.com'}>`,
             to, subject, html
         });
         console.log(`✅ Email sent to ${to}`);
