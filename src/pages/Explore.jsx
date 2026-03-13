@@ -50,6 +50,8 @@ export default function Explore() {
     const [portfolioTab, setPortfolioTab] = useState('Photos')
     const [isFavorite, setIsFavorite] = useState(false)
     const [showContactDropdown, setShowContactDropdown] = useState(false)
+    const [customMessage, setCustomMessage] = useState('')
+    const [activeAction, setActiveAction] = useState(null) // 'connect' or 'message'
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -60,22 +62,34 @@ export default function Explore() {
             setSelectedProfile(null)
         }
         setActionStatus({ connect: null, message: null })
+        setActiveAction(null)
+        setCustomMessage('')
     }
 
     const handleConnect = async (targetUserId) => {
         if (!requireAuth()) return
+        if (!activeAction) {
+            setActiveAction('connect')
+            return
+        }
         
         setActionLoading(prev => ({ ...prev, connect: true }))
         const { success } = await sendTargetedNotification(targetUserId, {
             type: 'connect',
             title: 'Connection Request',
-            message: `${user.name} wants to connect with you.`,
-            metadata: { senderId: user.id, senderName: user.name }
+            message: customMessage || `${user.name} wants to connect with you.`,
+            metadata: { 
+                senderId: user.id, 
+                senderName: user.name,
+                originalMessage: customMessage
+            }
         })
         
         setActionLoading(prev => ({ ...prev, connect: false }))
         if (success) {
             setActionStatus(prev => ({ ...prev, connect: 'Sent' }))
+            setActiveAction(null)
+            setCustomMessage('')
             addNotification({
                 type: 'info',
                 title: 'Request Sent',
@@ -86,18 +100,28 @@ export default function Explore() {
 
     const handleMessage = async (targetUserId) => {
         if (!requireAuth()) return
+        if (!activeAction) {
+            setActiveAction('message')
+            return
+        }
         
         setActionLoading(prev => ({ ...prev, message: true }))
         const { success } = await sendTargetedNotification(targetUserId, {
             type: 'message',
-            title: 'New Message',
-            message: `${user.name} sent you a message request.`,
-            metadata: { senderId: user.id, senderName: user.name }
+            title: 'New Message Request',
+            message: customMessage || `${user.name} sent you a message request.`,
+            metadata: { 
+                senderId: user.id, 
+                senderName: user.name,
+                originalMessage: customMessage
+            }
         })
         
         setActionLoading(prev => ({ ...prev, message: false }))
         if (success) {
             setActionStatus(prev => ({ ...prev, message: 'Sent' }))
+            setActiveAction(null)
+            setCustomMessage('')
             addNotification({
                 type: 'info',
                 title: 'Message Request Sent',
@@ -308,113 +332,140 @@ export default function Explore() {
                         )}
                     </AnimatePresence>
 
-                    {/* Results */}
-                    <div className="flex flex-col gap-6">
-                        {filtered.map((user, i) => (
-                            <motion.div
-                                key={user.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="card overflow-hidden border-0 shadow-2xl flex flex-col md:flex-row min-h-[220px] relative group cursor-pointer"
-                                style={{ background: 'var(--color-card)' }}
-                                onClick={() => setSelectedProfile(user)}
-                            >
-                                {/* Left Banner Section */}
-                                <div className="md:w-64 bg-primary/10 relative overflow-hidden flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-primary/10">
-                                    {/* Decorative Dots Pattern */}
-                                    <div className="absolute top-3 left-3 grid grid-cols-3 gap-1 opacity-20">
-                                        {[...Array(9)].map((_, i) => <div key={`dot-tl-${i}`} className="w-1 h-1 rounded-full bg-primary"></div>)}
-                                    </div>
-                                    <div className="absolute bottom-3 right-3 grid grid-cols-3 gap-1 opacity-20">
-                                        {[...Array(9)].map((_, i) => <div key={`dot-br-${i}`} className="w-1 h-1 rounded-full bg-primary"></div>)}
-                                    </div>
-
-                                    <div className="relative z-10 w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl flex items-center justify-center transform group-hover:scale-105 transition-all duration-500 overflow-hidden">
-                                        {user.photo ? (
-                                            <img src={user.photo} alt={(user.name?.split(" ")[0])} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="text-3xl font-black text-primary">{(user.name?.split(" ")[0])?.[0] || 'U'}{user.lastName?.[0] || ''}</span>
-                                        )}
-                                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-accent rounded-full flex items-center justify-center shadow-lg">
-                                            <Star size={14} className="text-white fill-current" />
-                                        </div>
-                                    </div>
-                                    <div className="mt-4 text-center">
-                                        <span className={`text-[10px] font-black uppercase tracking-widest block ${user.availability === 'Immediately' ? 'text-success' : 'text-warning'}`}>
-                                            {user.availability === 'Immediately' ? 'Available Now' : user.availability}
-                                        </span>
-                                    </div>
+                    {/* Results / Data Wall */}
+                    {!isAuthenticated ? (
+                        <div className="card text-center py-24 bg-bg-offset border-border/50 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary"></div>
+                            <div className="max-w-md mx-auto relative z-10">
+                                <div className="w-16 h-16 bg-primary/20 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <User size={32} />
                                 </div>
-
-                                {/* Main Content Section */}
-                                <div className="flex-1 p-6 md:p-8 flex flex-col justify-between">
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <span className="px-3 py-1 bg-primary/10 text-primary text-[11px] font-black uppercase tracking-tighter rounded-full italic">
-                                                {user.role || user.department || 'Professional'}
-                                            </span>
-                                            <div className="h-px bg-primary/10 flex-1"></div>
-                                            <span className="text-[11px] font-bold text-text-dim uppercase tracking-widest flex items-center gap-2">
-                                                <MapPin size={12} /> {user.location}
-                                            </span>
+                                <h3 className="text-2xl font-black mb-3">Login to Explore Talent</h3>
+                                <p className="text-sm text-text-muted leading-relaxed mb-8">
+                                    Join the CastUp community to view professional profiles, message creators, and build your network.
+                                </p>
+                                <button 
+                                    className="h-12 px-10 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30"
+                                    onClick={() => requireAuth()}
+                                >
+                                    Sign In / Register
+                                </button>
+                            </div>
+                            {/* Blurred background preview items */}
+                            <div className="absolute inset-0 opacity-5 pointer-events-none select-none blur-sm -z-10 flex flex-col gap-4 p-8">
+                                {[1, 2].map(i => (
+                                    <div key={i} className="h-32 bg-white rounded-2xl w-full"></div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-6">
+                            {filtered.map((user, i) => (
+                                <motion.div
+                                    key={user.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="card overflow-hidden border-0 shadow-2xl flex flex-col md:flex-row min-h-[220px] relative group cursor-pointer"
+                                    style={{ background: 'var(--color-card)' }}
+                                    onClick={() => setSelectedProfile(user)}
+                                >
+                                    {/* Left Banner Section */}
+                                    <div className="md:w-64 bg-primary/10 relative overflow-hidden flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-primary/10">
+                                        {/* Decorative Dots Pattern */}
+                                        <div className="absolute top-3 left-3 grid grid-cols-3 gap-1 opacity-20">
+                                            {[...Array(9)].map((_, i) => <div key={`dot-tl-${i}`} className="w-1 h-1 rounded-full bg-primary"></div>)}
+                                        </div>
+                                        <div className="absolute bottom-3 right-3 grid grid-cols-3 gap-1 opacity-20">
+                                            {[...Array(9)].map((_, i) => <div key={`dot-br-${i}`} className="w-1 h-1 rounded-full bg-primary"></div>)}
                                         </div>
 
-                                        <h2 className="text-3xl font-black mb-2 tracking-tight group-hover:text-primary transition-colors cursor-pointer">
-                                            {user.name}
-                                        </h2>
-                                        <p className="text-sm text-text-dim mb-6 line-clamp-2 leading-relaxed italic opacity-80">
-                                            {user.bio || `Professional ${user.role || 'creator'} based in ${user.location}. Experienced in various projects and ready for new collaborations.`}
-                                        </p>
-
-                                        {/* Info Row - Refined Separated Specs */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-                                            <div className="bg-primary/5 p-3 rounded-xl border border-primary/10 flex flex-col items-center justify-center text-center">
-                                                <span className="text-[9px] font-black text-primary/60 uppercase tracking-widest mb-1">Experience</span>
-                                                <div className="flex items-center gap-2">
-                                                    <Briefcase size={12} className="text-primary" />
-                                                    <span className="text-xs font-bold leading-none">{user.yearsOfExperience || '5+'} Years</span>
-                                                </div>
+                                        <div className="relative z-10 w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl flex items-center justify-center transform group-hover:scale-105 transition-all duration-500 overflow-hidden">
+                                            {user.photo ? (
+                                                <img src={user.photo} alt={(user.name?.split(" ")[0])} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-3xl font-black text-primary">{(user.name?.split(" ")[0])?.[0] || 'U'}{user.lastName?.[0] || ''}</span>
+                                            )}
+                                            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-accent rounded-full flex items-center justify-center shadow-lg">
+                                                <Star size={14} className="text-white fill-current" />
                                             </div>
-                                            <div className="bg-success/5 p-3 rounded-xl border border-success/10 flex flex-col items-center justify-center text-center">
-                                                <span className="text-[9px] font-black text-success/60 uppercase tracking-widest mb-1">Projects</span>
-                                                <div className="flex items-center gap-2">
-                                                    <Clapperboard size={12} className="text-success" />
-                                                    <span className="text-xs font-bold leading-none capitalize">{user.projectsCount || '10+'} Completed</span>
-                                                </div>
-                                            </div>
-                                            <div className="bg-accent/5 p-3 rounded-xl border border-accent/10 flex flex-col items-center justify-center text-center">
-                                                <span className="text-[9px] font-black text-accent/60 uppercase tracking-widest mb-1">Languages</span>
-                                                <div className="flex items-center gap-2">
-                                                    <Languages size={12} className="text-accent" />
-                                                    <span className="text-xs font-bold leading-none">{user.languages?.length ? user.languages.length : 2} Known</span>
-                                                </div>
-                                            </div>
+                                        </div>
+                                        <div className="mt-4 text-center">
+                                            <span className={`text-[10px] font-black uppercase tracking-widest block ${user.availability === 'Immediately' ? 'text-success' : 'text-warning'}`}>
+                                                {user.availability === 'Immediately' ? 'Available Now' : user.availability}
+                                            </span>
                                         </div>
                                     </div>
 
-                                    {/* Bottom Actions Row */}
-                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-border/10">
-                                        <div className="flex flex-wrap gap-1.5 flex-1 w-full">
-                                            {user.skills?.slice(0, 4).map(s => (
-                                                <span key={s} className="px-2 py-1 bg-surface border border-border/50 text-[10px] font-bold text-text-muted rounded-md tracking-wider">
-                                                    {s}
+                                    {/* Main Content Section */}
+                                    <div className="flex-1 p-6 md:p-8 flex flex-col justify-between">
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <span className="px-3 py-1 bg-primary/10 text-primary text-[11px] font-black uppercase tracking-tighter rounded-full italic">
+                                                    {user.role || user.department || 'Professional'}
                                                 </span>
-                                            ))}
+                                                <div className="h-px bg-primary/10 flex-1"></div>
+                                                <span className="text-[11px] font-bold text-text-dim uppercase tracking-widest flex items-center gap-2">
+                                                    <MapPin size={12} /> {user.location}
+                                                </span>
+                                            </div>
+
+                                            <h2 className="text-3xl font-black mb-2 tracking-tight group-hover:text-primary transition-colors cursor-pointer">
+                                                {user.name}
+                                            </h2>
+                                            <p className="text-sm text-text-dim mb-6 line-clamp-2 leading-relaxed italic opacity-80">
+                                                {user.bio || `Professional ${user.role || 'creator'} based in ${user.location}. Experienced in various projects and ready for new collaborations.`}
+                                            </p>
+
+                                            {/* Info Row - Refined Separated Specs */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                                                <div className="bg-primary/5 p-3 rounded-xl border border-primary/10 flex flex-col items-center justify-center text-center">
+                                                    <span className="text-[9px] font-black text-primary/60 uppercase tracking-widest mb-1">Experience</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <Briefcase size={12} className="text-primary" />
+                                                        <span className="text-xs font-bold leading-none">{user.yearsOfExperience || '5+'} Years</span>
+                                                    </div>
+                                                </div>
+                                                <div className="bg-success/5 p-3 rounded-xl border border-success/10 flex flex-col items-center justify-center text-center">
+                                                    <span className="text-[9px] font-black text-success/60 uppercase tracking-widest mb-1">Projects</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <Clapperboard size={12} className="text-success" />
+                                                        <span className="text-xs font-bold leading-none capitalize">{user.projectsCount || '10+'} Completed</span>
+                                                    </div>
+                                                </div>
+                                                <div className="bg-accent/5 p-3 rounded-xl border border-accent/10 flex flex-col items-center justify-center text-center">
+                                                    <span className="text-[9px] font-black text-accent/60 uppercase tracking-widest mb-1">Languages</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <Languages size={12} className="text-accent" />
+                                                        <span className="text-xs font-bold leading-none">{user.languages?.length ? user.languages.length : 2} Known</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        <div className="flex gap-3 w-full sm:w-auto shrink-0">
-                                            <button
-                                                className="h-12 px-6 rounded-xl border-2 border-primary/30 text-primary text-xs font-black uppercase tracking-widest transition-all hover:bg-primary/5 flex items-center justify-center gap-2 w-full sm:w-auto"
-                                            >
-                                                <Eye size={16} /> View Profile
-                                            </button>
+                                        {/* Bottom Actions Row */}
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-border/10">
+                                            <div className="flex flex-wrap gap-1.5 flex-1 w-full">
+                                                {user.skills?.slice(0, 4).map(s => (
+                                                    <span key={s} className="px-2 py-1 bg-surface border border-border/50 text-[10px] font-bold text-text-muted rounded-md tracking-wider">
+                                                        {s}
+                                                    </span>
+                                                ))}
+                                            </div>
+
+                                            <div className="flex gap-3 w-full sm:w-auto shrink-0">
+                                                <button
+                                                    className="h-12 px-6 rounded-xl border-2 border-primary/30 text-primary text-xs font-black uppercase tracking-widest transition-all hover:bg-primary/5 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                                >
+                                                    <Eye size={16} /> View Profile
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
 
                     {filtered.length === 0 && (
                         <div className="card text-center py-20 bg-opacity-30">
@@ -482,34 +533,49 @@ export default function Explore() {
                                         </div>
 
                                         <div className="flex flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
-                                            <button 
-                                                onClick={() => handleConnect(selectedProfile.id)}
-                                                disabled={actionLoading.connect || actionStatus.connect === 'Sent'}
-                                                className={`flex-1 md:flex-none h-11 px-6 ${actionStatus.connect === 'Sent' ? 'bg-success text-white' : 'bg-primary text-white'} rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-70 disabled:scale-100`}
-                                            >
-                                                {actionLoading.connect ? (
-                                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                                ) : (
-                                                    <>
-                                                        <User size={16} /> 
-                                                        {actionStatus.connect === 'Sent' ? 'Sent' : 'Connect'}
-                                                    </>
-                                                )}
-                                            </button>
-                                            <button 
-                                                onClick={() => handleMessage(selectedProfile.id)}
-                                                disabled={actionLoading.message || actionStatus.message === 'Sent'}
-                                                className={`flex-1 md:flex-none h-11 px-6 ${actionStatus.message === 'Sent' ? 'bg-success text-white' : 'bg-bg border border-border'} text-text-main rounded-xl font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2 disabled:opacity-70`}
-                                            >
-                                                {actionLoading.message ? (
-                                                    <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                                                ) : (
-                                                    <>
-                                                        <MessageSquare size={16} /> 
-                                                        {actionStatus.message === 'Sent' ? 'Sent' : 'Message'}
-                                                    </>
-                                                )}
-                                            </button>
+                                            {!activeAction ? (
+                                                <>
+                                                    <button 
+                                                        onClick={() => setActiveAction('connect')}
+                                                        className="flex-1 md:flex-none h-11 px-6 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                                                    >
+                                                        <User size={16} /> Connect
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setActiveAction('message')}
+                                                        className="flex-1 md:flex-none h-11 px-6 bg-bg border border-border text-text-main rounded-xl font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <MessageSquare size={16} /> Message
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <div className="flex flex-col w-full gap-3">
+                                                    <div className="relative">
+                                                        <textarea 
+                                                            placeholder={activeAction === 'connect' ? "Write a short note with your request..." : "Type your message here..."}
+                                                            className="w-full bg-bg border border-primary/30 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none min-h-[100px] shadow-inner"
+                                                            value={customMessage}
+                                                            onChange={e => setCustomMessage(e.target.value)}
+                                                            autoFocus
+                                                        />
+                                                        <div className="absolute bottom-2 right-2 flex gap-2">
+                                                            <button 
+                                                                className="px-3 py-1.5 bg-bg-offset border border-border rounded-lg text-xs font-bold hover:bg-border transition-all"
+                                                                onClick={() => setActiveAction(null)}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button 
+                                                                className="px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary-dark transition-all flex items-center gap-2 disabled:opacity-50"
+                                                                disabled={actionLoading.connect || actionLoading.message}
+                                                                onClick={() => activeAction === 'connect' ? handleConnect(selectedProfile.id) : handleMessage(selectedProfile.id)}
+                                                            >
+                                                                {(actionLoading.connect || actionLoading.message) ? 'Sending...' : 'Send Now'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

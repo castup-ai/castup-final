@@ -290,175 +290,195 @@ export default function FindWork() {
                 )}
             </AnimatePresence>
 
-            {/* Job listings */}
-            {/* Job listings - HORIZONTAL BANNER STYLE */}
-            <div className="flex flex-col gap-8">
-                {filteredJobs.length > 0 ? filteredJobs.map((job, i) => (
-                    <motion.div
-                        key={job.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="card overflow-hidden border-0 shadow-2xl flex flex-col md:flex-row min-h-[220px] relative group"
-                        style={{ background: 'var(--color-card)' }}
-                    >
-                        {/* Left Banner Section (Inspired by Join Us graphic) */}
-                        <div className="md:w-64 bg-primary/10 relative overflow-hidden flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-primary/10">
-                            {/* Decorative Dots Pattern */}
-                            <div className="absolute top-3 left-3 grid grid-cols-3 gap-1 opacity-20">
-                                {[...Array(9)].map((_, i) => <div key={i} className="w-1 h-1 rounded-full bg-primary"></div>)}
-                            </div>
-                            <div className="absolute bottom-3 right-3 grid grid-cols-3 gap-1 opacity-20">
-                                {[...Array(9)].map((_, i) => <div key={i} className="w-1 h-1 rounded-full bg-primary"></div>)}
-                            </div>
-
-                            {/* Stylized Icon Box */}
-                            <div className="relative z-10 w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-                                <Clapperboard size={45} className="text-primary" />
-                                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-accent rounded-full flex items-center justify-center shadow-lg">
-                                    <Heart size={14} className="text-white fill-current" />
-                                </div>
-                            </div>
-
-                            <div className="mt-4 text-center">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 block">Est. 2026</span>
-                            </div>
-
-                            {/* Delete Button (Only for Creator) */}
-                            {user && job.createdBy?.id === user.id && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (confirm('Are you sure you want to delete this job post?')) {
-                                            deleteJob(job.id);
-                                        }
-                                    }}
-                                    className="absolute top-4 right-4 w-10 h-10 rounded-xl bg-danger/10 text-danger flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-danger hover:text-white z-10 shadow-lg"
-                                    title="Delete Post"
-                                >
-                                    <Trash2 size={20} />
-                                </button>
-                            )}
+            {/* Job listings / Data Wall */}
+            {!isAuthenticated ? (
+                <div className="card text-center py-24 bg-bg-offset border-border/50 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary"></div>
+                    <div className="max-w-md mx-auto relative z-10">
+                        <div className="w-16 h-16 bg-primary/20 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Briefcase size={32} />
                         </div>
-
-                        {/* Main Content Section */}
-                        <div className="flex-1 p-6 md:p-8 flex flex-col justify-between">
-                            <div>
-                                <div className="flex items-center gap-3 mb-4">
-                                    <span className="px-3 py-1 bg-primary/10 text-primary text-[11px] font-black uppercase tracking-tighter rounded-full italic">
-                                        We Are Hiring
-                                    </span>
-                                    <div className="h-px bg-primary/10 flex-1"></div>
-                                    <span className="text-[11px] font-bold text-text-dim uppercase tracking-widest flex items-center gap-2">
-                                        <Calendar size={12} /> {job.endDate || job.lastDateToApply}
-                                    </span>
+                        <h3 className="text-2xl font-black mb-3">Login to Find Work</h3>
+                        <p className="text-sm text-text-muted leading-relaxed mb-8">
+                            Browse through hundreds of casting calls and crew opportunities. Join the CastUp community to start applying.
+                        </p>
+                        <button 
+                            className="h-12 px-10 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30"
+                            onClick={() => requireAuth()}
+                        >
+                            Sign In / Register
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-8">
+                    {filteredJobs.length > 0 ? filteredJobs.map((job, i) => (
+                        <motion.div
+                            key={job.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                            className="card overflow-hidden border-0 shadow-2xl flex flex-col md:flex-row min-h-[220px] relative group"
+                            style={{ background: 'var(--color-card)' }}
+                        >
+                            {/* Left Banner Section (Inspired by Join Us graphic) */}
+                            <div className="md:w-64 bg-primary/10 relative overflow-hidden flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-primary/10">
+                                {/* Decorative Dots Pattern */}
+                                <div className="absolute top-3 left-3 grid grid-cols-3 gap-1 opacity-20">
+                                    {[...Array(9)].map((_, i) => <div key={i} className="w-1 h-1 rounded-full bg-primary"></div>)}
+                                </div>
+                                <div className="absolute bottom-3 right-3 grid grid-cols-3 gap-1 opacity-20">
+                                    {[...Array(9)].map((_, i) => <div key={i} className="w-1 h-1 rounded-full bg-primary"></div>)}
                                 </div>
 
-                                <h2 className="text-3xl font-black mb-2 tracking-tight group-hover:text-primary transition-colors cursor-pointer" onClick={() => setSelectedJob(job)}>
-                                    {job.title}
-                                </h2>
-                                <p className="text-sm text-text-dim mb-6 line-clamp-2 leading-relaxed italic opacity-80">
-                                    Looking for professional {job.subCategory} for our upcoming {job.projectType}. Join a team of passionate creators and bring visions to life.
-                                </p>
-
-                                {/* Info Row - Refined Separated Specs */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-                                    <div className="bg-primary/5 p-3 rounded-xl border border-primary/10 flex flex-col items-center justify-center text-center">
-                                        <span className="text-[9px] font-black text-primary/60 uppercase tracking-widest mb-1">Project Type</span>
-                                        <div className="flex items-center gap-2">
-                                            <Briefcase size={12} className="text-primary" />
-                                            <span className="text-xs font-bold leading-none">{job.projectType}</span>
-                                        </div>
-                                    </div>
-                                    <div className="bg-success/5 p-3 rounded-xl border border-success/10 flex flex-col items-center justify-center text-center">
-                                        <span className="text-[9px] font-black text-success/60 uppercase tracking-widest mb-1">Vacancy</span>
-                                        <div className="flex items-center gap-2">
-                                            <CheckCircle size={12} className="text-success" />
-                                            <span className="text-xs font-bold leading-none capitalize">{job.subCategory}</span>
-                                        </div>
-                                    </div>
-                                    <div className="bg-accent/5 p-3 rounded-xl border border-accent/10 flex flex-col items-center justify-center text-center">
-                                        <span className="text-[9px] font-black text-accent/60 uppercase tracking-widest mb-1">End Date</span>
-                                        <div className="flex items-center gap-2">
-                                            <Calendar size={12} className="text-accent" />
-                                            <span className="text-xs font-bold leading-none">{job.endDate || job.lastDateToApply}</span>
-                                        </div>
+                                {/* Stylized Icon Box */}
+                                <div className="relative z-10 w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                                    <Clapperboard size={45} className="text-primary" />
+                                    <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-accent rounded-full flex items-center justify-center shadow-lg">
+                                        <Heart size={14} className="text-white fill-current" />
                                     </div>
                                 </div>
+
+                                <div className="mt-4 text-center">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary/40 block">Est. 2026</span>
+                                </div>
+
+                                {/* Delete Button (Only for Creator) */}
+                                {user && job.createdBy?.id === user.id && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('Are you sure you want to delete this job post?')) {
+                                                deleteJob(job.id);
+                                            }
+                                        }}
+                                        className="absolute top-4 right-4 w-10 h-10 rounded-xl bg-danger/10 text-danger flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-danger hover:text-white z-10 shadow-lg"
+                                        title="Delete Post"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                )}
                             </div>
 
-                            {/* Bottom Actions Row */}
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-border/10">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black border border-primary/20">
-                                        {(job.createdBy?.name?.split(' ')[0])?.[0]}
-                                    </div>
-                                    <div>
-                                        <span className="text-[10px] font-bold text-text-dim uppercase tracking-widest block">Posted By</span>
-                                        <span
-                                            className="text-sm font-bold cursor-pointer hover:underline hover:text-primary transition-all underline-offset-2"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (job.createdBy?.id) {
-                                                    navigate('/explore', { state: { viewProfileId: job.createdBy.id, fromJobs: true } });
-                                                }
-                                            }}
-                                        >
-                                            {(job.createdBy?.name?.split(' ')[0])} {job.createdBy?.lastName}
+                            {/* Main Content Section */}
+                            <div className="flex-1 p-6 md:p-8 flex flex-col justify-between">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <span className="px-3 py-1 bg-primary/10 text-primary text-[11px] font-black uppercase tracking-tighter rounded-full italic">
+                                            We Are Hiring
+                                        </span>
+                                        <div className="h-px bg-primary/10 flex-1"></div>
+                                        <span className="text-[11px] font-bold text-text-dim uppercase tracking-widest flex items-center gap-2">
+                                            <Calendar size={12} /> {job.endDate || job.lastDateToApply}
                                         </span>
                                     </div>
+
+                                    <h2 className="text-3xl font-black mb-2 tracking-tight group-hover:text-primary transition-colors cursor-pointer" onClick={() => setSelectedJob(job)}>
+                                        {job.title}
+                                    </h2>
+                                    <p className="text-sm text-text-dim mb-6 line-clamp-2 leading-relaxed italic opacity-80">
+                                        Looking for professional {job.subCategory} for our upcoming {job.projectType}. Join a team of passionate creators and bring visions to life.
+                                    </p>
+
+                                    {/* Info Row - Refined Separated Specs */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+                                        <div className="bg-primary/5 p-3 rounded-xl border border-primary/10 flex flex-col items-center justify-center text-center">
+                                            <span className="text-[9px] font-black text-primary/60 uppercase tracking-widest mb-1">Project Type</span>
+                                            <div className="flex items-center gap-2">
+                                                <Briefcase size={12} className="text-primary" />
+                                                <span className="text-xs font-bold leading-none">{job.projectType}</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-success/5 p-3 rounded-xl border border-success/10 flex flex-col items-center justify-center text-center">
+                                            <span className="text-[9px] font-black text-success/60 uppercase tracking-widest mb-1">Vacancy</span>
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle size={12} className="text-success" />
+                                                <span className="text-xs font-bold leading-none capitalize">{job.subCategory}</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-accent/5 p-3 rounded-xl border border-accent/10 flex flex-col items-center justify-center text-center">
+                                            <span className="text-[9px] font-black text-accent/60 uppercase tracking-widest mb-1">End Date</span>
+                                            <div className="flex items-center gap-2">
+                                                <Calendar size={12} className="text-accent" />
+                                                <span className="text-xs font-bold leading-none">{job.endDate || job.lastDateToApply}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="flex gap-3 w-full sm:w-auto">
-                                    <button
-                                        onClick={() => setSelectedJob(job)}
-                                        className="h-12 px-6 rounded-xl border-2 border-primary/30 text-primary text-xs font-black uppercase tracking-widest transition-all hover:bg-primary/5 flex items-center justify-center gap-2 flex-1 sm:flex-initial"
-                                    >
-                                        <Eye size={16} /> Details
-                                    </button>
-                                    {(!user || !job.createdBy || user.id !== job.createdBy.id) && (
-                                        appliedJobs.includes(job.id) ? (
-                                            <div className="h-12 px-6 rounded-xl bg-success/10 text-success border border-success/30 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 flex-1 sm:flex-initial">
-                                                <CheckCircle size={16} /> Applied
-                                            </div>
-                                        ) : (
-                                            <button
-                                                onClick={() => {
-                                                    if (!isAuthenticated) { requireAuth(); return }
-                                                    if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile'); return }
-                                                    setSelectedJob(job);
-                                                    setShowApply(true);
+                                {/* Bottom Actions Row */}
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-border/10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black border border-primary/20">
+                                            {(job.createdBy?.name?.split(' ')[0])?.[0]}
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] font-bold text-text-dim uppercase tracking-widest block">Posted By</span>
+                                            <span
+                                                className="text-sm font-bold cursor-pointer hover:underline hover:text-primary transition-all underline-offset-2"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (job.createdBy?.id) {
+                                                        navigate('/explore', { state: { viewProfileId: job.createdBy.id, fromJobs: true } });
+                                                    }
                                                 }}
-                                                className="h-12 px-8 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 shadow-xl shadow-primary/20 flex items-center justify-center gap-2 flex-1 sm:flex-initial"
                                             >
-                                                <ArrowRight size={16} /> Apply Now
-                                            </button>
-                                        )
-                                    )}
+                                                {(job.createdBy?.name?.split(' ')[0])} {job.createdBy?.lastName}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3 w-full sm:w-auto">
+                                        <button
+                                            onClick={() => setSelectedJob(job)}
+                                            className="h-12 px-6 rounded-xl border-2 border-primary/30 text-primary text-xs font-black uppercase tracking-widest transition-all hover:bg-primary/5 flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+                                        >
+                                            <Eye size={16} /> Details
+                                        </button>
+                                        {(!user || !job.createdBy || user.id !== job.createdBy.id) && (
+                                            appliedJobs.includes(job.id) ? (
+                                                <div className="h-12 px-6 rounded-xl bg-success/10 text-success border border-success/30 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 flex-1 sm:flex-initial">
+                                                    <CheckCircle size={16} /> Applied
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => {
+                                                        if (!isAuthenticated) { requireAuth(); return }
+                                                        if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile'); return }
+                                                        setSelectedJob(job);
+                                                        setShowApply(true);
+                                                    }}
+                                                    className="h-12 px-8 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 shadow-xl shadow-primary/20 flex items-center justify-center gap-2 flex-1 sm:flex-initial"
+                                                >
+                                                    <ArrowRight size={16} /> Apply Now
+                                                </button>
+                                            )
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </motion.div>
-                )) : (
-                    <div className="col-span-full">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 card border-dashed border-2">
-                            <AlertCircle size={48} className="mx-auto mb-4 opacity-20" />
-                            <h3 className="text-lg font-bold mb-2">No projects matching your search</h3>
-                            <p className="text-sm opacity-60 max-w-xs mx-auto mb-8">Try adjusting your filters or status tabs to find more opportunities.</p>
-                            <button
-                                onClick={() => {
-                                    setSearchQuery('')
-                                    setStatusFilter('All')
-                                    setFilters({ sortBy: 'newest', projectType: '', subCategory: '', experience: '', country: '', state: '' })
-                                }}
-                                className="btn btn-primary btn-sm rounded-full px-8"
-                            >
-                                Reset All Filters
-                            </button>
                         </motion.div>
-                    </div>
-                )}
-            </div>
+                    )) : (
+                        <div className="col-span-full">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 card border-dashed border-2">
+                                <AlertCircle size={48} className="mx-auto mb-4 opacity-20" />
+                                <h3 className="text-lg font-bold mb-2">No projects matching your search</h3>
+                                <p className="text-sm opacity-60 max-w-xs mx-auto mb-8">Try adjusting your filters or status tabs to find more opportunities.</p>
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery('')
+                                        setStatusFilter('All')
+                                        setFilters({ sortBy: 'newest', projectType: '', subCategory: '', experience: '', country: '', state: '' })
+                                    }}
+                                    className="btn btn-primary btn-sm rounded-full px-8"
+                                >
+                                    Reset All Filters
+                                </button>
+                            </motion.div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Job Detail Modal */}
             <AnimatePresence>

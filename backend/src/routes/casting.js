@@ -4,10 +4,10 @@ import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Protected routes
+// Protected routes - Now fully secured
 router.post('/', authMiddleware, createCastingCall);
-router.get('/', getCastingCalls);
-router.get('/:id', getCastingCallById);
+router.get('/', authMiddleware, getCastingCalls);
+router.get('/:id', authMiddleware, getCastingCallById);
 router.post('/:id/apply', authMiddleware, applyToCastingCall);
 
 export default router;
