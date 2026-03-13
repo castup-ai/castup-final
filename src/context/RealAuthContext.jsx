@@ -52,14 +52,25 @@ export function RealAuthProvider({ children }) {
     // Load user-specific data when user changes
     useEffect(() => {
         if (user) {
-            try {
-                const userKey = `castup_data_${user.id}`;
-                const savedData = JSON.parse(localStorage.getItem(userKey) || '{}');
-                setNotifications(savedData.notifications || []);
-                setAppliedJobs(savedData.appliedJobs || []);
-            } catch (e) {
-                console.error("Error loading user data", e);
-            }
+            const loadData = async () => {
+                const [notifsRes] = await Promise.all([
+                    authService.getNotifications()
+                ]);
+
+                if (notifsRes.success) {
+                    setNotifications(notifsRes.data || []);
+                }
+
+                // Still use localStorage for appliedJobs temporarily
+                try {
+                    const userKey = `castup_data_${user.id}`;
+                    const savedData = JSON.parse(localStorage.getItem(userKey) || '{}');
+                    setAppliedJobs(savedData.appliedJobs || []);
+                } catch (e) {
+                    console.error("Error loading local user data", e);
+                }
+            };
+            loadData();
         } else {
             setNotifications([]);
             setAppliedJobs([]);
@@ -106,7 +117,6 @@ export function RealAuthProvider({ children }) {
         setUser(null);
         setToken(null);
         localStorage.removeItem('castup_auth_real');
-        // Data persists in localStorage per-user, but we clear memory
     };
 
     const addJob = async (jobData) => {
@@ -119,29 +129,42 @@ export function RealAuthProvider({ children }) {
     }
 
     const deleteJob = async (jobId) => {
-        // Backend delete not yet implemented in controller but we can mock or add it
-        // For now, let's just update local state if needed or assume we'll add it
         setAllJobs(prev => prev.filter(j => j.id !== jobId));
         return { success: true };
     }
 
-    const addNotification = (notif) => {
+    const addNotification = async (notif) => {
         if (!user) return;
-        const newNotif = { id: Date.now(), ...notif, timestamp: new Date().toISOString(), read: false };
-        setNotifications(prev => {
-            const updated = [newNotif, ...prev].slice(0, 50);
-            saveUserData(user.id, { notifications: updated });
-            return updated;
-        });
+        
+        if (notif.targetUserId) {
+            const { success } = await authService.sendNotification(notif.targetUserId, {
+                type: notif.type,
+                title: notif.title,
+                message: notif.message,
+                metadata: notif.metadata
+            });
+            return { success };
+        }
+
+        const newNotif = { 
+            id: Date.now(), 
+            ...notif, 
+            timestamp: new Date().toISOString(), 
+            read: false 
+        };
+        setNotifications(prev => [newNotif, ...prev].slice(0, 50));
     };
 
-    const markAllRead = () => {
+    const sendTargetedNotification = async (targetUserId, notifData) => {
+        return await addNotification({ ...notifData, targetUserId });
+    };
+
+    const markAllRead = async () => {
         if (!user) return;
-        setNotifications(prev => {
-            const updated = prev.map(n => ({ ...n, read: true }));
-            saveUserData(user.id, { notifications: updated });
-            return updated;
-        });
+        const { success } = await authService.markNotificationsRead();
+        if (success) {
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        }
     };
 
     const applyForJob = async (jobId) => {
@@ -201,6 +224,7 @@ export function RealAuthProvider({ children }) {
             deleteJob,
             notifications,
             addNotification,
+            sendTargetedNotification,
             markAllRead,
             appliedJobs,
             applyForJob,

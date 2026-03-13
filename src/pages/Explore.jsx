@@ -37,8 +37,10 @@ const CREW_ROLES = [
 const sortOptions = ['Most Recent', 'Most Viewed', 'Top Rated']
 
 export default function Explore() {
-    const { user, allUsers, isAuthenticated, requireAuth } = useAuth()
+    const { user, allUsers, isAuthenticated, requireAuth, sendTargetedNotification, addNotification } = useAuth()
     const [selectedProfile, setSelectedProfile] = useState(null)
+    const [actionLoading, setActionLoading] = useState({ connect: false, message: false })
+    const [actionStatus, setActionStatus] = useState({ connect: null, message: null })
     const [showFilters, setShowFilters] = useState(false)
     const [search, setSearch] = useState('')
     const [filters, setFilters] = useState({
@@ -56,6 +58,51 @@ export default function Explore() {
             navigate(-1)
         } else {
             setSelectedProfile(null)
+        }
+        setActionStatus({ connect: null, message: null })
+    }
+
+    const handleConnect = async (targetUserId) => {
+        if (!requireAuth()) return
+        
+        setActionLoading(prev => ({ ...prev, connect: true }))
+        const { success } = await sendTargetedNotification(targetUserId, {
+            type: 'connect',
+            title: 'Connection Request',
+            message: `${user.name} wants to connect with you.`,
+            metadata: { senderId: user.id, senderName: user.name }
+        })
+        
+        setActionLoading(prev => ({ ...prev, connect: false }))
+        if (success) {
+            setActionStatus(prev => ({ ...prev, connect: 'Sent' }))
+            addNotification({
+                type: 'info',
+                title: 'Request Sent',
+                message: `Your connection request has been sent to ${selectedProfile.name}`
+            })
+        }
+    }
+
+    const handleMessage = async (targetUserId) => {
+        if (!requireAuth()) return
+        
+        setActionLoading(prev => ({ ...prev, message: true }))
+        const { success } = await sendTargetedNotification(targetUserId, {
+            type: 'message',
+            title: 'New Message',
+            message: `${user.name} sent you a message request.`,
+            metadata: { senderId: user.id, senderName: user.name }
+        })
+        
+        setActionLoading(prev => ({ ...prev, message: false }))
+        if (success) {
+            setActionStatus(prev => ({ ...prev, message: 'Sent' }))
+            addNotification({
+                type: 'info',
+                title: 'Message Request Sent',
+                message: `Your inquiry has been sent to ${selectedProfile.name}`
+            })
         }
     }
 
@@ -435,11 +482,33 @@ export default function Explore() {
                                         </div>
 
                                         <div className="flex flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
-                                            <button className="flex-1 md:flex-none h-11 px-6 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
-                                                <User size={16} /> Connect
+                                            <button 
+                                                onClick={() => handleConnect(selectedProfile.id)}
+                                                disabled={actionLoading.connect || actionStatus.connect === 'Sent'}
+                                                className={`flex-1 md:flex-none h-11 px-6 ${actionStatus.connect === 'Sent' ? 'bg-success text-white' : 'bg-primary text-white'} rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-70 disabled:scale-100`}
+                                            >
+                                                {actionLoading.connect ? (
+                                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                ) : (
+                                                    <>
+                                                        <User size={16} /> 
+                                                        {actionStatus.connect === 'Sent' ? 'Sent' : 'Connect'}
+                                                    </>
+                                                )}
                                             </button>
-                                            <button className="flex-1 md:flex-none h-11 px-6 bg-bg border border-border text-text-main rounded-xl font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2">
-                                                <MessageSquare size={16} /> Message
+                                            <button 
+                                                onClick={() => handleMessage(selectedProfile.id)}
+                                                disabled={actionLoading.message || actionStatus.message === 'Sent'}
+                                                className={`flex-1 md:flex-none h-11 px-6 ${actionStatus.message === 'Sent' ? 'bg-success text-white' : 'bg-bg border border-border'} text-text-main rounded-xl font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2 disabled:opacity-70`}
+                                            >
+                                                {actionLoading.message ? (
+                                                    <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                                                ) : (
+                                                    <>
+                                                        <MessageSquare size={16} /> 
+                                                        {actionStatus.message === 'Sent' ? 'Sent' : 'Message'}
+                                                    </>
+                                                )}
                                             </button>
                                         </div>
                                     </div>

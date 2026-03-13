@@ -179,3 +179,67 @@ export const updateProfile = async (req, res) => {
         res.status(500).json({ error: 'Server error: ' + error.message });
     }
 };
+
+// Get notifications for current user
+export const getNotifications = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT id, type, title, message, read, metadata, created_at as "timestamp" 
+             FROM notifications 
+             WHERE user_id = $1 
+             ORDER BY created_at DESC 
+             LIMIT 50`,
+            [req.userId]
+        );
+
+        res.json({ success: true, notifications: result.rows });
+    } catch (error) {
+        console.error('Get notifications error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Send notification to another user (Connect/Message)
+export const sendNotification = async (req, res) => {
+    try {
+        const { userId } = req.params; // target user
+        const { type, title, message, metadata } = req.body;
+        const senderId = req.userId;
+
+        // Get sender name for the message
+        const sender = await pool.query('SELECT name FROM users WHERE id = $1', [senderId]);
+        const senderName = sender.rows[0]?.name || 'Someone';
+
+        const result = await pool.query(
+            `INSERT INTO notifications (user_id, type, title, message, metadata) 
+             VALUES ($1, $2, $3, $4, $5) 
+             RETURNING *`,
+            [
+                userId, 
+                type || 'info', 
+                title || 'New Notification',
+                message || `${senderName} wants to connect with you`,
+                JSON.stringify({ ...metadata, senderId, senderName })
+            ]
+        );
+
+        res.json({ success: true, notification: result.rows[0] });
+    } catch (error) {
+        console.error('Send notification error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Mark notifications as read
+export const markNotificationsRead = async (req, res) => {
+    try {
+        await pool.query(
+            'UPDATE notifications SET read = TRUE WHERE user_id = $1',
+            [req.userId]
+        );
+        res.json({ success: true, message: 'Notifications marked as read' });
+    } catch (error) {
+        console.error('Mark notifications read error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};

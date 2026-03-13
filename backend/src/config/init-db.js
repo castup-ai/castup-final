@@ -128,12 +128,22 @@ export const initializeDatabase = async () => {
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 user_id UUID REFERENCES users(id) ON DELETE CASCADE,
                 type VARCHAR(100) NOT NULL,
+                title VARCHAR(255),
                 message TEXT NOT NULL,
                 read BOOLEAN DEFAULT FALSE,
                 metadata JSONB DEFAULT '{}',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // Migration: Ensure notifications table has title column
+        const notifCols = await pool.query(`
+            SELECT column_name FROM information_schema.columns WHERE table_name = 'notifications'
+        `);
+        const existingNotifCols = notifCols.rows.map(r => r.column_name);
+        if (!existingNotifCols.includes('title')) {
+            await pool.query('ALTER TABLE notifications ADD COLUMN title VARCHAR(255)');
+        }
 
         // Password reset tokens table
         await pool.query(`
