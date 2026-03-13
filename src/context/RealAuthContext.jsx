@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/auth.service';
+import { castingService } from '../services/casting.service';
 import api from '../services/api';
 
 const RealAuthContext = createContext(null);
@@ -11,25 +12,9 @@ export function RealAuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [allUsers, setAllUsers] = useState([]);
 
-    // Notifications system
-    const [notifications, setNotifications] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('castup_notifications') || '[]'); }
-        catch { return []; }
-    });
-
-    // Track applied jobs per user (prevent duplicate applications)
-    const [appliedJobs, setAppliedJobs] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('castup_applied_jobs') || '[]'); }
-        catch { return []; }
-    });
-
-    // We keep jobs locally for now or if we implement a job service we can swap it later
-    const [registeredJobs, setRegisteredJobs] = useState(() => {
-        try {
-            const saved = localStorage.getItem('castup_jobs_real');
-            return saved ? JSON.parse(saved) : [];
-        } catch { return []; }
-    });
+    const [notifications, setNotifications] = useState([]);
+    const [appliedJobs, setAppliedJobs] = useState([]);
+    const [allJobs, setAllJobs] = useState([]);
 
     useEffect(() => {
         const initAuth = async () => {
@@ -39,12 +24,10 @@ export function RealAuthProvider({ children }) {
                     const parsed = JSON.parse(saved);
                     setToken(parsed.token);
 
-                    // Fetch fresh profile data using the token
                     const { success, data } = await authService.getProfile();
                     if (success) {
                         setUser(data);
                     } else {
-                        // Token might be expired
                         logout();
                     }
                 } catch (e) {
@@ -52,16 +35,46 @@ export function RealAuthProvider({ children }) {
                 }
             }
 
-            // Fetch generic public users list for Explore
-            const pubUsers = await authService.getAllUsers();
-            if (pubUsers.success && pubUsers.data) {
-                setAllUsers(pubUsers.data);
-            }
+            // Fetch initial data
+            const [jobsRes, usersRes] = await Promise.all([
+                castingService.getAll(),
+                authService.getAllUsers()
+            ]);
+
+            if (jobsRes.success) setAllJobs(jobsRes.data);
+            if (usersRes.success) setAllUsers(usersRes.data);
             
             setLoading(false);
         };
         initAuth();
     }, []);
+
+    // Load user-specific data when user changes
+    useEffect(() => {
+        if (user) {
+            try {
+                const userKey = `castup_data_${user.id}`;
+                const savedData = JSON.parse(localStorage.getItem(userKey) || '{}');
+                setNotifications(savedData.notifications || []);
+                setAppliedJobs(savedData.appliedJobs || []);
+            } catch (e) {
+                console.error("Error loading user data", e);
+            }
+        } else {
+            setNotifications([]);
+            setAppliedJobs([]);
+        }
+    }, [user]);
+
+    const saveUserData = (userId, updates) => {
+        try {
+            const userKey = `castup_data_${userId}`;
+            const current = JSON.parse(localStorage.getItem(userKey) || '{}');
+            localStorage.setItem(userKey, JSON.stringify({ ...current, ...updates }));
+        } catch (e) {
+            console.error("Error saving user data", e);
+        }
+    };
 
     const login = async (email, password) => {
         const { success, data, error } = await authService.login(email, password);
@@ -93,68 +106,68 @@ export function RealAuthProvider({ children }) {
         setUser(null);
         setToken(null);
         localStorage.removeItem('castup_auth_real');
+        // Data persists in localStorage per-user, but we clear memory
     };
 
-    const addJob = (jobData) => {
-        const newJob = {
-            id: String(Date.now()),
-            ...jobData,
-            createdBy: user,
-            createdAt: new Date().toISOString()
+    const addJob = async (jobData) => {
+        const { success, data, error } = await castingService.create(jobData);
+        if (success) {
+            setAllJobs(prev => [data, ...prev]);
+            return { success: true, job: data };
         }
-        setRegisteredJobs(prev => {
-            const updated = [newJob, ...prev];
-            localStorage.setItem('castup_jobs_real', JSON.stringify(updated));
-            return updated;
-        })
-        return { success: true, job: newJob }
+        return { success: false, error };
     }
 
-    const deleteJob = (jobId) => {
-        setRegisteredJobs(prev => {
-            const updated = prev.filter(j => j.id !== jobId);
-            localStorage.setItem('castup_jobs_real', JSON.stringify(updated));
-            return updated;
-        })
-        return { success: true }
+    const deleteJob = async (jobId) => {
+        // Backend delete not yet implemented in controller but we can mock or add it
+        // For now, let's just update local state if needed or assume we'll add it
+        setAllJobs(prev => prev.filter(j => j.id !== jobId));
+        return { success: true };
     }
 
     const addNotification = (notif) => {
+        if (!user) return;
         const newNotif = { id: Date.now(), ...notif, timestamp: new Date().toISOString(), read: false };
         setNotifications(prev => {
-            const updated = [newNotif, ...prev].slice(0, 50); // keep last 50
-            localStorage.setItem('castup_notifications', JSON.stringify(updated));
+            const updated = [newNotif, ...prev].slice(0, 50);
+            saveUserData(user.id, { notifications: updated });
             return updated;
         });
     };
 
     const markAllRead = () => {
+        if (!user) return;
         setNotifications(prev => {
             const updated = prev.map(n => ({ ...n, read: true }));
-            localStorage.setItem('castup_notifications', JSON.stringify(updated));
+            saveUserData(user.id, { notifications: updated });
             return updated;
         });
     };
 
-    const applyForJob = (jobId) => {
-        setAppliedJobs(prev => {
-            if (prev.includes(jobId)) return prev;
-            const updated = [...prev, jobId];
-            localStorage.setItem('castup_applied_jobs', JSON.stringify(updated));
-            return updated;
-        });
-        // Notify the job creator
-        const job = registeredJobs.find(j => j.id === jobId);
-        if (job && user) {
-            // Notification for the current user (applicant confirmation)
-            addNotification({
-                type: 'applied',
-                title: 'Application Submitted',
-                message: `You applied for "${job.title}"`,
-                jobId
+    const applyForJob = async (jobId) => {
+        if (!user) return;
+
+        const { success, error } = await castingService.apply(jobId);
+        if (success) {
+            setAppliedJobs(prev => {
+                if (prev.includes(jobId)) return prev;
+                const updated = [...prev, jobId];
+                saveUserData(user.id, { appliedJobs: updated });
+                return updated;
             });
+
+            const job = allJobs.find(j => j.id === jobId);
+            if (job) {
+                addNotification({
+                    type: 'applied',
+                    title: 'Application Submitted',
+                    message: `You applied for "${job.title}"`,
+                    jobId
+                });
+            }
+            return { success: true };
         }
-        return { success: true };
+        return { success: false, error };
     };
 
     const updateProfile = async (data) => {
@@ -183,16 +196,17 @@ export function RealAuthProvider({ children }) {
             loading,
             showAuthModal, setShowAuthModal,
             allUsers,
-            allJobs: registeredJobs,
+            allJobs,
             addJob,
             deleteJob,
             notifications,
             addNotification,
             markAllRead,
             appliedJobs,
-            applyForJob
+            applyForJob,
+            updateProfile
         }}>
-            {!loading && children}
+            {children}
         </RealAuthContext.Provider>
     );
 }

@@ -79,13 +79,48 @@ export const initializeDatabase = async () => {
                 created_by UUID REFERENCES users(id) ON DELETE CASCADE,
                 title VARCHAR(500) NOT NULL,
                 description TEXT,
-                requirements JSONB DEFAULT '{}',
+                project_type VARCHAR(100),
+                category VARCHAR(50),
+                sub_category VARCHAR(100),
+                experience VARCHAR(100),
+                country VARCHAR(100),
+                state VARCHAR(100),
+                city VARCHAR(100),
+                last_date_to_apply DATE,
+                service_duration JSONB DEFAULT '{}',
+                requirements TEXT,
+                documents JSONB DEFAULT '[]',
                 status VARCHAR(50) DEFAULT 'open' CHECK (status IN ('open', 'closed')),
                 applications JSONB DEFAULT '[]',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // Migration: Ensure existing casting_calls have all columns
+        const castingCols = await pool.query(`
+            SELECT column_name FROM information_schema.columns WHERE table_name = 'casting_calls'
+        `);
+        const existingCastingCols = castingCols.rows.map(r => r.column_name);
+        
+        const newCastingCols = [
+            ['project_type', 'VARCHAR(100)'],
+            ['category', 'VARCHAR(50)'],
+            ['sub_category', 'VARCHAR(100)'],
+            ['experience', 'VARCHAR(100)'],
+            ['country', 'VARCHAR(100)'],
+            ['state', 'VARCHAR(100)'],
+            ['city', 'VARCHAR(100)'],
+            ['last_date_to_apply', 'DATE'],
+            ['service_duration', 'JSONB DEFAULT \'{}\''],
+            ['documents', 'JSONB DEFAULT \'[]\'']
+        ];
+
+        for (const [col, type] of newCastingCols) {
+            if (!existingCastingCols.includes(col)) {
+                await pool.query(`ALTER TABLE casting_calls ADD COLUMN ${col} ${type}`);
+            }
+        }
 
         // Notifications table
         await pool.query(`

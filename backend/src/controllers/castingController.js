@@ -3,13 +3,26 @@ import pool from '../config/database.js';
 // Create casting call
 export const createCastingCall = async (req, res) => {
     try {
-        const { title, description, requirements } = req.body;
+        const { 
+            title, description, projectType, category, subCategory, 
+            experience, country, state, city, lastDateToApply, 
+            serviceDuration, requirements, documents 
+        } = req.body;
 
         const result = await pool.query(
-            `INSERT INTO casting_calls (created_by, title, description, requirements) 
-             VALUES ($1, $2, $3, $4) 
+            `INSERT INTO casting_calls (
+                created_by, title, description, project_type, category, 
+                sub_category, experience, country, state, city, 
+                last_date_to_apply, service_duration, requirements, documents
+            ) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
              RETURNING *`,
-            [req.userId, title, description, JSON.stringify(requirements)]
+            [
+                req.userId, title, description, projectType, category, 
+                subCategory, experience, country, state, city, 
+                lastDateToApply, JSON.stringify(serviceDuration || {}), 
+                requirements, JSON.stringify(documents || [])
+            ]
         );
 
         res.status(201).json({
@@ -29,7 +42,12 @@ export const getCastingCalls = async (req, res) => {
         const { status = 'open' } = req.query;
 
         const result = await pool.query(
-            `SELECT c.*, u.name as creator_name, u.department as creator_department
+            `SELECT c.id, c.title, c.description, c.project_type as "projectType", 
+                    c.category, c.sub_category as "subCategory", c.experience, 
+                    c.country, c.state, c.city, c.last_date_to_apply as "lastDateToApply", 
+                    c.service_duration as "serviceDuration", c.requirements, 
+                    c.documents, c.status, c.created_at as "createdAt",
+                    u.id as "creatorId", u.name as "creatorName", u.department as "creatorDepartment"
              FROM casting_calls c
              JOIN users u ON c.created_by = u.id
              WHERE c.status = $1
@@ -37,7 +55,17 @@ export const getCastingCalls = async (req, res) => {
             [status]
         );
 
-        res.json({ success: true, castingCalls: result.rows });
+        // Map creator fields into a nested object to match frontend expectations
+        const formatted = result.rows.map(row => ({
+            ...row,
+            createdBy: {
+                id: row.creatorId,
+                name: row.creatorName,
+                department: row.creatorDepartment
+            }
+        }));
+
+        res.json({ success: true, castingCalls: formatted });
     } catch (error) {
         console.error('Get casting calls error:', error);
         res.status(500).json({ error: 'Server error' });
@@ -50,7 +78,12 @@ export const getCastingCallById = async (req, res) => {
         const { id } = req.params;
 
         const result = await pool.query(
-            `SELECT c.*, u.name as creator_name, u.email as creator_email, u.department as creator_department
+            `SELECT c.id, c.title, c.description, c.project_type as "projectType", 
+                    c.category, c.sub_category as "subCategory", c.experience, 
+                    c.country, c.state, c.city, c.last_date_to_apply as "lastDateToApply", 
+                    c.service_duration as "serviceDuration", c.requirements, 
+                    c.documents, c.status, c.created_at as "createdAt",
+                    u.id as "creatorId", u.name as "creatorName", u.email as "creatorEmail", u.department as "creatorDepartment"
              FROM casting_calls c
              JOIN users u ON c.created_by = u.id
              WHERE c.id = $1`,
@@ -61,7 +94,18 @@ export const getCastingCallById = async (req, res) => {
             return res.status(404).json({ error: 'Casting call not found' });
         }
 
-        res.json({ success: true, castingCall: result.rows[0] });
+        const row = result.rows[0];
+        const formatted = {
+            ...row,
+            createdBy: {
+                id: row.creatorId,
+                name: row.creatorName,
+                email: row.creatorEmail,
+                department: row.creatorDepartment
+            }
+        };
+
+        res.json({ success: true, castingCall: formatted });
     } catch (error) {
         console.error('Get casting call error:', error);
         res.status(500).json({ error: 'Server error' });

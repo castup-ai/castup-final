@@ -35,7 +35,7 @@ export const getUsers = async (req, res) => {
 
         const result = await pool.query(query, params);
 
-        res.json({ success: true, users: result.rows });
+        res.json({ success: true, data: result.rows });
     } catch (error) {
         console.error('Get users error:', error);
         res.status(500).json({ error: 'Server error' });

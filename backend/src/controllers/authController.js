@@ -46,7 +46,12 @@ export const signup = async (req, res) => {
         const result = await pool.query(
             `INSERT INTO users (email, password_hash, name, department, country, phone) 
              VALUES ($1, $2, $3, $4, $5, $6) 
-             RETURNING id, email, name, department, country, phone, created_at`,
+             RETURNING id, name, email, department, country, phone, 
+                       role, category, experience, availability, location, 
+                       languages, age, gender, height, weight, next_available as "nextAvailable", 
+                       bio, years_of_experience as "yearsOfExperience", awards, skills, 
+                       portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
+                       profile_picture as "photo", created_at as "createdAt"`,
             [email, passwordHash, name, department, country, phone]
         );
 
@@ -59,14 +64,7 @@ export const signup = async (req, res) => {
         res.status(201).json({
             success: true,
             message: 'User created successfully',
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                department: user.department,
-                country: user.country,
-                phone: user.phone
-            },
+            user: user,
             token,
             refreshToken
         });
@@ -82,7 +80,17 @@ export const login = async (req, res) => {
         const { email, password } = req.body;
 
         // Find user
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const result = await pool.query(
+            `SELECT id, name, email, department, country, phone, 
+                    role, category, experience, availability, location, 
+                    languages, age, gender, height, weight, next_available as "nextAvailable", 
+                    bio, years_of_experience as "yearsOfExperience", awards, skills, 
+                    portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
+                    profile_picture as "photo", password_hash
+             FROM users 
+             WHERE email = $1`, 
+            [email]
+        );
         if (result.rows.length === 0) {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
@@ -103,10 +111,8 @@ export const login = async (req, res) => {
             success: true,
             message: 'Login successful',
             user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                department: user.department
+                ...user,
+                password_hash: undefined // Don't send the hash
             },
             token,
             refreshToken
