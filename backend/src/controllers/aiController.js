@@ -1,7 +1,9 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
-// Initialize the Gemini AI SDK
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// Initialize the OpenAI SDK
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || 'missing-key',
+});
 
 export const chat = async (req, res) => {
     try {
@@ -11,14 +13,7 @@ export const chat = async (req, res) => {
             return res.status(400).json({ error: 'Message is required' });
         }
 
-        if (!process.env.GEMINI_API_KEY) {
-             return res.status(500).json({ error: 'Gemini API key is not configured' });
-        }
-
-        // Get the model - Using 1.5 Flash for better stability and free tier compatibility
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        // System instructions
+        // System instructions (prepended to history)
         const systemPrompt = `You are CastUp's AI Assistant, an cinema industry expert. 
         Help with finding talent, profile tips, and cinema questions. 
         Be professional, brief, and use bullet points.`;
@@ -33,21 +28,20 @@ export const chat = async (req, res) => {
         
         fullPrompt += `User: ${message}\nAssistant:`;
 
-        const result = await model.generateContent(fullPrompt);
-        const responseText = result.response.text();
+        const response = await openai.responses.create({
+            model: "gpt-5-nano",
+            input: fullPrompt,
+            store: true,
+        });
 
-        res.json({ success: true, response: responseText });
+        res.json({ success: true, response: response.output_text });
     } catch (error) {
         console.error('AI Chat Error:', error);
         
         let errorMessage = "I'm having trouble thinking right now. Please try again later.";
         
-        if (error.message?.includes('API key was reported as leaked')) {
-            errorMessage = "⚠️ **Security Alert**: Your Google Gemini API key has been deactivated by Google because it was reported as leaked. Please generate a **New API Key** in Google AI Studio and update your configuration.";
-        } else if (error.message?.includes('API key not found')) {
-            errorMessage = "⚠️ **Configuration Error**: No valid API key found. Please check your Render environment variables.";
-        } else if (error.message?.includes('User location is not supported')) {
-            errorMessage = "⚠️ **Regional Restriction**: Gemini AI is currently not available in your region with this API key.";
+        if (error.message) {
+             console.error("OpenAI Details:", error.message);
         }
 
         res.json({ success: true, response: errorMessage });
