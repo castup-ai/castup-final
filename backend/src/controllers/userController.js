@@ -9,7 +9,7 @@ export const getUsers = async (req, res) => {
             SELECT id, name, email, department, country, phone, 
                    role, category, experience, availability, location, 
                    languages, age, gender, height, weight, next_available as "nextAvailable", 
-                   bio, years_of_experience as "yearsOfExperience", awards, skills, 
+                   bio, years_of_experience as "yearsOfExperience", awards, skills, projects_worked_on as "projectsWorkedOn", additional_skills as "additionalSkills", 
                    portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
                    profile_picture as "photo", created_at as "createdAt"
             FROM users
@@ -51,7 +51,7 @@ export const getUserById = async (req, res) => {
             `SELECT id, name, email, department, country, phone, 
                    role, category, experience, availability, location, 
                    languages, age, gender, height, weight, next_available as "nextAvailable", 
-                   bio, years_of_experience as "yearsOfExperience", awards, skills, 
+                   bio, years_of_experience as "yearsOfExperience", awards, skills, projects_worked_on as "projectsWorkedOn", additional_skills as "additionalSkills", 
                    portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
                    profile_picture as "photo", created_at as "createdAt"
              FROM users
@@ -77,7 +77,7 @@ export const getProfile = async (req, res) => {
             `SELECT id, name, email, department, country, phone, 
                    role, category, experience, availability, location, 
                    languages, age, gender, height, weight, next_available as "nextAvailable", 
-                   bio, years_of_experience as "yearsOfExperience", awards, skills, 
+                   bio, years_of_experience as "yearsOfExperience", awards, skills, projects_worked_on as "projectsWorkedOn", additional_skills as "additionalSkills", 
                    portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
                    profile_picture as "photo", created_at as "createdAt"
              FROM users
@@ -122,6 +122,8 @@ export const updateProfile = async (req, res) => {
             yearsOfExperience: 'years_of_experience', 
             awards: 'awards', 
             skills: 'skills', 
+            projectsWorkedOn: 'projects_worked_on',
+            additionalSkills: 'additional_skills',
             portfolioLink: 'portfolio_link', 
             socialMedia: 'social_media', 
             projectType: 'project_type',
@@ -166,7 +168,7 @@ export const updateProfile = async (req, res) => {
             RETURNING id, name, email, department, country, phone, 
                    role, category, experience, availability, location, 
                    languages, age, gender, height, weight, next_available as "nextAvailable", 
-                   bio, years_of_experience as "yearsOfExperience", awards, skills, 
+                   bio, years_of_experience as "yearsOfExperience", awards, skills, projects_worked_on as "projectsWorkedOn", additional_skills as "additionalSkills", 
                    portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
                    profile_picture as "photo", created_at as "createdAt"
         `;

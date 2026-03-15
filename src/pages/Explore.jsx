@@ -662,7 +662,7 @@ export default function Explore() {
                                     <div className="mt-6">
                                         <label className="text-text-muted text-sm font-bold mb-3 block">Additional Skills</label>
                                         <div className="bg-bg rounded-xl border border-border/50 p-4 font-medium text-text-main min-h-[56px] flex items-center">
-                                            {selectedProfile.additionalSkills || 'Swimming, Horse Riding, Martial Arts, Dancing'}
+                                            {selectedProfile.additionalSkills || 'None provided'}
                                         </div>
                                     </div>
 
@@ -673,13 +673,13 @@ export default function Explore() {
                                             <div>
                                                 <label className="text-text-muted text-sm font-bold mb-3 block">Next Available Date</label>
                                                 <div className="bg-bg rounded-xl border border-border/50 p-4 font-medium text-text-main min-h-[56px] flex items-center">
-                                                    {selectedProfile.availabilityDate || '01/12/2025 to 31/12/2025'}
+                                                    {selectedProfile.nextAvailable ? new Date(selectedProfile.nextAvailable).toLocaleDateString() : 'Not specified'}
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="text-text-muted text-sm font-bold mb-3 block">Projects Type</label>
+                                                <label className="text-text-muted text-sm font-bold mb-3 block">Project Types</label>
                                                 <div className="bg-bg rounded-xl border border-border/50 p-4 font-medium text-text-main min-h-[56px] flex items-center">
-                                                    {selectedProfile.projectsType || 'Feature Film, Drama, Web Series'}
+                                                    {selectedProfile.projectType || 'Not specified'}
                                                 </div>
                                             </div>
                                         </div>
@@ -687,17 +687,18 @@ export default function Explore() {
                                         <div className="mt-8">
                                             <label className="text-text-muted text-sm font-bold mb-3 block">Projects Worked On</label>
                                             <div className="bg-bg rounded-xl border border-border/50 p-4 font-medium text-text-main leading-relaxed min-h-[56px] flex items-center">
-                                                {selectedProfile.projectsWorkedOn || 'Angamaly Diaries, Velipadinte Pusthakam, Pokkiri Simon, Paipin Chuvattile Pranayam, Chekka Chivantha Vaanam'}
+                                                {selectedProfile.projectsWorkedOn || 'None listed'}
                                             </div>
                                         </div>
 
                                         <div className="mt-8">
                                             <label className="text-text-muted text-sm font-bold mb-3 block">Awards and Recognition</label>
                                             <div className="bg-bg rounded-xl border border-border/50 p-4 font-medium text-text-main leading-relaxed min-h-[56px] flex items-center">
-                                                {selectedProfile.awards || 'Best actor in a Negative role, Best New Face Male, New Sensation in acting'}
+                                                {selectedProfile.awards || 'None listed'}
                                             </div>
                                         </div>
                                     </div>
+
 
                                     {/* Portfolio & Links */}
                                     <div className="mt-8 pt-6 border-t border-border/30">

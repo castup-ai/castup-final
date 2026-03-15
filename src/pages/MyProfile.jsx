@@ -55,8 +55,8 @@ export default function MyProfile() {
         role: '', category: 'Artist', experience: '', availability: '', location: '',
         languages: '', age: '', gender: '', height: '', weight: '',
         nextAvailable: '', bio: '', yearsOfExperience: '', awards: '',
-        skills: '', portfolioLink: '', socialMedia: '',
-        projectType: '', photo: null
+        skills: '', additionalSkills: '', portfolioLink: '', socialMedia: '',
+        projectType: '', projectsWorkedOn: '', photo: null
     })
 
     useEffect(() => {
@@ -80,9 +80,9 @@ export default function MyProfile() {
                         gender: user.gender || '', height: user.height || '', weight: user.weight || '',
                         nextAvailable: user.nextAvailable || '', bio: user.bio || '',
                         yearsOfExperience: user.yearsOfExperience || '', awards: user.awards || '',
-                        skills: user.skills?.join(', ') || '', portfolioLink: user.portfolioLink || '',
+                        skills: user.skills?.join(', ') || '', additionalSkills: user.additionalSkills || '', portfolioLink: user.portfolioLink || '',
                         socialMedia: user.socialMedia ? JSON.stringify(user.socialMedia) : '',
-                        projectType: user.projectType || '', photo: user.photo || null
+                        projectType: user.projectType || '', projectsWorkedOn: user.projectsWorkedOn || '', photo: user.photo || null
                     };
                 }
                 return prev;
@@ -373,6 +373,16 @@ export default function MyProfile() {
                         <label>Description / Bio</label>
                         {editing ? <textarea rows={4} value={form.bio} onChange={e => update('bio', e.target.value)} placeholder="Tell us about yourself..." />
                             : <p className="text-sm py-2">{user.bio || '—'}</p>}
+                    </div>
+                    <div className="form-group">
+                        <label>Projects Worked On</label>
+                        {editing ? <textarea rows={3} value={form.projectsWorkedOn} onChange={e => update('projectsWorkedOn', e.target.value)} placeholder="Angamaly Diaries, Velipadinte Pusthakam..." />
+                            : <p className="text-sm py-2">{user.projectsWorkedOn || '—'}</p>}
+                    </div>
+                    <div className="form-group">
+                        <label>Additional Skills</label>
+                        {editing ? <input value={form.additionalSkills} onChange={e => update('additionalSkills', e.target.value)} placeholder="Swimming, Horse Riding, Martial Arts..." />
+                            : <p className="text-sm py-2">{user.additionalSkills || '—'}</p>}
                     </div>
                     <div className="form-group">
                         <label>Awards & Recognition</label>
