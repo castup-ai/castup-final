@@ -87,14 +87,16 @@ export default function PostRequest() {
 
         const jobData = {
             title: form.title,
+            description: form.projectDetails,
             projectType: form.projectType,
-            details: form.projectDetails,
+            category: form.category,
+            subCategory: form.subCategory,
+            experience: form.experience || 'Any',
             startDate: form.startDate,
             endDate: form.endDate,
             country: form.country,
             state: form.state,
             city: form.city,
-            subCategory: form.subCategory,
             serviceDuration: { start: form.serviceStart, end: form.serviceEnd },
             lastDateToApply: form.lastDateToApply,
             payRate: form.payRate,

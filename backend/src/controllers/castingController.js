@@ -6,22 +6,25 @@ export const createCastingCall = async (req, res) => {
         const { 
             title, description, projectType, category, subCategory, 
             experience, country, state, city, lastDateToApply, 
-            serviceDuration, requirements, documents 
+            serviceDuration, requirements, documents,
+            payRate, startDate, endDate
         } = req.body;
 
         const result = await pool.query(
             `INSERT INTO casting_calls (
                 created_by, title, description, project_type, category, 
                 sub_category, experience, country, state, city, 
-                last_date_to_apply, service_duration, requirements, documents
+                last_date_to_apply, service_duration, requirements, documents,
+                pay_rate, start_date, end_date
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) 
              RETURNING *`,
             [
                 req.userId, title, description, projectType, category, 
                 subCategory, experience, country, state, city, 
                 lastDateToApply, JSON.stringify(serviceDuration || {}), 
-                requirements, JSON.stringify(documents || [])
+                requirements, JSON.stringify(documents || []),
+                payRate, startDate, endDate
             ]
         );
 
@@ -47,6 +50,7 @@ export const getCastingCalls = async (req, res) => {
                     c.country, c.state, c.city, c.last_date_to_apply as "lastDateToApply", 
                     c.service_duration as "serviceDuration", c.requirements, 
                     c.documents, c.status, c.created_at as "createdAt",
+                    c.pay_rate as "payRate", c.start_date as "startDate", c.end_date as "endDate",
                     u.id as "creatorId", u.name as "creatorName", u.department as "creatorDepartment"
              FROM casting_calls c
              JOIN users u ON c.created_by = u.id
@@ -83,6 +87,7 @@ export const getCastingCallById = async (req, res) => {
                     c.country, c.state, c.city, c.last_date_to_apply as "lastDateToApply", 
                     c.service_duration as "serviceDuration", c.requirements, 
                     c.documents, c.status, c.created_at as "createdAt",
+                    c.pay_rate as "payRate", c.start_date as "startDate", c.end_date as "endDate",
                     u.id as "creatorId", u.name as "creatorName", u.email as "creatorEmail", u.department as "creatorDepartment"
              FROM casting_calls c
              JOIN users u ON c.created_by = u.id
