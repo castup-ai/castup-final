@@ -150,3 +150,52 @@ export const addPortfolioMedia = async (req, res) => {
         res.status(500).json({ error: 'Server error saving work' });
     }
 };
+
+// Delete project/media from portfolio
+export const deletePortfolioMedia = async (req, res) => {
+    try {
+        const { mediaId } = req.params;
+
+        const existing = await pool.query(
+            'SELECT id, media FROM portfolios WHERE user_id = $1',
+            [req.userId]
+        );
+
+        if (existing.rows.length === 0) {
+            return res.status(404).json({ error: 'Portfolio not found' });
+        }
+
+        let currentMedia = existing.rows[0].media || [];
+        if (!Array.isArray(currentMedia)) {
+            try {
+                currentMedia = typeof currentMedia === 'string' ? JSON.parse(currentMedia) : [];
+                if (!Array.isArray(currentMedia)) currentMedia = [];
+            } catch(e) {
+                currentMedia = [];
+            }
+        }
+
+        const filteredMedia = currentMedia.filter(project => project.id !== mediaId);
+
+        if (filteredMedia.length === currentMedia.length) {
+            return res.status(404).json({ error: 'Media not found in portfolio' });
+        }
+
+        const result = await pool.query(
+            `UPDATE portfolios 
+             SET media = $1, updated_at = CURRENT_TIMESTAMP
+             WHERE user_id = $2
+             RETURNING *`,
+            [JSON.stringify(filteredMedia), req.userId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Project deleted successfully',
+            portfolio: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Delete portfolio media error:', error);
+        res.status(500).json({ error: 'Server error deleting work' });
+    }
+};

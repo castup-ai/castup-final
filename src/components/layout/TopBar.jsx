@@ -109,7 +109,9 @@ export default function TopBar() {
                             )}
                         </div>
                         <div className="max-h-80 overflow-y-auto">
-                            {notifications.length > 0 ? notifications.map(n => (
+                            {notifications.length > 0 ? notifications.map(n => {
+                                const meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata || '{}') : (n.metadata || {});
+                                return (
                                 <div key={n.id} className={`p-4 border-b transition-colors cursor-pointer ${!n.read ? 'bg-primary/5' : 'hover:bg-white/5'}`}
                                     style={{ borderColor: 'var(--color-border)' }}>
                                     <div className="flex gap-3">
@@ -117,14 +119,21 @@ export default function TopBar() {
                                             {getNotifIcon(n.type)}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold leading-tight">{n.title}</p>
+                                            <p className="text-sm font-semibold leading-tight flex items-center flex-wrap gap-1">
+                                                {n.title}
+                                                {meta.senderName && (
+                                                    <span className="text-xs font-normal" style={{ color: 'var(--color-text-dim)' }}>
+                                                        from <span className="underline decoration-primary underline-offset-2 font-medium" style={{ color: 'var(--color-text)' }}>{meta.senderName}</span>
+                                                    </span>
+                                                )}
+                                            </p>
                                             <p className="text-xs mt-0.5 leading-snug" style={{ color: 'var(--color-text-dim)' }}>{n.message}</p>
                                             <p className="text-[10px] mt-1.5 font-medium" style={{ color: 'var(--color-text-muted)' }}>{timeAgo(n.timestamp)}</p>
                                         </div>
                                         {!n.read && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1" />}
                                     </div>
                                 </div>
-                            )) : (
+                            )}) : (
                                 <div className="p-8 text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
                                     <Bell size={28} className="mx-auto mb-2 opacity-20" />
                                     <p>No notifications yet</p>

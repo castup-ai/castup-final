@@ -126,9 +126,27 @@ export default function MyProfile() {
             setEditing(false);
             setTimeout(() => setSaved(false), 3000);
         } else {
-            alert(`Error saving profile: \${result.error || 'Unknown error. Check backend logs.'}`);
+            alert(`Error saving profile: ${result.error || 'Unknown error. Check backend logs.'}`);
         }
     }
+
+    const handleDeleteWork = async (projectId, e) => {
+        if (e) e.stopPropagation(); // prevent opening lightbox if clicked from card
+        if (!confirm('Are you sure you want to delete this work from your profile?')) return;
+        
+        try {
+            const res = await api.delete(`/portfolios/media/${projectId}`);
+            if (res.data?.success) {
+                setPortfolio(res.data.portfolio);
+                if (lightbox?.project?.id === projectId) {
+                    setLightbox(null);
+                }
+            }
+        } catch (err) {
+            console.error("Failed to delete work", err);
+            alert("Failed to delete work. Please try again later.");
+        }
+    };
 
     if (!user) return (
         <div className="text-center py-20">
@@ -472,7 +490,16 @@ export default function MyProfile() {
                                     )}
                                 </div>
                                 <div className="p-4 flex-1 flex flex-col">
-                                    <p className="text-[10px] font-bold tracking-wider uppercase mb-1" style={{ color: 'var(--color-secondary)' }}>{project.type}</p>
+                                    <div className="flex justify-between items-start">
+                                        <p className="text-[10px] font-bold tracking-wider uppercase mb-1" style={{ color: 'var(--color-secondary)' }}>{project.type}</p>
+                                        <button 
+                                            onClick={(e) => handleDeleteWork(project.id, e)}
+                                            className="text-danger opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-danger/10 rounded"
+                                            title="Delete Work"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
                                     <h4 className="font-semibold leading-tight line-clamp-1 mb-2">{project.title}</h4>
                                     <p className="text-xs line-clamp-2 mb-3 flex-1" style={{ color: 'var(--color-text-dim)' }}>{project.description}</p>
                                     <div className="pt-3 mt-auto border-t border-border flex items-center justify-between">
@@ -502,13 +529,20 @@ export default function MyProfile() {
                             className="relative max-w-4xl w-full"
                             onClick={e => e.stopPropagation()}
                         >
-                            {/* Close Button */}
-                            <button
-                                onClick={() => setLightbox(null)}
-                                className="absolute -top-12 right-0 text-white/70 hover:text-white flex items-center gap-2 text-sm font-bold"
-                            >
-                                <X size={18} /> Close
-                            </button>
+                            <div className="absolute -top-12 left-0 right-0 flex justify-between items-center px-4 md:px-0">
+                                <button
+                                    onClick={() => handleDeleteWork(lightbox.project.id)}
+                                    className="text-white/70 hover:text-danger flex items-center gap-2 text-sm font-bold bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full backdrop-blur transition-colors"
+                                >
+                                    <Trash2 size={16} /> Delete Work
+                                </button>
+                                <button
+                                    onClick={() => setLightbox(null)}
+                                    className="text-white/70 hover:text-white flex items-center gap-2 text-sm font-bold bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full backdrop-blur transition-colors"
+                                >
+                                    <X size={16} /> Close
+                                </button>
+                            </div>
 
                             {/* Media Viewer */}
                             <div className="rounded-2xl overflow-hidden bg-black flex items-center justify-center" style={{ minHeight: '300px', maxHeight: '70vh' }}>
