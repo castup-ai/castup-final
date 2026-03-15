@@ -91,16 +91,17 @@ export default function MyProfile() {
             if (!editing) {
                 // Fetch Portfolio Media only when not in initial registration edit mode
                 const fetchPortfolio = async () => {
-                try {
-                    const res = await api.get('/portfolios/me')
-                    if (res.data?.success && res.data.portfolio) {
-                        setPortfolio(res.data.portfolio)
+                    try {
+                        const res = await api.get('/portfolios/me')
+                        if (res.data?.success && res.data.portfolio) {
+                            setPortfolio(res.data.portfolio)
+                        }
+                    } catch(e) {
+                        console.error("Failed to load portfolio works", e)
                     }
-                } catch(e) {
-                    console.error("Failed to load portfolio works", e)
                 }
+                fetchPortfolio()
             }
-            fetchPortfolio()
         }
     }, [user, editing])
 
