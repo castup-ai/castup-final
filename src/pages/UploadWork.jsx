@@ -43,10 +43,11 @@ export default function UploadWork() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            const isProfileComplete = user && (user.name?.split(" ")[0]) && user.role
+            // Relaxed check: Just need a name and either a role or department (which are usually set on registration)
+            const isProfileComplete = user && user.name && (user.role || user.department);
             if (!isProfileComplete) {
-                alert('Kindly complete your profile before uploading work.')
-                navigate('/profile')
+                alert('Kindly complete your basic profile (Name & Role/Department) before uploading work.');
+                navigate('/profile?edit=true');
             }
         } else {
             // Wait a brief moment to avoid flashing during auth check
@@ -67,11 +68,11 @@ export default function UploadWork() {
         e.preventDefault()
         if (!isAuthenticated) { requireAuth(); return }
 
-        const isProfileComplete = user && (user.name?.split(" ")[0]) && user.role
+        const isProfileComplete = user && user.name && (user.role || user.department);
         if (!isProfileComplete) {
-            alert('Kindly complete your profile before uploading work.')
-            navigate('/profile')
-            return
+            alert('Kindly complete your basic profile before uploading work.');
+            navigate('/profile?edit=true');
+            return;
         }
 
         const requiredFields = ['title', 'type', 'description', 'castCrew']

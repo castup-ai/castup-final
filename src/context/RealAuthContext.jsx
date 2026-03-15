@@ -39,14 +39,20 @@ export function RealAuthProvider({ children }) {
             const saved = localStorage.getItem('castup_auth_real');
             if (saved) {
                 try {
-                    const parsed = JSON.parse(saved);
-                    setToken(parsed.token);
-
-                    const { success, data } = await authService.getProfile();
-                    if (success) {
-                        setUser(data);
-                    } else {
-                        logout();
+                    const { token, user: savedUser } = JSON.parse(saved);
+                    if (token) {
+                        setToken(token);
+                        // If we have a saved user, use it immediately for UI stability
+                        if (savedUser) setUser(savedUser);
+                        
+                        const profileRes = await authService.getProfile();
+                        if (profileRes.success) {
+                            setUser(profileRes.data);
+                            // Update the stored user with the latest profile data
+                            localStorage.setItem('castup_auth_real', JSON.stringify({ token, user: profileRes.data }));
+                        } else if (profileRes.error === 'Unauthorized') {
+                            logout();
+                        }
                     }
                 } catch (e) {
                     localStorage.removeItem('castup_auth_real');
@@ -105,7 +111,11 @@ export function RealAuthProvider({ children }) {
         if (success) {
             setUser(data.user);
             setToken(data.token);
-            localStorage.setItem('castup_auth_real', JSON.stringify({ token: data.token }));
+            // Persist both token and user object for better session stability
+            localStorage.setItem('castup_auth_real', JSON.stringify({ 
+                token: data.token,
+                user: data.user 
+            }));
             await refreshPlatformData();
             return { success: true, user: data.user };
         }
@@ -119,7 +129,11 @@ export function RealAuthProvider({ children }) {
         if (success) {
             setUser(resultData.user);
             setToken(resultData.token);
-            localStorage.setItem('castup_auth_real', JSON.stringify({ token: resultData.token }));
+            // Persist both token and user object for better session stability
+            localStorage.setItem('castup_auth_real', JSON.stringify({ 
+                token: resultData.token,
+                user: resultData.user 
+            }));
             await refreshPlatformData();
             return { success: true, user: resultData.user };
         }

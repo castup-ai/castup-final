@@ -166,19 +166,6 @@ export default function Explore() {
     }
 
     const filtered = allUsers.filter(u => {
-        if (user && (u.id === user.id || u.email === user.email)) return false
-        if (search && !`${u.name} ${u.role} ${u.skills?.join(' ')}`.toLowerCase().includes(search.toLowerCase())) return false
-        if (filters.experience !== 'All' && u.experience !== filters.experience) return false
-        if (filters.availability !== 'All' && u.availability !== filters.availability) return false
-
-        // Category/Role Check
-        if (filters.role !== 'All') {
-            if (u.role !== filters.role) return false
-        } else if (filters.category !== 'All') {
-            const list = filters.category === 'Artist' ? ARTIST_ROLES : CREW_ROLES
-            if (!list.includes(u.role)) return false
-        }
-
         if (filters.location && !u.location?.toLowerCase().includes(filters.location.toLowerCase())) return false
         return true
     })
@@ -411,8 +398,8 @@ export default function Explore() {
                                             </div>
                                         </div>
                                         <div className="mt-4 text-center">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest block ${user.availability === 'Immediately' ? 'text-success' : 'text-warning'}`}>
-                                                {user.availability === 'Immediately' ? 'Available Now' : user.availability}
+                                            <span className={`text-[10px] font-black uppercase tracking-widest block \${user.availability === 'Immediately' ? 'text-success' : 'text-warning'}`}>
+                                                {user.availability ? (user.availability === 'Immediately' ? 'Available Now' : user.availability) : 'Available'}
                                             </span>
                                         </div>
                                     </div>

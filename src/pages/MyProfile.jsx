@@ -60,28 +60,37 @@ export default function MyProfile() {
     })
 
     useEffect(() => {
-        if (user && !editing) {
+        if (user) {
             const nameParts = (user.name || '').split(' ');
             const firstName = nameParts.length > 0 ? nameParts[0] : '';
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
             
-            setForm({
-                firstName: firstName, lastName: lastName,
-                email: user.email || '', phone: user.phone || '', country: user.country || '',
-                role: user.role || '', category: user.category || (CREW_ROLES.includes(user.role) ? 'Crew' : 'Artist'),
-                experience: user.experience || '',
-                availability: user.availability || '', location: user.location || '',
-                languages: user.languages?.join(', ') || '', age: user.age || '',
-                gender: user.gender || '', height: user.height || '', weight: user.weight || '',
-                nextAvailable: user.nextAvailable || '', bio: user.bio || '',
-                yearsOfExperience: user.yearsOfExperience || '', awards: user.awards || '',
-                skills: user.skills?.join(', ') || '', portfolioLink: user.portfolioLink || '',
-                socialMedia: user.socialMedia ? JSON.stringify(user.socialMedia) : '',
-                projectType: user.projectType || '', photo: user.photo || null
-            })
+            // Only update form if it's currently empty or we're not explicitly editing (to avoid overwriting unsaved changes)
+            // But for the FIRST load, we MUST populate it even if editing is true
+            setForm(prev => {
+                // If the email is empty, it's likely the first load after registration
+                if (!prev.email || !editing) {
+                    return {
+                        firstName: firstName, lastName: lastName,
+                        email: user.email || '', phone: user.phone || '', country: user.country || '',
+                        role: user.role || '', category: user.category || (CREW_ROLES.includes(user.role) ? 'Crew' : 'Artist'),
+                        experience: user.experience || '',
+                        availability: user.availability || '', location: user.location || '',
+                        languages: user.languages?.join(', ') || '', age: user.age || '',
+                        gender: user.gender || '', height: user.height || '', weight: user.weight || '',
+                        nextAvailable: user.nextAvailable || '', bio: user.bio || '',
+                        yearsOfExperience: user.yearsOfExperience || '', awards: user.awards || '',
+                        skills: user.skills?.join(', ') || '', portfolioLink: user.portfolioLink || '',
+                        socialMedia: user.socialMedia ? JSON.stringify(user.socialMedia) : '',
+                        projectType: user.projectType || '', photo: user.photo || null
+                    };
+                }
+                return prev;
+            });
             
-            // Fetch Portfolio Media
-            const fetchPortfolio = async () => {
+            if (!editing) {
+                // Fetch Portfolio Media only when not in initial registration edit mode
+                const fetchPortfolio = async () => {
                 try {
                     const res = await api.get('/portfolios/me')
                     if (res.data?.success && res.data.portfolio) {
