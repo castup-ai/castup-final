@@ -15,42 +15,41 @@ export const chat = async (req, res) => {
              return res.status(500).json({ error: 'Gemini API key is not configured' });
         }
 
-        // Get the model
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        // Get the model - Using 1.5 Flash for better stability and free tier compatibility
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        // System instructions to guide the AI's persona
-        const systemPrompt = `You are CastUp's AI Assistant, an intelligent cinema industry companion. 
-You help users with finding talent, giving profile improvement tips, industry standards, and answering cinema-related questions.
-You are concise, professional, and knowledgeable about the film and entertainment industry (actors, crew, directors, cinematographers, rates, etc.).
-Keep your answers formatted in a very clean, brief, modern way without rambling. Use bullet points when helpful.`;
+        // System instructions
+        const systemPrompt = `You are CastUp's AI Assistant, an cinema industry expert. 
+        Help with finding talent, profile tips, and cinema questions. 
+        Be professional, brief, and use bullet points.`;
 
-        // Format the entire conversation into one clear text block for the model
-        let fullPrompt = `SYSTEM INSTRUCTION: ${systemPrompt}\n\n`;
+        let fullPrompt = `SYSTEM: ${systemPrompt}\n\n`;
         
         if (history && history.length > 0) {
-            fullPrompt += "PREVIOUS CONVERSATION HISTORY:\n";
             history.forEach(msg => {
-                const roleName = msg.role === 'ai' ? 'Assistant' : 'User';
-                fullPrompt += `${roleName}: ${msg.content}\n\n`;
+                fullPrompt += `${msg.role === 'ai' ? 'Assistant' : 'User'}: ${msg.content}\n\n`;
             });
         }
         
-        fullPrompt += `CURRENT USER MESSAGE:\nUser: ${message}\n\nAssistant:`;
+        fullPrompt += `User: ${message}\nAssistant:`;
 
         const result = await model.generateContent(fullPrompt);
         const responseText = result.response.text();
 
-        res.json({
-            success: true,
-            response: responseText
-        });
+        res.json({ success: true, response: responseText });
     } catch (error) {
         console.error('AI Chat Error:', error);
         
-        // Graceful fallback for API Key validation / Geo-restriction errors
-        return res.json({
-            success: true,
-            response: "⚠️ **Demo Mode Active**\n\nThe AI Assistant is currently running in limited demo mode because the connected Google Gemini API key is either inactive or restricted in this region.\n\nIn the full version, I would provide customized advice about talent profiles, industry rates, and script pitches. Please provide an active API Key in the Render dashboard to unlock real-time intelligence!"
-        });
+        let errorMessage = "I'm having trouble thinking right now. Please try again later.";
+        
+        if (error.message?.includes('API key was reported as leaked')) {
+            errorMessage = "⚠️ **Security Alert**: Your Google Gemini API key has been deactivated by Google because it was reported as leaked. Please generate a **New API Key** in Google AI Studio and update your configuration.";
+        } else if (error.message?.includes('API key not found')) {
+            errorMessage = "⚠️ **Configuration Error**: No valid API key found. Please check your Render environment variables.";
+        } else if (error.message?.includes('User location is not supported')) {
+            errorMessage = "⚠️ **Regional Restriction**: Gemini AI is currently not available in your region with this API key.";
+        }
+
+        res.json({ success: true, response: errorMessage });
     }
 };
