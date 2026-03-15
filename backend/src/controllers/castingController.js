@@ -3,12 +3,22 @@ import pool from '../config/database.js';
 // Create casting call
 export const createCastingCall = async (req, res) => {
     try {
+        console.log('Incoming job creation request:', {
+            userId: req.userId,
+            body: req.body
+        });
+
         const { 
             title, description, projectType, category, subCategory, 
             experience, country, state, city, lastDateToApply, 
             serviceDuration, requirements, documents,
             payRate, startDate, endDate
         } = req.body;
+
+        // PostgreSQL fix: empty strings are not valid dates. Convert to null.
+        const safeLastDate = lastDateToApply || null;
+        const safeStartDate = startDate || null;
+        const safeEndDate = endDate || null;
 
         const result = await pool.query(
             `INSERT INTO casting_calls (
@@ -21,12 +31,14 @@ export const createCastingCall = async (req, res) => {
              RETURNING *`,
             [
                 req.userId, title, description, projectType, category, 
-                subCategory, experience, country, state, city, 
-                lastDateToApply, JSON.stringify(serviceDuration || {}), 
+                subCategory, experience || 'Any', country, state, city, 
+                safeLastDate, JSON.stringify(serviceDuration || {}), 
                 requirements, JSON.stringify(documents || []),
-                payRate, startDate, endDate
+                payRate, safeStartDate, safeEndDate
             ]
         );
+
+        console.log('✅ Job created successfully:', result.rows[0].id);
 
         res.status(201).json({
             success: true,
@@ -34,8 +46,17 @@ export const createCastingCall = async (req, res) => {
             castingCall: result.rows[0]
         });
     } catch (error) {
-        console.error('Create casting call error:', error);
-        res.status(500).json({ error: 'Server error' });
+        console.error('❌ Create casting call error details:', {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            detail: error.detail
+        });
+        res.status(500).json({ 
+            error: 'Server error', 
+            details: error.message,
+            code: error.code 
+        });
     }
 };
 

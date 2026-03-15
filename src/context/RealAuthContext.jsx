@@ -162,12 +162,12 @@ export function RealAuthProvider({ children }) {
     };
 
     const addJob = async (jobData) => {
-        const { success, data, error } = await castingService.create(jobData);
-        if (success) {
-            setAllJobs(prev => [data, ...prev]);
-            return { success: true, job: data };
+        const result = await castingService.create(jobData);
+        if (result.success) {
+            setAllJobs(prev => [result.data, ...prev]);
+            return { success: true, job: result.data };
         }
-        return { success: false, error };
+        return result; // contains success: false, error, details, code
     }
 
     const deleteJob = async (jobId) => {

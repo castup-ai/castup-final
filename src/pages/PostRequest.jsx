@@ -109,7 +109,10 @@ export default function PostRequest() {
             if (result.success) {
                 setSubmitted(true)
             } else {
-                alert(result.error || 'Failed to create request. Please try again.')
+                const errorMsg = result.details 
+                    ? `${result.error}: ${result.details}`
+                    : result.error || 'Failed to create request. Please try again.';
+                alert(errorMsg)
             }
         } catch (err) {
             console.error("Job Creation Error:", err)

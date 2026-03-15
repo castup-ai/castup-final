@@ -32,7 +32,9 @@ export const castingService = {
         } catch (error) {
             return {
                 success: false,
-                error: error.response?.data?.error || 'Failed to create casting call'
+                error: error.response?.data?.error || 'Failed to create casting call',
+                details: error.response?.data?.details,
+                code: error.response?.data?.code
             };
         }
     },
