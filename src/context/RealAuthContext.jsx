@@ -162,8 +162,8 @@ export function RealAuthProvider({ children }) {
         return { success: false, error };
     }
 
-    const deleteWork = async (workId) => {
-        const { success, error } = await adminService.deleteWork(workId);
+    const deleteWork = async (workId, userId, isPortfolio) => {
+        const { success, error } = await adminService.deleteWork(workId, userId, isPortfolio);
         if (success) {
             setAllWorks(prev => prev.filter(w => w.id !== workId));
             return { success: true };

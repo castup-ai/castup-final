@@ -7,8 +7,10 @@ import {
     MapPin, Calendar, Award, Briefcase, Globe, Star,
     ChevronDown, Languages, CheckCircle, Heart, MoreHorizontal,
     User, Camera, Instagram, Youtube, Linkedin, Twitter, ExternalLink,
-    Play, Clock, Ruler, Droplets, Image as ImageIcon, Clapperboard, Eye
+    Play, Clock, Ruler, Droplets, Image as ImageIcon, Clapperboard, Eye, FileVideo,
+    X as CloseIcon, ChevronLeft, ChevronRight
 } from 'lucide-react'
+import { portfolioService } from '@/services/portfolio.service'
 
 const experienceLevels = ['All', 'Beginner', 'Intermediate', 'Expert']
 const availabilityOptions = ['All', 'Immediately', 'Next Week', 'Next Month']
@@ -52,6 +54,9 @@ export default function Explore() {
     const [showContactDropdown, setShowContactDropdown] = useState(false)
     const [customMessage, setCustomMessage] = useState('')
     const [activeAction, setActiveAction] = useState(null) // 'connect' or 'message'
+    const [portfolioData, setPortfolioData] = useState(null)
+    const [fetchingPortfolio, setFetchingPortfolio] = useState(false)
+    const [lightbox, setLightbox] = useState(null) // { project, fileIndex }
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -131,13 +136,28 @@ export default function Explore() {
     }
 
     useEffect(() => {
-        if (location.state?.viewProfileId && allUsers.length > 0) {
-            const targetUser = allUsers.find(u => u.id === location.state.viewProfileId)
-            if (targetUser) {
-                setSelectedProfile(targetUser)
+        if (selectedProfile) {
+            const fetchPortfolio = async () => {
+                setFetchingPortfolio(true)
+                try {
+                    const { success, data } = await portfolioService.getPortfolio(selectedProfile.id)
+                    if (success) {
+                        setPortfolioData(data)
+                    } else {
+                        setPortfolioData(null)
+                    }
+                } catch (err) {
+                    console.error("Error fetching portfolio:", err)
+                    setPortfolioData(null)
+                } finally {
+                    setFetchingPortfolio(false)
+                }
             }
+            fetchPortfolio()
+        } else {
+            setPortfolioData(null)
         }
-    }, [location.state, allUsers])
+    }, [selectedProfile])
 
     const getAvailableRoles = () => {
         if (filters.category === 'Artist') return ['All', ...ARTIST_ROLES]
@@ -698,45 +718,92 @@ export default function Explore() {
 
                                         <div>
                                             {/* Portfolio section */}
+                                            {/* Portfolio section */}
                                             <div>
-                                                <label className="text-text-muted text-sm font-bold mb-4 block uppercase tracking-wider">Portfolio (Images & Videos)</label>
-                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                                    {[1, 2, 3, 4].map(i => (
-                                                        <div key={i} className="aspect-square bg-bg rounded-2xl border border-border/50 overflow-hidden flex items-center justify-center text-primary/20 hover:text-primary transition-colors cursor-pointer group">
-                                                            <ImageIcon size={32} className="group-hover:scale-110 transition-transform" />
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                <label className="text-text-muted text-sm font-bold mb-4 block uppercase tracking-wider">
+                                                    Portfolio (Uploaded Work)
+                                                </label>
+                                                
+                                                {fetchingPortfolio ? (
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-pulse">
+                                                        {[1, 2, 3, 4].map(i => (
+                                                            <div key={i} className="aspect-square bg-bg-offset rounded-2xl border border-border/30" />
+                                                        ))}
+                                                    </div>
+                                                ) : portfolioData?.media && portfolioData.media.length > 0 ? (
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                                        {portfolioData.media.map((item, idx) => (
+                                                            <motion.div 
+                                                                key={item.id || idx} 
+                                                                whileHover={{ scale: 1.05 }}
+                                                                onClick={() => setLightbox({ project: item, fileIndex: 0 })}
+                                                                className="aspect-square bg-bg-offset rounded-2xl border border-border/50 overflow-hidden flex flex-col items-center justify-center text-primary/40 hover:text-primary transition-all cursor-pointer relative group p-2 text-center"
+                                                            >
+                                                                {item.type?.toLowerCase().includes('video') || (item.files && item.files.some(f => f.type?.includes('video'))) ? (
+                                                                    <FileVideo size={32} className="mb-2" />
+                                                                ) : (
+                                                                    <ImageIcon size={32} className="mb-2" />
+                                                                )}
+                                                                <span className="text-[10px] font-black uppercase tracking-tighter truncate w-full px-2">
+                                                                    {item.title}
+                                                                </span>
+                                                                <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                    <Eye size={20} className="text-primary" />
+                                                                </div>
+                                                            </motion.div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="card p-12 text-center border-dashed border-border/30 opacity-30">
+                                                        <ImageIcon size={40} className="mx-auto mb-4" />
+                                                        <p className="text-xs font-bold uppercase tracking-widest">No work uploaded yet</p>
+                                                    </div>
+                                                )}
                                             </div>
-
+                                            
                                             {/* Social Links section */}
                                             <div className="mt-14 pt-4">
                                                 <label className="text-text-muted text-sm font-bold mb-4 block uppercase tracking-wider">Social & Project Links</label>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    <a href="#" className="flex items-center gap-4 bg-bg rounded-xl border border-border/50 p-4 hover:border-primary/50 transition-colors group">
-                                                        <div className="w-10 h-10 rounded-lg bg-bg-offset flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                                                            <Instagram size={20} className="text-text-muted group-hover:text-primary transition-colors" />
-                                                        </div>
-                                                        <span className="font-medium text-text-muted group-hover:text-text-main transition-colors">Instagram</span>
-                                                    </a>
-                                                    <a href="#" className="flex items-center gap-4 bg-bg rounded-xl border border-border/50 p-4 hover:border-primary/50 transition-colors group">
-                                                        <div className="w-10 h-10 rounded-lg bg-bg-offset flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                                                            <Linkedin size={20} className="text-text-muted group-hover:text-primary transition-colors" />
-                                                        </div>
-                                                        <span className="font-medium text-text-muted group-hover:text-text-main transition-colors">LinkedIn</span>
-                                                    </a>
-                                                    <a href="#" className="flex items-center gap-4 bg-bg rounded-xl border border-border/50 p-4 hover:border-primary/50 transition-colors group">
-                                                        <div className="w-10 h-10 rounded-lg bg-bg-offset flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                                                            <Youtube size={20} className="text-text-muted group-hover:text-primary transition-colors" />
-                                                        </div>
-                                                        <span className="font-medium text-text-muted group-hover:text-text-main transition-colors">YouTube</span>
-                                                    </a>
-                                                    <a href="#" className="flex items-center gap-4 bg-bg rounded-xl border border-border/50 p-4 hover:border-primary/50 transition-colors group">
-                                                        <div className="w-10 h-10 rounded-lg bg-bg-offset flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                                                            <Globe size={20} className="text-text-muted group-hover:text-primary transition-colors" />
-                                                        </div>
-                                                        <span className="font-medium text-text-muted group-hover:text-text-main transition-colors">Previous Works</span>
-                                                    </a>
+                                                    {(() => {
+                                                        const sm = selectedProfile.socialMedia || {};
+                                                        const links = [
+                                                            { id: 'instagram', label: 'Instagram', icon: Instagram, value: sm.instagram },
+                                                            { id: 'linkedin', label: 'LinkedIn', icon: Linkedin, value: sm.linkedin },
+                                                            { id: 'youtube', label: 'YouTube', icon: Youtube, value: sm.youtube },
+                                                            { id: 'portfolio', label: 'Previous Works', icon: Globe, value: sm.portfolio || selectedProfile.portfolioLink }
+                                                        ];
+                                                        
+                                                        const activeLinks = links.filter(l => l.value);
+                                                        
+                                                        if (activeLinks.length === 0) {
+                                                            return (
+                                                                <div className="col-span-full py-8 text-center opacity-30 italic text-sm">
+                                                                    No social links shared by this professional
+                                                                </div>
+                                                            );
+                                                        }
+                                                        
+                                                        return activeLinks.map(link => (
+                                                            <a 
+                                                                key={link.id}
+                                                                href={link.value.startsWith('http') ? link.value : `https://${link.value}`}
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer" 
+                                                                className="flex items-center gap-4 bg-bg rounded-xl border border-border/50 p-4 hover:border-primary/50 transition-colors group"
+                                                            >
+                                                                <div className="w-10 h-10 rounded-lg bg-bg-offset flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                                                    <link.icon size={20} className="text-text-muted group-hover:text-primary transition-colors" />
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-[10px] font-black uppercase text-text-dim leading-none mb-1">{link.label}</span>
+                                                                    <span className="font-bold text-text-main group-hover:text-primary transition-colors text-xs truncate max-w-[150px]">
+                                                                        {link.value.replace(/https?:\/\/(www\.)?/, '').split('/')[0]}...
+                                                                    </span>
+                                                                </div>
+                                                            </a>
+                                                        ));
+                                                    })()}
                                                 </div>
                                             </div>
 
@@ -753,6 +820,89 @@ export default function Explore() {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Lightbox Modal (Outside main modal to stay on top) */}
+            <AnimatePresence>
+                {lightbox && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                        style={{ background: 'rgba(0,0,0,0.95)' }}
+                        onClick={() => setLightbox(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="relative max-w-5xl w-full"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Close Button */}
+                            <button
+                                onClick={() => setLightbox(null)}
+                                className="absolute -top-12 right-0 text-white/70 hover:text-white flex items-center gap-2 text-sm font-bold bg-white/5 px-4 py-2 rounded-full border border-white/10"
+                            >
+                                <CloseIcon size={18} /> Close
+                            </button>
+
+                            {/* Media Viewer */}
+                            <div className="rounded-2xl overflow-hidden bg-black flex items-center justify-center border border-white/10 shadow-2xl" style={{ minHeight: '300px', maxHeight: '80vh' }}>
+                                {(() => {
+                                    const file = lightbox.project.files?.[lightbox.fileIndex]
+                                    if (!file?.data) return (
+                                        <div className="text-white/30 text-sm p-24 text-center">
+                                            <ImageIcon size={48} className="mx-auto mb-4 opacity-10" />
+                                            No media to display
+                                        </div>
+                                    )
+                                    return file.type?.startsWith('video/') ? (
+                                        <video 
+                                            src={file.data} 
+                                            controls 
+                                            autoPlay 
+                                            className="max-w-full max-h-[80vh] object-contain" 
+                                            style={{ width: '100%' }} 
+                                        />
+                                    ) : (
+                                        <img src={file.data} alt={lightbox.project.title} className="max-w-full max-h-[80vh] object-contain" />
+                                    )
+                                })()}
+                            </div>
+
+                            {/* Navigation for multiple files */}
+                            {lightbox.project.files && lightbox.project.files.length > 1 && (
+                                <div className="flex items-center justify-center gap-6 mt-6">
+                                    <button
+                                        onClick={() => setLightbox(prev => ({ ...prev, fileIndex: Math.max(0, prev.fileIndex - 1) }))}
+                                        disabled={lightbox.fileIndex === 0}
+                                        className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white disabled:opacity-20 transition-all border border-white/5"
+                                    ><ChevronLeft size={24} /></button>
+                                    
+                                    <div className="flex gap-2">
+                                        {lightbox.project.files.map((_, i) => (
+                                            <div 
+                                                key={i} 
+                                                className={`w-1.5 h-1.5 rounded-full transition-all \${i === lightbox.fileIndex ? 'bg-primary w-4' : 'bg-white/20'}`}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={() => setLightbox(prev => ({ ...prev, fileIndex: Math.min(lightbox.project.files.length - 1, prev.fileIndex + 1) }))}
+                                        disabled={lightbox.fileIndex === lightbox.project.files.length - 1}
+                                        className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white disabled:opacity-20 transition-all border border-white/5"
+                                    ><ChevronRight size={24} /></button>
+                                </div>
+                            )}
+
+                            {/* Info Section */}
+                            <div className="mt-8 text-center px-4 max-w-2xl mx-auto">
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-2 block">{lightbox.project.type}</span>
+                                <h3 className="text-white font-black text-2xl mb-3">{lightbox.project.title}</h3>
+                                <p className="text-white/40 text-sm leading-relaxed">{lightbox.project.description}</p>
                             </div>
                         </motion.div>
                     </motion.div>

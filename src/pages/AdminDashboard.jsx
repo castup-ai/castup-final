@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
 import { Navigate } from 'react-router-dom'
 import {
     Shield, Users, Briefcase, Trash2, Search, BarChart2, Mail,
-    CheckCircle, XCircle, Eye, RefreshCw, Video, Database, Sparkles
+    CheckCircle, XCircle, Eye, RefreshCw, Video, Database, Sparkles,
+    Filter, Download, Plus, ArrowRight, Check, X as CloseIcon, ChevronLeft, ChevronRight, FileVideo
 } from 'lucide-react'
 
 const ADMIN_EMAILS = ['castup4862446@gmail.com', 'castupaiapp@gmail.com']
@@ -20,6 +21,7 @@ export default function AdminDashboard() {
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [deletedMsg, setDeletedMsg] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
+    const [preview, setPreview] = useState(null) // { url, type, name }
     const itemsPerPage = 10
 
     // Reset page on tab/search change
@@ -89,15 +91,17 @@ export default function AdminDashboard() {
         }
     }
 
-    const handleDeleteWork = async (workId, workName) => {
-        if (window.confirm(`Permanently remove work "${workName}"?`)) {
-            const result = await deleteWork(workId)
-            if (result.success) {
-                setDeletedMsg('Work entry removed.')
-                setTimeout(() => setDeletedMsg(''), 3000)
-            } else {
-                alert(result.error || 'Failed to delete work')
-            }
+    const handleDeleteWork = async (id, name) => {
+        if (!window.confirm(`Are you sure you want to delete the work "\${name}"?`)) return
+        
+        const workItem = allWorks.find(w => w.id === id);
+        const { success, error } = await deleteWork(id, workItem?.user_id, workItem?.is_portfolio);
+        
+        if (success) {
+            setDeletedMsg(`Work "\${name}" deleted successfully`)
+            setTimeout(() => setDeletedMsg(''), 3000)
+        } else {
+            alert(`Error deleting work: \${error}`)
         }
     }
 
@@ -338,16 +342,20 @@ export default function AdminDashboard() {
                         ) : filteredWorks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(work => (
                             <motion.div key={work.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                                 className="card p-5 border-0 shadow-lg hover:shadow-2xl transition-all flex items-center gap-6 group">
-                                <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-inner bg-black/20 flex items-center justify-center shrink-0">
-                                    {work.source_type === 'youtube' ? (
-                                        <div className="text-danger flex flex-col items-center gap-1">
-                                            <Video size={24} />
-                                            <span className="text-[8px] font-black uppercase">YouTube</span>
-                                        </div>
+                                <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-inner bg-black/20 flex items-center justify-center shrink-0 relative">
+                                    {work.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$|data:image/i) ? (
+                                        <img src={work.file_url} className="w-full h-full object-cover" />
                                     ) : (
-                                        <div className="text-primary flex flex-col items-center gap-1">
-                                            <Sparkles size={24} />
-                                            <span className="text-[8px] font-black uppercase">{work.source_type || 'File'}</span>
+                                        <div className="flex flex-col items-center">
+                                            {work.source_type === 'Video' || (work.file_type && work.file_type.includes('video')) ? <Video size={20} className="text-primary mb-1" /> : <Layers size={20} className="text-white/40 mb-1" />}
+                                            <span className="text-[8px] font-black uppercase text-center">{work.source_type || 'File'}</span>
+                                        </div>
+                                    )}
+                                    {work.is_portfolio && (
+                                        <div className="absolute top-0 right-0 p-1">
+                                            <div className="bg-primary/80 backdrop-blur-md rounded-bl-lg px-1.5 py-0.5 pointer-events-none">
+                                                <Sparkles size={10} className="text-white" />
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -355,12 +363,13 @@ export default function AdminDashboard() {
                                     <div className="flex items-center justify-between gap-4 mb-2">
                                         <h3 className="text-lg font-black truncate">{work.name}</h3>
                                         <div className="flex items-center gap-2">
-                                            <a href={work.file_url || work.source_url} target="_blank" rel="noopener noreferrer"
+                                            <button 
+                                                onClick={() => setPreview({ url: work.file_url || work.source_url, type: work.file_type || (work.source_type === 'Video' ? 'video/mp4' : 'image/png'), name: work.name })}
                                                 className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors"
-                                                title="View Source"
+                                                title="Preview Work"
                                             >
                                                 <Eye size={18} />
-                                            </a>
+                                            </button>
                                             <button
                                                 onClick={() => handleDeleteWork(work.id, work.name)}
                                                 className="w-10 h-10 rounded-xl flex items-center justify-center text-danger hover:bg-danger/10 transition-colors"
@@ -407,6 +416,43 @@ export default function AdminDashboard() {
                     </div>
                 )}
             </motion.div>
+
+            {/* Preview Lightbox */}
+            <AnimatePresence>
+                {preview && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95"
+                        onClick={() => setPreview(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="relative max-w-5xl w-full"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <button 
+                                onClick={() => setPreview(null)}
+                                className="absolute -top-12 right-0 text-white/50 hover:text-white flex items-center gap-2 font-bold px-4 py-2"
+                            >
+                                <CloseIcon size={18} /> Close
+                            </button>
+
+                            <div className="rounded-2xl overflow-hidden bg-black border border-white/10 shadow-2xl flex items-center justify-center" style={{ minHeight: '300px', maxHeight: '80vh' }}>
+                                {preview.url?.startsWith('data:video') || preview.type?.includes('video') ? (
+                                    <video src={preview.url} controls autoPlay className="max-w-full max-h-[80vh] object-contain w-full" />
+                                ) : (
+                                    <img src={preview.url} alt={preview.name} className="max-w-full max-h-[80vh] object-contain" />
+                                )}
+                            </div>
+                            
+                            <div className="mt-6 text-center">
+                                <h3 className="text-xl font-black">{preview.name}</h3>
+                                <p className="text-white/40 text-sm mt-1 uppercase tracking-widest">{preview.type}</p>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

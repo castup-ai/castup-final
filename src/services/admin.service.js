@@ -49,9 +49,12 @@ export const adminService = {
         }
     },
 
-    deleteWork: async (workId) => {
+    deleteWork: async (workId, userId, isPortfolio) => {
         try {
-            const response = await api.delete(`/admin/works/${workId}`);
+            const url = isPortfolio 
+                ? `/admin/works/\${workId}?isPortfolio=true&userId=\${userId}` 
+                : `/admin/works/\${workId}`;
+            const response = await api.delete(url);
             return { success: true, message: response.data.message };
         } catch (error) {
             return {

@@ -68,19 +68,60 @@ export const deleteJob = async (req, res) => {
     }
 };
 
-// Get all works (files)
+// Get all works (files + portfolio media)
 export const getAllWorks = async (req, res) => {
     try {
-        const result = await pool.query(`
-            SELECT f.*, u.name as "ownerName", u.email as "ownerEmail"
+        // Get files from files table
+        const filesResult = await pool.query(`
+            SELECT f.id, f.name, f.file_url, f.file_type, f.source_type, f.created_at,
+                   u.name as "ownerName", u.email as "ownerEmail"
             FROM files f
             LEFT JOIN users u ON f.user_id = u.id
             ORDER BY f.created_at DESC
         `);
 
+        // Get portfolio media and flatten it
+        const portfolioResult = await pool.query(`
+            SELECT p.media, u.name as "ownerName", u.email as "ownerEmail", u.id as "user_id"
+            FROM portfolios p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.media IS NOT NULL
+        `);
+
+        const portfolioWorks = [];
+        portfolioResult.rows.forEach(row => {
+            let media = row.media;
+            if (typeof media === 'string') {
+                try { media = JSON.parse(media); } catch(e) { media = []; }
+            }
+            if (Array.isArray(media)) {
+                media.forEach(item => {
+                    // Map portfolio item to "file" structure
+                    portfolioWorks.push({
+                        id: item.id || `port_\${item.title}_\${row.user_id}`,
+                        name: item.title,
+                        file_url: item.files && item.files.length > 0 ? item.files[0].data : null,
+                        file_type: item.files && item.files.length > 0 ? item.files[0].type : 'portfolio/item',
+                        source_type: item.type || 'Portfolio',
+                        created_at: item.createdAt || new Date().toISOString(),
+                        ownerName: row.ownerName,
+                        ownerEmail: row.ownerEmail,
+                        user_id: row.user_id, // Important for deletion
+                        is_portfolio: true,
+                        all_files: item.files // For detailed view
+                    });
+                });
+            }
+        });
+
+        // Merge and sort
+        const allWorks = [...filesResult.rows, ...portfolioWorks].sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+        );
+
         res.json({
             success: true,
-            data: result.rows
+            data: allWorks
         });
     } catch (error) {
         console.error('Get all works error:', error);
@@ -88,11 +129,38 @@ export const getAllWorks = async (req, res) => {
     }
 };
 
-// Delete a work entry
+// Delete a work entry (File or Portfolio Item)
 export const deleteWork = async (req, res) => {
     try {
         const { workId } = req.params;
 
+        // Check if it's a portfolio item
+        if (workId.startsWith('port_') || req.query.isPortfolio === 'true') {
+            const userId = req.query.userId;
+            if (!userId) {
+                return res.status(400).json({ error: 'User ID required to delete portfolio work' });
+            }
+
+            // Get portfolio
+            const pRes = await pool.query('SELECT media FROM portfolios WHERE user_id = $1', [userId]);
+            if (pRes.rows.length === 0) return res.status(404).json({ error: 'Portfolio not found' });
+
+            let media = pRes.rows[0].media;
+            if (typeof media === 'string') media = JSON.parse(media);
+            
+            // Filter out the work. We use both ID and possibly Title if ID is generated.
+            const newMedia = media.filter(m => m.id !== workId && `port_\${m.title}_\${userId}` !== workId);
+            
+            if (newMedia.length === media.length) {
+                return res.status(404).json({ error: 'Work item not found in portfolio' });
+            }
+
+            await pool.query('UPDATE portfolios SET media = $1 WHERE user_id = $2', [JSON.stringify(newMedia), userId]);
+
+            return res.json({ success: true, message: 'Portfolio work deleted' });
+        }
+
+        // Standard file deletion
         const result = await pool.query('DELETE FROM files WHERE id = $1 RETURNING name', [workId]);
 
         if (result.rows.length === 0) {
@@ -101,7 +169,7 @@ export const deleteWork = async (req, res) => {
 
         res.json({
             success: true,
-            message: `Work "${result.rows[0].name}" deleted successfully`
+            message: `Work "\${result.rows[0].name}" deleted successfully`
         });
     } catch (error) {
         console.error('Delete work error:', error);
