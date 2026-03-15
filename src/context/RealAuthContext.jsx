@@ -130,7 +130,7 @@ export function RealAuthProvider({ children }) {
                 token: data.token,
                 user: data.user 
             }));
-            await refreshPlatformData();
+            refreshPlatformData(); // Fetch in background, do not block login
             return { success: true, user: data.user };
         }
 
@@ -148,7 +148,7 @@ export function RealAuthProvider({ children }) {
                 token: resultData.token,
                 user: resultData.user 
             }));
-            await refreshPlatformData();
+            refreshPlatformData(); // Fetch in background, do not block register
             return { success: true, user: resultData.user };
         }
 
