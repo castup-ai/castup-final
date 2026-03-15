@@ -7,8 +7,30 @@ import api from '../services/api';
 const RealAuthContext = createContext(null);
 
 export function RealAuthProvider({ children }) {
-    const [user, setUser] = useState(null);
-    const [token, setToken] = useState(null);
+    const [user, setUser] = useState(() => {
+        const saved = localStorage.getItem('castup_auth_real');
+        if (saved) {
+            try {
+                const { user: savedUser } = JSON.parse(saved);
+                return savedUser || null;
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
+    });
+    const [token, setToken] = useState(() => {
+        const saved = localStorage.getItem('castup_auth_real');
+        if (saved) {
+            try {
+                const { token: savedToken } = JSON.parse(saved);
+                return savedToken || null;
+            } catch (e) {
+                return null;
+            }
+        }
+        return null;
+    });
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [allUsers, setAllUsers] = useState([]);
@@ -36,26 +58,18 @@ export function RealAuthProvider({ children }) {
 
     useEffect(() => {
         const initAuth = async () => {
-            const saved = localStorage.getItem('castup_auth_real');
-            if (saved) {
+            if (token) {
                 try {
-                    const { token, user: savedUser } = JSON.parse(saved);
-                    if (token) {
-                        setToken(token);
-                        // If we have a saved user, use it immediately for UI stability
-                        if (savedUser) setUser(savedUser);
-                        
-                        const profileRes = await authService.getProfile();
-                        if (profileRes.success) {
-                            setUser(profileRes.data);
-                            // Update the stored user with the latest profile data
-                            localStorage.setItem('castup_auth_real', JSON.stringify({ token, user: profileRes.data }));
-                        } else if (profileRes.error === 'Unauthorized') {
-                            logout();
-                        }
+                    const profileRes = await authService.getProfile();
+                    if (profileRes.success) {
+                        setUser(profileRes.data);
+                        // Update the stored user with the latest profile data
+                        localStorage.setItem('castup_auth_real', JSON.stringify({ token, user: profileRes.data }));
+                    } else if (profileRes.error === 'Unauthorized' || profileRes.error === 'jwt expired') {
+                        logout();
                     }
                 } catch (e) {
-                    localStorage.removeItem('castup_auth_real');
+                    console.error("Auth init error:", e);
                 }
             }
 
