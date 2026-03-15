@@ -45,10 +45,11 @@ export default function PostRequest() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            const isProfileComplete = user && (user.name?.split(" ")[0]) && user.role
+            // Relaxed check: Name and either Role or Department
+            const isProfileComplete = user && user.name && (user.role || user.department);
             if (!isProfileComplete) {
-                alert('Kindly complete your profile before posting a request.')
-                navigate('/profile')
+                alert('Kindly complete your basic profile (Name & Role/Department) before posting a request.')
+                navigate('/profile?edit=true')
             }
         } else {
             // Wait a brief moment to avoid flashing during auth check
@@ -58,14 +59,15 @@ export default function PostRequest() {
         }
     }, [isAuthenticated, user, navigate, requireAuth])
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
         if (!isAuthenticated) { requireAuth(); return }
 
-        const isProfileComplete = user && (user.name?.split(" ")[0]) && user.role
+        // Relaxed check: Name and either Role or Department
+        const isProfileComplete = user && user.name && (user.role || user.department);
         if (!isProfileComplete) {
-            alert('Kindly complete your profile before posting a request.')
-            navigate('/profile')
+            alert('Kindly complete your basic profile before posting a request.')
+            navigate('/profile?edit=true')
             return
         }
 
@@ -100,9 +102,16 @@ export default function PostRequest() {
             documents: form.documents
         }
 
-        const result = addJob(jobData)
-        if (result.success) {
-            setSubmitted(true)
+        try {
+            const result = await addJob(jobData)
+            if (result.success) {
+                setSubmitted(true)
+            } else {
+                alert(result.error || 'Failed to create request. Please try again.')
+            }
+        } catch (err) {
+            console.error("Job Creation Error:", err)
+            alert('An unexpected error occurred while creating the request.')
         }
     }
 
