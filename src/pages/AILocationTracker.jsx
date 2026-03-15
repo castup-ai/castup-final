@@ -1,40 +1,72 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { MapPin, Search, Users, Film, Navigation, Star, Sparkles } from 'lucide-react'
-
-const MOCK_LOCATIONS = [
-    {
-        id: 1, name: 'Mumbai', region: 'Maharashtra', talent: 342, active: 15, lat: '19.0760', lng: '72.8777',
-        topRoles: ['Actor', 'Director', 'Producer'], popularStudios: ['Film City', 'Mehboob Studios']
-    },
-    {
-        id: 2, name: 'Chennai', region: 'Tamil Nadu', talent: 218, active: 8, lat: '13.0827', lng: '80.2707',
-        topRoles: ['Actor', 'Music Director', 'Cinematographer'], popularStudios: ['AVM Studios', 'Prasad Studios']
-    },
-    {
-        id: 3, name: 'Hyderabad', region: 'Telangana', talent: 186, active: 12, lat: '17.3850', lng: '78.4867',
-        topRoles: ['Actor', 'Producer', 'VFX Artist'], popularStudios: ['Ramoji Film City', 'Annapurna Studios']
-    },
-    {
-        id: 4, name: 'Kochi', region: 'Kerala', talent: 124, active: 6, lat: '9.9312', lng: '76.2673',
-        topRoles: ['Actor', 'Director', 'Editor'], popularStudios: ['Revathi Kalamandir', 'Udaya Studios']
-    },
-    {
-        id: 5, name: 'Bangalore', region: 'Karnataka', talent: 97, active: 5, lat: '12.9716', lng: '77.5946',
-        topRoles: ['VFX Artist', 'Sound Designer', 'Editor'], popularStudios: ['Kanteerava Studios']
-    },
-    {
-        id: 6, name: 'Delhi NCR', region: 'Delhi', talent: 156, active: 9, lat: '28.7041', lng: '77.1025',
-        topRoles: ['Actor', 'Screenwriter', 'Director'], popularStudios: ['Noida Film City', 'Marwah Studios']
-    },
-]
+import { useAuth } from '../context/RealAuthContext'
 
 export default function AILocationTracker() {
+    const { allUsers } = useAuth()
     const [search, setSearch] = useState('')
     const [description, setDescription] = useState('')
     const [selected, setSelected] = useState(null)
 
-    const filtered = MOCK_LOCATIONS.filter(l => {
+    // Calculate dynamic locations based on real users
+    const dynamicLocations = useMemo(() => {
+        if (!allUsers || allUsers.length === 0) return [];
+        
+        const locMap = {};
+        
+        allUsers.forEach(user => {
+            const rawLoc = user.location?.trim();
+            if (!rawLoc) return; // Skip users without a location
+            
+            // Standardize capitalization (e.g., "mumbai" -> "Mumbai")
+            const locName = rawLoc.charAt(0).toUpperCase() + rawLoc.slice(1).toLowerCase();
+            
+            if (!locMap[locName]) {
+                locMap[locName] = {
+                    id: locName,
+                    name: locName,
+                    region: 'India', // Could extract from Google Maps API later if needed
+                    talent: 0,
+                    active: 0,
+                    roleCounts: {},
+                    popularStudios: ['Independent/Local Studios']
+                };
+            }
+            
+            locMap[locName].talent += 1;
+            
+            // Count active ready workers
+            if (user.availability === 'Available now' || user.availability === 'Ready to Work') {
+                locMap[locName].active += 1;
+            }
+            
+            // Aggregate roles
+            if (user.role) {
+                locMap[locName].roleCounts[user.role] = (locMap[locName].roleCounts[user.role] || 0) + 1;
+            }
+        });
+        
+        return Object.values(locMap).map((loc, index) => {
+            // Get top 3 roles
+            const topRoles = Object.entries(loc.roleCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(r => r[0]);
+                
+            return {
+                id: index + 1,
+                name: loc.name,
+                region: loc.region,
+                talent: loc.talent,
+                active: loc.active,
+                topRoles: topRoles.length > 0 ? topRoles : ['Various'],
+                popularStudios: loc.popularStudios
+            };
+        }).sort((a, b) => b.talent - a.talent); // Sort by highest talent pool
+    }, [allUsers]);
+
+    const filtered = dynamicLocations.filter(l => {
         const term = search || description
         return !term || l.name.toLowerCase().includes(term.toLowerCase()) ||
             l.region.toLowerCase().includes(term.toLowerCase()) ||
@@ -97,40 +129,46 @@ export default function AILocationTracker() {
                         style={{ background: 'linear-gradient(135deg, var(--color-bg) 0%, var(--color-surface) 100%)' }}>
                         {/* Simulated map with dots */}
                         <div className="relative w-full h-80">
-                            {MOCK_LOCATIONS.map((loc, i) => (
-                                <motion.div
-                                    key={loc.id}
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ delay: 0.3 + i * 0.1, type: 'spring' }}
-                                    className="absolute cursor-pointer group"
-                                    style={{
-                                        left: `${15 + (i % 3) * 30}%`,
-                                        top: `${15 + Math.floor(i / 3) * 45}%`,
-                                    }}
-                                    onClick={() => setSelected(loc)}
-                                >
-                                    <div className={`relative flex flex-col items-center`}>
-                                        <div className={`w-4 h-4 rounded-full transition-all ${selected?.id === loc.id ? 'ring-4 ring-opacity-30' : ''}`}
-                                            style={{
-                                                background: selected?.id === loc.id ? 'var(--color-primary)' : 'var(--color-secondary)',
-                                                ringColor: 'var(--color-primary)',
-                                                boxShadow: `0 0 ${loc.talent / 20}px ${selected?.id === loc.id ? 'var(--color-primary)' : 'var(--color-secondary)'}`,
-                                            }}>
-                                            <motion.div
-                                                animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
-                                                transition={{ repeat: Infinity, duration: 2, delay: i * 0.3 }}
-                                                className="absolute inset-0 rounded-full"
-                                                style={{ background: 'var(--color-secondary)' }}
-                                            />
+                            {dynamicLocations.length === 0 ? (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <p style={{ color: 'var(--color-text-muted)' }}>No location data available yet. Users need to add locations to their profiles.</p>
+                                </div>
+                            ) : (
+                                dynamicLocations.map((loc, i) => (
+                                    <motion.div
+                                        key={loc.id}
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        transition={{ delay: 0.3 + i * 0.1, type: 'spring' }}
+                                        className="absolute cursor-pointer group"
+                                        style={{
+                                            left: `${15 + (i % 3) * 30}%`,
+                                            top: `${15 + Math.floor(i / 3) * 45}%`,
+                                        }}
+                                        onClick={() => setSelected(loc)}
+                                    >
+                                        <div className={`relative flex flex-col items-center`}>
+                                            <div className={`w-4 h-4 rounded-full transition-all ${selected?.id === loc.id ? 'ring-4 ring-opacity-30' : ''}`}
+                                                style={{
+                                                    background: selected?.id === loc.id ? 'var(--color-primary)' : 'var(--color-secondary)',
+                                                    ringColor: 'var(--color-primary)',
+                                                    boxShadow: `0 0 ${Math.min(loc.talent * 2, 20)}px ${selected?.id === loc.id ? 'var(--color-primary)' : 'var(--color-secondary)'}`,
+                                                }}>
+                                                <motion.div
+                                                    animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
+                                                    transition={{ repeat: Infinity, duration: 2, delay: i * 0.3 }}
+                                                    className="absolute inset-0 rounded-full"
+                                                    style={{ background: 'var(--color-secondary)' }}
+                                                />
+                                            </div>
+                                            <span className="text-xs mt-1 font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
+                                                style={{ color: 'var(--color-text)' }}>
+                                                {loc.name}
+                                            </span>
                                         </div>
-                                        <span className="text-xs mt-1 font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
-                                            style={{ color: 'var(--color-text)' }}>
-                                            {loc.name}
-                                        </span>
-                                    </div>
-                                </motion.div>
-                            ))}
+                                    </motion.div>
+                                ))
+                            )}
                         </div>
                         <p className="text-xs mt-4" style={{ color: 'var(--color-text-dim)' }}>
                             <Navigation size={12} className="inline mr-1" /> Click on a location dot to view details
