@@ -1,38 +1,103 @@
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
 import { Navigate } from 'react-router-dom'
 import {
     Shield, Users, Briefcase, Trash2, Search, BarChart2, Mail,
-    CheckCircle, XCircle, Eye, RefreshCw
+    CheckCircle, XCircle, Eye, RefreshCw, Video, Database, Sparkles
 } from 'lucide-react'
 
-const ADMIN_EMAIL = 'castup4862446@gmail.com'
+const ADMIN_EMAILS = ['castup4862446@gmail.com', 'castupaiapp@gmail.com']
 
 export default function AdminDashboard() {
-    const { user, allUsers, allJobs, deleteJob } = useAuth()
+    const { 
+        user, allUsers, allJobs, allWorks, 
+        deleteJob, deleteUser, deleteWork, 
+        refreshPlatformData 
+    } = useAuth()
     const [activeTab, setActiveTab] = useState('overview')
     const [search, setSearch] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
     const [deletedMsg, setDeletedMsg] = useState('')
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 10
+
+    // Reset page on tab/search change
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [activeTab, debouncedSearch])
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search)
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [search])
 
     // Guard: only admin can access
-    if (!user || user.email !== ADMIN_EMAIL) {
+    if (!user || !ADMIN_EMAILS.includes(user.email)) {
         return <Navigate to="/home" replace />
     }
 
-    const filteredUsers = allUsers.filter(u =>
-        !search || u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())
+    const filteredUsers = useMemo(() => 
+        allUsers.filter(u =>
+            !debouncedSearch || 
+            u.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+            u.email?.toLowerCase().includes(debouncedSearch.toLowerCase())
+        ), [allUsers, debouncedSearch]
     )
 
-    const filteredJobs = allJobs.filter(j =>
-        !search || j.title?.toLowerCase().includes(search.toLowerCase())
+    const filteredJobs = useMemo(() => 
+        allJobs.filter(j =>
+            !debouncedSearch || j.title?.toLowerCase().includes(debouncedSearch.toLowerCase())
+        ), [allJobs, debouncedSearch]
     )
 
-    const handleDeleteJob = (jobId) => {
+    const filteredWorks = useMemo(() => 
+        allWorks.filter(w =>
+            !debouncedSearch || 
+            w.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+            w.ownerEmail?.toLowerCase().includes(debouncedSearch.toLowerCase())
+        ), [allWorks, debouncedSearch]
+    )
+
+    const handleDeleteJob = async (jobId) => {
         if (window.confirm('Delete this job posting? This cannot be undone.')) {
-            deleteJob(jobId)
-            setDeletedMsg('Job deleted successfully.')
-            setTimeout(() => setDeletedMsg(''), 3000)
+            const result = await deleteJob(jobId)
+            if (result.success) {
+                setDeletedMsg('Job deleted successfully.')
+                setTimeout(() => setDeletedMsg(''), 3000)
+            } else {
+                alert(result.error || 'Failed to delete job')
+            }
+        }
+    }
+
+    const handleDeleteUser = async (userId, userEmail) => {
+        if (ADMIN_EMAILS.includes(userEmail)) {
+            return alert('You cannot delete an admin account.')
+        }
+        if (window.confirm(`Delete user ${userEmail} and all their data? This action is permanent.`)) {
+            const result = await deleteUser(userId)
+            if (result.success) {
+                setDeletedMsg('User deleted successfully.')
+                setTimeout(() => setDeletedMsg(''), 3000)
+            } else {
+                alert(result.error || 'Failed to delete user')
+            }
+        }
+    }
+
+    const handleDeleteWork = async (workId, workName) => {
+        if (window.confirm(`Permanently remove work "${workName}"?`)) {
+            const result = await deleteWork(workId)
+            if (result.success) {
+                setDeletedMsg('Work entry removed.')
+                setTimeout(() => setDeletedMsg(''), 3000)
+            } else {
+                alert(result.error || 'Failed to delete work')
+            }
         }
     }
 
@@ -40,182 +105,308 @@ export default function AdminDashboard() {
         { key: 'overview', label: 'Overview', icon: BarChart2 },
         { key: 'users', label: `Users (${allUsers.length})`, icon: Users },
         { key: 'jobs', label: `Jobs (${allJobs.length})`, icon: Briefcase },
+        { key: 'works', label: `Works (${allWorks.length})`, icon: Video },
     ]
 
     return (
-        <div className="max-w-6xl mx-auto">
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.15)', color: 'var(--color-danger)' }}>
-                        <Shield size={20} />
+        <div className="max-w-6xl mx-auto pb-12">
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #991b1b 100%)', color: 'white' }}>
+                            <Shield size={24} />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-black tracking-tight">System Control</h1>
+                            <p className="text-sm font-medium" style={{ color: 'var(--color-text-dim)' }}>Administrator: {user.email}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-                        <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Logged in as {user.email}</p>
-                    </div>
+                    <button 
+                        onClick={() => refreshPlatformData()}
+                        className="btn-ghost flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border border-white/5 hover:bg-white/5 transition-all"
+                    >
+                        <RefreshCw size={14} /> Refresh Data
+                    </button>
                 </div>
             </motion.div>
 
             {deletedMsg && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                    className="mb-4 p-3 rounded-lg flex items-center gap-2 text-sm"
-                    style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--color-success)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                    <CheckCircle size={16} /> {deletedMsg}
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                    className="mb-6 p-4 rounded-xl flex items-center gap-3 text-sm font-bold shadow-xl"
+                    style={{ background: 'rgba(16,185,129,0.15)', color: 'var(--color-success)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <CheckCircle size={20} /> {deletedMsg}
                 </motion.div>
             )}
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {[
-                    { label: 'Total Users', value: allUsers.length, color: 'var(--color-primary-light)', icon: Users },
-                    { label: 'Active Jobs', value: allJobs.length, color: 'var(--color-secondary)', icon: Briefcase },
-                    { label: 'Artists', value: allUsers.filter(u => u.category === 'Artist').length, color: 'var(--color-accent)', icon: Eye },
-                    { label: 'Crew Members', value: allUsers.filter(u => u.category === 'Crew').length, color: 'var(--color-success)', icon: CheckCircle },
-                ].map(stat => (
-                    <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                        className="card p-5">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{stat.label}</span>
-                            <stat.icon size={16} style={{ color: stat.color }} />
+                    { label: 'Total Users', value: allUsers.length, color: '#6366f1', icon: Users, bg: 'rgba(99,102,241,0.1)' },
+                    { label: 'Active Jobs', value: allJobs.length, color: '#ec4899', icon: Briefcase, bg: 'rgba(236,72,153,0.1)' },
+                    { label: 'Artists', value: allUsers.filter(u => u.category === 'Artist').length, color: '#8b5cf6', icon: Eye, bg: 'rgba(139,92,246,0.1)' },
+                    { label: 'Crew Members', value: allUsers.filter(u => u.category === 'Crew').length, color: '#10b981', icon: CheckCircle, bg: 'rgba(16,185,129,0.1)' },
+                ].map((stat, i) => (
+                    <motion.div key={stat.label} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                        className="card p-6 border-0 shadow-lg group hover:translate-y-[-4px] transition-all">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: stat.bg, color: stat.color }}>
+                                <stat.icon size={20} />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--color-text-dim)' }}>Active Now</span>
                         </div>
-                        <div className="text-3xl font-black" style={{ color: stat.color }}>{stat.value}</div>
+                        <div className="text-3xl font-black mb-1" style={{ color: 'var(--color-text)' }}>{stat.value}</div>
+                        <div className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{stat.label}</div>
                     </motion.div>
                 ))}
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 mb-6 border-b" style={{ borderColor: 'var(--color-border)' }}>
+            <div className="flex gap-1 mb-8 p-1 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)' }}>
                 {tabs.map(tab => (
                     <button
                         key={tab.key}
                         onClick={() => { setActiveTab(tab.key); setSearch('') }}
-                        className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-all ${activeTab === tab.key ? 'border-primary text-primary' : 'border-transparent'}`}
-                        style={{ color: activeTab === tab.key ? 'var(--color-primary-light)' : 'var(--color-text-muted)' }}
+                        className={`flex-1 flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold rounded-xl transition-all ${activeTab === tab.key ? 'shadow-lg' : 'opacity-50 hover:opacity-100'}`}
+                        style={{ 
+                            background: activeTab === tab.key ? 'var(--color-bg-light)' : 'transparent',
+                            color: activeTab === tab.key ? 'var(--color-primary-light)' : 'var(--color-text-muted)'
+                        }}
                     >
-                        <tab.icon size={15} /> {tab.label}
+                        <tab.icon size={16} /> {tab.label}
                     </button>
                 ))}
             </div>
 
             {/* Search */}
             {activeTab !== 'overview' && (
-                <div className="relative mb-4">
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-dim)' }} />
-                    <input className="pl-9" placeholder={activeTab === 'users' ? 'Search users by name or email...' : 'Search jobs by title...'}
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative mb-6">
+                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-dim)' }} />
+                    <input className="pl-12 py-4 rounded-2xl border-0 shadow-inner" 
+                        style={{ background: 'rgba(255,255,255,0.03)' }}
+                        placeholder={
+                            activeTab === 'users' ? 'Search by name or email...' : 
+                            activeTab === 'jobs' ? 'Search jobs by title...' : 
+                            'Search works by name or owner...'
+                        }
                         value={search} onChange={e => setSearch(e.target.value)} />
-                </div>
+                </motion.div>
             )}
 
-            {/* Overview Tab */}
-            {activeTab === 'overview' && (
-                <div className="space-y-4">
-                    <div className="card p-6">
-                        <h3 className="font-bold mb-4 flex items-center gap-2"><BarChart2 size={16} style={{ color: 'var(--color-primary-light)' }} /> Platform Overview</h3>
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between py-2 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                                <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Admin Email</span>
-                                <span className="text-sm font-bold flex items-center gap-1"><Mail size={13} /> {ADMIN_EMAIL}</span>
-                            </div>
-                            <div className="flex items-center justify-between py-2 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                                <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Registered Users</span>
-                                <span className="text-sm font-bold text-primary">{allUsers.length}</span>
-                            </div>
-                            <div className="flex items-center justify-between py-2 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                                <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Job Postings</span>
-                                <span className="text-sm font-bold text-secondary">{allJobs.length}</span>
-                            </div>
-                            <div className="flex items-center justify-between py-2">
-                                <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Immediately Available</span>
-                                <span className="text-sm font-bold text-success">{allUsers.filter(u => u.availability === 'Immediately').length}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Recent Users */}
-                    <div className="card p-6">
-                        <h3 className="font-bold mb-4 flex items-center gap-2"><Users size={16} style={{ color: 'var(--color-secondary)' }} /> Recent Registrations</h3>
-                        <div className="space-y-3">
-                            {allUsers.slice(0, 5).map(u => (
-                                <div key={u.id} className="flex items-center gap-3 py-2 border-b last:border-0" style={{ borderColor: 'var(--color-border)' }}>
-                                    <div className="avatar avatar-sm">{(u.name || 'U').substring(0, 2).toUpperCase()}</div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold truncate">{u.name}</p>
-                                        <p className="text-xs truncate" style={{ color: 'var(--color-text-dim)' }}>{u.email}</p>
+            {/* Content Area */}
+            <motion.div layout>
+                {/* Overview Tab */}
+                {activeTab === 'overview' && (
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="card p-8 border-0 shadow-xl overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-4 opacity-10"><BarChart2 size={120} /></div>
+                            <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                                <span className="w-2 h-6 rounded-full" style={{ background: 'var(--color-primary)' }}></span>
+                                Platform Vitality
+                            </h3>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between py-3 border-b border-white/5">
+                                    <span className="text-sm font-medium" style={{ color: 'var(--color-text-dim)' }}>Admin Integrity</span>
+                                    <span className="text-sm font-black flex items-center gap-2 text-success"><Shield size={14} /> Verified Admin Pool</span>
+                                </div>
+                                <div className="flex items-center justify-between py-3 border-b border-white/5">
+                                    <span className="text-sm font-medium" style={{ color: 'var(--color-text-dim)' }}>Database Node</span>
+                                    <span className="text-xs font-mono font-bold px-2 py-1 rounded bg-white/5">AWS-AP-SOUTH-1</span>
+                                </div>
+                                <div className="flex items-center justify-between py-3">
+                                    <span className="text-sm font-medium" style={{ color: 'var(--color-text-dim)' }}>API Status</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-success animate-pulse"></div>
+                                        <span className="text-xs font-bold text-success">Operational</span>
                                     </div>
-                                    <span className="badge text-xs">{u.role || 'Unset'}</span>
                                 </div>
-                            ))}
+                            </div>
+                        </div>
+
+                        {/* Recent Users List */}
+                        <div className="card p-8 border-0 shadow-xl">
+                            <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                                <span className="w-2 h-6 rounded-full" style={{ background: '#ec4899' }}></span>
+                                New Joiners
+                            </h3>
+                            <div className="space-y-4">
+                                {allUsers.slice(0, 4).map(u => (
+                                    <div key={u.id} className="flex items-center gap-4 group">
+                                        <div className="avatar avatar-md shadow-lg group-hover:scale-105 transition-transform">
+                                            {u.photo ? <img src={u.photo} alt={u.name} className="w-full h-full object-cover" /> : (u.name || 'U').substring(0, 2).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold truncate">{u.name}</p>
+                                            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-dim)' }}>{u.role || 'GUEST'}</p>
+                                        </div>
+                                        <span className="text-[10px] font-mono opacity-50">{new Date(u.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Users Tab */}
-            {activeTab === 'users' && (
-                <div className="space-y-3">
-                    {filteredUsers.length === 0 ? (
-                        <div className="card p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>No users found</div>
-                    ) : filteredUsers.map(u => (
-                        <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                            className="card p-4 flex items-center gap-4">
-                            <div className="avatar avatar-md">
-                                {u.photo ? <img src={u.photo} alt={u.name} className="w-full h-full object-cover" /> : (u.name || 'U').substring(0, 2).toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-semibold truncate">{u.name}</p>
-                                <p className="text-xs truncate" style={{ color: 'var(--color-text-dim)' }}>{u.email}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    {u.role && <span className="badge text-xs">{u.role}</span>}
-                                    {u.location && <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{u.location}</span>}
+                {/* Users Management */}
+                {activeTab === 'users' && (
+                    <div className="grid gap-4">
+                        {filteredUsers.length === 0 ? (
+                            <div className="card p-12 text-center font-bold opacity-50">Zero results match your lookup</div>
+                        ) : filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(u => (
+                            <motion.div key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                className="card p-5 flex items-center gap-5 group hover:shadow-2xl transition-all border-0">
+                                <div className="avatar avatar-lg shadow-xl shrink-0">
+                                    {u.photo ? <img src={u.photo} alt={u.name} className="w-full h-full object-cover" /> : (u.name || 'U').substring(0, 2).toUpperCase()}
                                 </div>
-                            </div>
-                            <div className="text-right shrink-0">
-                                <span className={`badge ${u.availability === 'Immediately' ? 'badge-success' : 'badge-warning'} text-xs`}>
-                                    {u.availability || 'Not set'}
-                                </span>
-                                {u.email === ADMIN_EMAIL && (
-                                    <div className="text-xs mt-1 font-bold" style={{ color: 'var(--color-danger)' }}>Admin</div>
-                                )}
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            )}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <p className="text-lg font-black truncate">{u.name}</p>
+                                        {ADMIN_EMAILS.includes(u.email) && <span className="badge badge-error text-[10px] font-black uppercase py-0.5">Admin</span>}
+                                    </div>
+                                    <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text-dim)' }}>{u.email}</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {u.category && <span className="badge text-[10px] font-black uppercase" style={{ background: 'rgba(255,255,255,0.05)' }}>{u.category}</span>}
+                                        {u.role && <span className="badge text-[10px] font-black uppercase" style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}>{u.role}</span>}
+                                        {u.location && <span className="text-[10px] font-bold opacity-40 flex items-center gap-1 uppercase tracking-widest">{u.location}</span>}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-3 shrink-0">
+                                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md tracking-tighter ${u.availability === 'Immediately' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}`}>
+                                        {u.availability || 'Pending'}
+                                    </span>
+                                    {!ADMIN_EMAILS.includes(u.email) && (
+                                        <button
+                                            onClick={() => handleDeleteUser(u.id, u.email)}
+                                            className="w-10 h-10 rounded-xl flex items-center justify-center text-danger hover:bg-danger/10 transition-colors"
+                                            title="Permanently Remove User"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
+                                    )}
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
 
-            {/* Jobs Tab */}
-            {activeTab === 'jobs' && (
-                <div className="space-y-3">
-                    {filteredJobs.length === 0 ? (
-                        <div className="card p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>No job postings found</div>
-                    ) : filteredJobs.map(job => (
-                        <motion.div key={job.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                            className="card p-5 flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--color-primary-light)' }}>
-                                <Briefcase size={18} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-semibold">{job.title}</p>
-                                <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-dim)' }}>
-                                    Posted by: {job.createdBy?.name || 'Unknown'} • {job.location || 'Location N/A'}
-                                </p>
-                                <p className="text-xs mt-1 line-clamp-1" style={{ color: 'var(--color-text-muted)' }}>{job.description}</p>
-                                <div className="flex items-center gap-2 mt-2">
-                                    {job.projectType && <span className="badge text-xs">{job.projectType}</span>}
-                                    {job.budget && <span className="badge badge-success text-xs">₹{job.budget}</span>}
+                {/* Jobs Management */}
+                {activeTab === 'jobs' && (
+                    <div className="grid gap-4">
+                        {filteredJobs.length === 0 ? (
+                            <div className="card p-12 text-center font-bold opacity-50">No active job deployments recorded</div>
+                        ) : filteredJobs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(job => (
+                            <motion.div key={job.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                className="card p-6 border-0 shadow-lg hover:shadow-2xl transition-all flex items-start gap-6 group">
+                                <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner" 
+                                    style={{ background: 'rgba(236,72,153,0.05)', color: '#ec4899' }}>
+                                    <Briefcase size={24} />
                                 </div>
-                            </div>
-                            <button
-                                onClick={() => handleDeleteJob(job.id)}
-                                className="shrink-0 btn btn-ghost btn-icon btn-sm"
-                                style={{ color: 'var(--color-danger)' }}
-                                title="Delete Job"
-                            >
-                                <Trash2 size={16} />
-                            </button>
-                        </motion.div>
-                    ))}
-                </div>
-            )}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="text-xl font-black truncate">{job.title}</h3>
+                                        <button
+                                            onClick={() => handleDeleteJob(job.id)}
+                                            className="w-10 h-10 rounded-xl flex items-center justify-center text-danger hover:bg-danger/10 opacity-0 group-hover:opacity-100 transition-all"
+                                            title="Terminate Job Posting"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <span className="text-xs font-bold" style={{ color: 'var(--color-text-dim)' }}>
+                                            Posted by: <span className="text-white">{job.createdBy?.name || 'Unknown'}</span>
+                                        </span>
+                                        <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                        <span className="text-xs font-bold" style={{ color: 'var(--color-text-dim)' }}>{job.location || 'Remote'}</span>
+                                    </div>
+                                    <p className="text-sm line-clamp-2 mb-4 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>{job.description}</p>
+                                    <div className="flex items-center gap-3">
+                                        {job.projectType && <span className="badge badge-secondary text-[10px] font-black uppercase">{job.projectType}</span>}
+                                        {job.budget && <span className="badge badge-success text-[10px] font-black uppercase">REWARD: ₹{job.budget}</span>}
+                                        <span className="text-[10px] font-mono opacity-30 ml-auto">DEPLOYED: {new Date(job.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Works Management */}
+                {activeTab === 'works' && (
+                    <div className="grid gap-4">
+                        {filteredWorks.length === 0 ? (
+                            <div className="card p-12 text-center font-bold opacity-50">No portfolio works uploaded yet</div>
+                        ) : filteredWorks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(work => (
+                            <motion.div key={work.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                className="card p-5 border-0 shadow-lg hover:shadow-2xl transition-all flex items-center gap-6 group">
+                                <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-inner bg-black/20 flex items-center justify-center shrink-0">
+                                    {work.source_type === 'youtube' ? (
+                                        <div className="text-danger flex flex-col items-center gap-1">
+                                            <Video size={24} />
+                                            <span className="text-[8px] font-black uppercase">YouTube</span>
+                                        </div>
+                                    ) : (
+                                        <div className="text-primary flex flex-col items-center gap-1">
+                                            <Sparkles size={24} />
+                                            <span className="text-[8px] font-black uppercase">{work.source_type || 'File'}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-4 mb-2">
+                                        <h3 className="text-lg font-black truncate">{work.name}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <a href={work.file_url || work.source_url} target="_blank" rel="noopener noreferrer"
+                                                className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors"
+                                                title="View Source"
+                                            >
+                                                <Eye size={18} />
+                                            </a>
+                                            <button
+                                                onClick={() => handleDeleteWork(work.id, work.name)}
+                                                className="w-10 h-10 rounded-xl flex items-center justify-center text-danger hover:bg-danger/10 transition-colors"
+                                                title="Delete Work"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <span className="text-[10px] font-black uppercase text-white/40">Owner:</span>
+                                        <span className="text-xs font-bold text-white/80">{work.ownerName || 'Unknown'}</span>
+                                        <span className="text-xs font-medium text-white/40">({work.ownerEmail})</span>
+                                        <div className="ml-auto text-[10px] font-mono opacity-30 uppercase">
+                                            Uploaded: {new Date(work.created_at).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Pagination UI */}
+                {activeTab !== 'overview' && (
+                    <div className="mt-8 flex items-center justify-center gap-4">
+                        <button 
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => prev - 1)}
+                            className="px-6 py-2 rounded-xl bg-white/5 font-bold disabled:opacity-20 hover:bg-white/10 transition-all"
+                        >
+                            Previous
+                        </button>
+                        <span className="text-sm font-black opacity-40">
+                            Page {currentPage} of {Math.ceil((activeTab === 'users' ? filteredUsers.length : activeTab === 'jobs' ? filteredJobs.length : filteredWorks.length) / itemsPerPage) || 1}
+                        </span>
+                        <button 
+                            disabled={currentPage >= Math.ceil((activeTab === 'users' ? filteredUsers.length : activeTab === 'jobs' ? filteredJobs.length : filteredWorks.length) / itemsPerPage)}
+                            onClick={() => setCurrentPage(prev => prev + 1)}
+                            className="px-6 py-2 rounded-xl bg-white/5 font-bold disabled:opacity-20 hover:bg-white/10 transition-all"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
+            </motion.div>
         </div>
     )
 }

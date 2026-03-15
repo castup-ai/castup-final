@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
+import { authService } from '../services/auth.service'
 import api from '../services/api'
 
 export default function ForgotPassword() {
@@ -16,15 +17,15 @@ export default function ForgotPassword() {
         setError('')
 
         try {
-            const response = await api.post('/auth/forgot-password', { email });
+            const result = await authService.forgotPassword(email);
 
-            if (response.data.success) {
+            if (result.success) {
                 setSubmitted(true)
             } else {
-                setError(response.data.error || 'Failed to send reset link.')
+                setError(result.error || 'Failed to send reset link.')
             }
         } catch (err) {
-            setError(err.response?.data?.error || 'Could not connect to the server. Please try again.')
+            setError('Could not connect to the server. Please try again.')
         } finally {
             setLoading(false)
         }

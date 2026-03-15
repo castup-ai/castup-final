@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/auth.service';
 import { castingService } from '../services/casting.service';
+import { adminService } from '../services/admin.service';
 import api from '../services/api';
 
 const RealAuthContext = createContext(null);
@@ -15,6 +16,23 @@ export function RealAuthProvider({ children }) {
     const [notifications, setNotifications] = useState([]);
     const [appliedJobs, setAppliedJobs] = useState([]);
     const [allJobs, setAllJobs] = useState([]);
+    const [allWorks, setAllWorks] = useState([]);
+
+    const refreshPlatformData = async () => {
+        try {
+            const [jobsRes, usersRes, worksRes] = await Promise.all([
+                castingService.getAll(),
+                authService.getAllUsers(),
+                adminService.getAllWorks()
+            ]);
+
+            if (jobsRes.success) setAllJobs(jobsRes.data || []);
+            if (usersRes.success) setAllUsers(usersRes.data || []);
+            if (worksRes.success) setAllWorks(worksRes.data || []);
+        } catch (error) {
+            console.error("Error refreshing platform data:", error);
+        }
+    };
 
     useEffect(() => {
         const initAuth = async () => {
@@ -36,13 +54,7 @@ export function RealAuthProvider({ children }) {
             }
 
             // Fetch initial data
-            const [jobsRes, usersRes] = await Promise.all([
-                castingService.getAll(),
-                authService.getAllUsers()
-            ]);
-
-            if (jobsRes.success) setAllJobs(jobsRes.data);
-            if (usersRes.success) setAllUsers(usersRes.data);
+            await refreshPlatformData();
             
             setLoading(false);
         };
@@ -94,6 +106,7 @@ export function RealAuthProvider({ children }) {
             setUser(data.user);
             setToken(data.token);
             localStorage.setItem('castup_auth_real', JSON.stringify({ token: data.token }));
+            await refreshPlatformData();
             return { success: true, user: data.user };
         }
 
@@ -107,6 +120,7 @@ export function RealAuthProvider({ children }) {
             setUser(resultData.user);
             setToken(resultData.token);
             localStorage.setItem('castup_auth_real', JSON.stringify({ token: resultData.token }));
+            await refreshPlatformData();
             return { success: true, user: resultData.user };
         }
 
@@ -129,8 +143,32 @@ export function RealAuthProvider({ children }) {
     }
 
     const deleteJob = async (jobId) => {
-        setAllJobs(prev => prev.filter(j => j.id !== jobId));
-        return { success: true };
+        const { success, error } = await adminService.deleteJob(jobId);
+        if (success) {
+            setAllJobs(prev => prev.filter(j => j.id !== jobId));
+            return { success: true };
+        }
+        return { success: false, error };
+    }
+
+    const deleteUser = async (userId) => {
+        const { success, error } = await adminService.deleteUser(userId);
+        if (success) {
+            setAllUsers(prev => prev.filter(u => u.id !== userId));
+            // Also refresh other data in case cascaded deletes happened
+            refreshPlatformData();
+            return { success: true };
+        }
+        return { success: false, error };
+    }
+
+    const deleteWork = async (workId) => {
+        const { success, error } = await adminService.deleteWork(workId);
+        if (success) {
+            setAllWorks(prev => prev.filter(w => w.id !== workId));
+            return { success: true };
+        }
+        return { success: false, error };
     }
 
     const addNotification = async (notif) => {
@@ -220,8 +258,12 @@ export function RealAuthProvider({ children }) {
             showAuthModal, setShowAuthModal,
             allUsers,
             allJobs,
+            allWorks,
             addJob,
             deleteJob,
+            deleteUser,
+            deleteWork,
+            refreshPlatformData,
             notifications,
             addNotification,
             sendTargetedNotification,

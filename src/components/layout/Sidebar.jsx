@@ -2,10 +2,12 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/RealAuthContext'
 import {
     Home, Compass, FileText, Briefcase, Upload,
-    Bot, MapPin, Video, Phone, User, ChevronLeft, ChevronRight, Sparkles, LogOut
+    Bot, MapPin, Video, Phone, User, ChevronLeft, ChevronRight, Sparkles, LogOut, Shield
 } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+
+const ADMIN_EMAILS = ['castup4862446@gmail.com', 'castupaiapp@gmail.com']
 
 const navItems = [
     { path: '/home', label: 'Home', icon: Home },
@@ -139,6 +141,36 @@ export default function Sidebar() {
                         </NavLink>
                     ))}
                 </div>
+
+                {/* Admin Dashboard */}
+                {user && ADMIN_EMAILS.includes(user.email) && (
+                    <div className="pt-3 mt-3 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                        <NavLink
+                            to="/admin"
+                            className={({ isActive }) =>
+                                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? 'text-white' : 'hover:bg-[var(--color-surface-light)]'
+                                }`
+                            }
+                            style={({ isActive }) => isActive ? {
+                                background: 'linear-gradient(135deg, var(--color-danger), var(--color-danger-dark))',
+                            } : { color: 'var(--color-text-dim)' }}
+                        >
+                            <Shield size={20} className="text-danger" />
+                            <AnimatePresence>
+                                {!collapsed && (
+                                    <motion.span
+                                        initial={{ opacity: 0, width: 0 }}
+                                        animate={{ opacity: 1, width: 'auto' }}
+                                        exit={{ opacity: 0, width: 0 }}
+                                        className="whitespace-nowrap overflow-hidden font-bold"
+                                    >
+                                        Admin Dashboard
+                                    </motion.span>
+                                )}
+                            </AnimatePresence>
+                        </NavLink>
+                    </div>
+                )}
 
                 {/* Contact Us */}
                 <div className="pt-3 mt-3 border-t" style={{ borderColor: 'var(--color-border)' }}>

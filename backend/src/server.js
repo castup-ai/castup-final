@@ -8,6 +8,7 @@ import portfolioRoutes from './routes/portfolios.js';
 import userRoutes from './routes/users.js';
 import castingRoutes from './routes/casting.js';
 import aiRoutes from './routes/ai.js';
+import adminRoutes from './routes/admin.js';
 import initializeDatabase from './config/init-db.js';
 
 // Load environment variables
@@ -53,6 +54,7 @@ app.use('/api/portfolios', portfolioRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/casting', castingRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Root route - API Welcome
 app.get('/', (req, res) => {

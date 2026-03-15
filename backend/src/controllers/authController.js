@@ -179,8 +179,9 @@ export const forgotPassword = async (req, res) => {
         const resetUrl = `${process.env.CLIENT_URL || 'https://castup-frontend.vercel.app'}/reset-password/${token}`;
         console.log('Reset URL generated:', resetUrl);
 
-        // Send password reset email
-        await sendEmail({
+        // Send password reset email asynchronously - don't await!
+        // This prevents the API from hanging if SMTP is slow
+        sendEmail({
             to: user.email,
             subject: 'CastUp - Reset Your Password',
             html: `
@@ -195,7 +196,14 @@ export const forgotPassword = async (req, res) => {
                     <p style="color: #475569; font-size: 12px;">© 2025 CastUp. Your cinema industry companion.</p>
                 </div>
             `
+        }).then(sent => {
+            if (sent) console.log(`✅ Reset email successfully queued for ${user.email}`);
+            else console.error(`❌ Failed to send reset email to ${user.email}`);
+        }).catch(err => {
+            console.error('❌ Email sending error:', err);
         });
+
+        console.log(`ℹ️ Responding to client for forgot-password request (${user.email})`);
 
         res.json({
             success: true,
