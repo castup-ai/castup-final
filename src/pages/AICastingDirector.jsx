@@ -270,7 +270,7 @@ export default function AICastingDirector() {
                                     >
                                         <div className="flex items-start gap-4">
                                             <div className="relative">
-                                                <div className="avatar avatar-lg">{(user.name?.split(" ")[0])[0]}{user.lastName[0]}</div>
+                                                <div className="avatar avatar-lg">{(user.name?.split(" ")[0])?.[0] || 'U'}{user.lastName?.[0] || ''}</div>
                                                 <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                                                     style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}>
                                                     #{i + 1}
