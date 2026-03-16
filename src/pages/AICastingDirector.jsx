@@ -121,7 +121,10 @@ export default function AICastingDirector() {
             if (criteria.skills) {
                 const skillList = criteria.skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
                 if (skillList.length > 0) {
-                    matches = matches.filter(u => u.skills?.some(s => skillList.some(sk => s.toLowerCase().includes(sk))))
+                    matches = matches.filter(u => {
+                        const userSkills = Array.isArray(u.skills) ? u.skills : (typeof u.skills === 'string' ? u.skills.split(',') : []);
+                        return userSkills.some(s => skillList.some(sk => typeof s === 'string' && s.toLowerCase().includes(sk)));
+                    })
                 }
             }
             if (criteria.ageRange !== 'Any') {
@@ -293,7 +296,12 @@ export default function AICastingDirector() {
                                                 </div>
                                                 <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>{user.bio}</p>
                                                 <div className="flex flex-wrap gap-1.5 mt-2">
-                                                    {user.skills?.slice(0, 4).map(s => <span key={s} className="badge text-xs">{s}</span>)}
+                                                    {(Array.isArray(user.skills) ? user.skills : (typeof user.skills === 'string' ? user.skills.split(',') : []))
+                                                        .slice(0, 4)
+                                                        .map(s => {
+                                                            const skillName = typeof s === 'string' ? s.trim() : s;
+                                                            return skillName ? <span key={skillName} className="badge text-xs">{skillName}</span> : null;
+                                                        })}
                                                 </div>
                                                 <div className="flex gap-2 mt-3">
                                                     <button className="btn btn-outline btn-sm"><Mail size={14} /> Connect</button>
