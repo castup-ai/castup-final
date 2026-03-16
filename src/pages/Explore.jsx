@@ -174,11 +174,48 @@ export default function Explore() {
         }
     }, [location.key, location.state?.viewProfileId, allUsers]);
 
-    const filtered = allUsers.filter(u => {
+    let filtered = allUsers.filter(u => {
         if (user && String(u.id) === String(user.id)) return false;
-        if (filters.location && !u.location?.toLowerCase().includes(filters.location.toLowerCase())) return false
-        return true
+        
+        // Category filtering (case insensitive)
+        if (filters.category !== 'All') {
+            const list = filters.category === 'Artist' ? ARTIST_ROLES : CREW_ROLES;
+            const lowerList = list.map(r => r.toLowerCase());
+            if (!u.role || !lowerList.includes(u.role.toLowerCase())) return false;
+        }
+
+        // Role filtering
+        if (filters.role !== 'All' && u.role?.toLowerCase() !== filters.role.toLowerCase()) return false;
+        
+        // Experience filtering
+        if (filters.experience !== 'All' && u.experience !== filters.experience) return false;
+        
+        // Availability filtering
+        if (filters.availability !== 'All' && u.availability !== filters.availability) return false;
+
+        // Location filtering
+        if (filters.location) {
+            const searchLoc = filters.location.trim().toLowerCase();
+            if (!u.location || !u.location.toLowerCase().includes(searchLoc)) return false;
+        }
+
+        // Search text filtering
+        if (search) {
+            const s = search.toLowerCase();
+            if (!u.name?.toLowerCase().includes(s)) return false;
+        }
+
+        return true;
     })
+
+    // Sorting
+    if (filters.sort === 'Top Rated') {
+        filtered.sort((a, b) => (b.rating || b.yearsOfExperience || 0) - (a.rating || a.yearsOfExperience || 0));
+    } else if (filters.sort === 'Most Viewed') {
+        filtered.sort((a, b) => (b.views || b.projectsCount || 0) - (a.views || a.projectsCount || 0));
+    } else { // Most Recent or default
+        filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
 
     const resetFilters = () => {
         setFilters({ experience: 'All', availability: 'All', category: 'All', role: 'All', location: '', sort: 'Most Recent' })

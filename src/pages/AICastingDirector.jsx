@@ -101,10 +101,12 @@ export default function AICastingDirector() {
         setTimeout(() => {
             let matches = [...allUsers]
             if (criteria.role !== 'All') {
-                matches = matches.filter(u => u.role === criteria.role)
+                const searchRole = criteria.role.toLowerCase()
+                matches = matches.filter(u => u.role && u.role.toLowerCase() === searchRole)
             } else if (criteria.category !== 'All') {
                 const list = criteria.category === 'Artist' ? ARTIST_ROLES : CREW_ROLES
-                matches = matches.filter(u => list.includes(u.role))
+                const lowerList = list.map(r => r.toLowerCase())
+                matches = matches.filter(u => u.role && lowerList.includes(u.role.toLowerCase()))
             }
             if (criteria.experience && criteria.experience !== 'Any') {
                 matches = matches.filter(u => u.experience === criteria.experience)
