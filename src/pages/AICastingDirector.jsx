@@ -71,6 +71,28 @@ export default function AICastingDirector() {
         else if (desc.includes('intermediate') || desc.includes('some experience')) newCriteria.experience = 'Intermediate'
         else if (desc.includes('expert') || desc.includes('experienced') || desc.includes('professional')) newCriteria.experience = 'Expert'
 
+        // Detect Location using Regex (e.g., "in Bangalore", "from Mumbai", "based in Delhi")
+        const locationMatch = desc.match(/(?:in|from|at|based in)\s+([a-zA-Z]+)/i)
+        if (locationMatch && locationMatch[1]) {
+            // Capitalize first letter of city
+            newCriteria.location = locationMatch[1].charAt(0).toUpperCase() + locationMatch[1].slice(1)
+        }
+
+        // Detect Skills (basic keyword matching for common skills, or extract after "skills like" / "who can")
+        const commonSkills = ['dance', 'singing', 'acting', 'editing', 'writing', 'martial arts', 'swimming', 'driving']
+        const foundSkills = commonSkills.filter(skill => desc.includes(skill))
+        
+        const skillsMatch = desc.match(/(?:skills like|who can|good at|knows)\s+([a-zA-Z\s,]+)/i)
+        if (skillsMatch && skillsMatch[1]) {
+            const extracted = skillsMatch[1].split(',').map(s => s.trim()).filter(Boolean)
+            foundSkills.push(...extracted)
+        }
+        
+        if (foundSkills.length > 0) {
+            // Remove duplicates and join
+            newCriteria.skills = [...new Set(foundSkills)].map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')
+        }
+
         setCriteria(newCriteria)
     }
 
