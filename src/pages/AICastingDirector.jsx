@@ -106,12 +106,21 @@ export default function AICastingDirector() {
                 const list = criteria.category === 'Artist' ? ARTIST_ROLES : CREW_ROLES
                 matches = matches.filter(u => list.includes(u.role))
             }
-            if (criteria.experience) matches = matches.filter(u => u.experience === criteria.experience)
-            if (criteria.gender !== 'Any') matches = matches.filter(u => u.gender === criteria.gender)
-            if (criteria.location) matches = matches.filter(u => u.location?.toLowerCase().includes(criteria.location.toLowerCase()))
+            if (criteria.experience && criteria.experience !== 'Any') {
+                matches = matches.filter(u => u.experience === criteria.experience)
+            }
+            if (criteria.gender && criteria.gender !== 'Any') {
+                matches = matches.filter(u => u.gender === criteria.gender)
+            }
+            if (criteria.location) {
+                const searchLoc = criteria.location.trim().toLowerCase();
+                matches = matches.filter(u => u.location && u.location.toLowerCase().includes(searchLoc))
+            }
             if (criteria.skills) {
-                const skillList = criteria.skills.split(',').map(s => s.trim().toLowerCase())
-                matches = matches.filter(u => u.skills?.some(s => skillList.some(sk => s.toLowerCase().includes(sk))))
+                const skillList = criteria.skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
+                if (skillList.length > 0) {
+                    matches = matches.filter(u => u.skills?.some(s => skillList.some(sk => s.toLowerCase().includes(sk))))
+                }
             }
             if (criteria.ageRange !== 'Any') {
                 const [min, max] = criteria.ageRange.includes('+') ? [parseInt(criteria.ageRange), 100] : criteria.ageRange.split('-').map(Number)
