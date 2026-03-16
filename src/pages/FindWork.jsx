@@ -57,7 +57,7 @@ export default function FindWork() {
         state: ''
     })
 
-    const isProfileComplete = user && (user.name?.split(" ")[0]) && user.role
+    const isProfileComplete = user && user.name && (user.role || user.department);
 
     // Derived lists for filters
     const uniqueCountries = useMemo(() => [...new Set(allJobs.map(j => j.country).filter(Boolean))].sort(), [allJobs])

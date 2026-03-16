@@ -1,6 +1,6 @@
 import { MessageSquare, Bell, CheckCheck, Briefcase, AlertCircle } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/RealAuthContext'
 
 export default function TopBar() {
@@ -9,6 +9,7 @@ export default function TopBar() {
     const [showMessages, setShowMessages] = useState(false)
     const notifRef = useRef(null)
     const msgRef = useRef(null)
+    const navigate = useNavigate()
 
     const unreadCount = notifications.filter(n => !n.read).length
 
@@ -113,7 +114,13 @@ export default function TopBar() {
                                 const meta = typeof n.metadata === 'string' ? JSON.parse(n.metadata || '{}') : (n.metadata || {});
                                 return (
                                 <div key={n.id} className={`p-4 border-b transition-colors cursor-pointer ${!n.read ? 'bg-primary/5' : 'hover:bg-white/5'}`}
-                                    style={{ borderColor: 'var(--color-border)' }}>
+                                    style={{ borderColor: 'var(--color-border)' }}
+                                    onClick={() => {
+                                        if (meta.senderId) {
+                                            navigate('/explore', { state: { viewProfileId: meta.senderId } });
+                                        }
+                                        setShowNotifs(false);
+                                    }}>
                                     <div className="flex gap-3">
                                         <div className={`avatar avatar-sm shrink-0 ${n.type === 'applied' ? 'bg-success/20 text-success' : 'bg-primary/20 text-primary'}`}>
                                             {getNotifIcon(n.type)}

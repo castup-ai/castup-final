@@ -165,7 +165,17 @@ export default function Explore() {
         return ['All', ...ARTIST_ROLES, ...CREW_ROLES].sort()
     }
 
+    useEffect(() => {
+        if (location.state?.viewProfileId && allUsers.length > 0) {
+            const profile = allUsers.find(u => String(u.id) === String(location.state.viewProfileId));
+            if (profile) {
+                setSelectedProfile(profile);
+            }
+        }
+    }, [location.key, location.state?.viewProfileId, allUsers]);
+
     const filtered = allUsers.filter(u => {
+        if (user && String(u.id) === String(user.id)) return false;
         if (filters.location && !u.location?.toLowerCase().includes(filters.location.toLowerCase())) return false
         return true
     })
@@ -430,21 +440,21 @@ export default function Explore() {
                                                     <span className="text-[9px] font-black text-primary/60 uppercase tracking-widest mb-1">Experience</span>
                                                     <div className="flex items-center gap-2">
                                                         <Briefcase size={12} className="text-primary" />
-                                                        <span className="text-xs font-bold leading-none">{user.yearsOfExperience || '5+'} Years</span>
+                                                        <span className="text-xs font-bold leading-none">{user.yearsOfExperience || '0'} Years</span>
                                                     </div>
                                                 </div>
                                                 <div className="bg-success/5 p-3 rounded-xl border border-success/10 flex flex-col items-center justify-center text-center">
                                                     <span className="text-[9px] font-black text-success/60 uppercase tracking-widest mb-1">Projects</span>
                                                     <div className="flex items-center gap-2">
                                                         <Clapperboard size={12} className="text-success" />
-                                                        <span className="text-xs font-bold leading-none capitalize">{user.projectsCount || '10+'} Completed</span>
+                                                        <span className="text-xs font-bold leading-none capitalize">{user.projectsCount || '0'} Completed</span>
                                                     </div>
                                                 </div>
                                                 <div className="bg-accent/5 p-3 rounded-xl border border-accent/10 flex flex-col items-center justify-center text-center">
                                                     <span className="text-[9px] font-black text-accent/60 uppercase tracking-widest mb-1">Languages</span>
                                                     <div className="flex items-center gap-2">
                                                         <Languages size={12} className="text-accent" />
-                                                        <span className="text-xs font-bold leading-none">{user.languages?.length ? user.languages.length : 2} Known</span>
+                                                        <span className="text-xs font-bold leading-none">{user.languages?.length ? user.languages.length : 0} Known</span>
                                                     </div>
                                                 </div>
                                             </div>

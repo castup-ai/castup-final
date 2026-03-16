@@ -73,8 +73,8 @@ export function RealAuthProvider({ children }) {
                 }
             }
 
-            // Fetch initial data
-            await refreshPlatformData();
+            // Fetch initial data in background, don't block render
+            refreshPlatformData();
             
             setLoading(false);
         };
