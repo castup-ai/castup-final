@@ -233,6 +233,25 @@ export function RealAuthProvider({ children }) {
         }
     };
 
+    const acceptConnection = async (notification) => {
+        // Send an 'accepted' notification back to the sender
+        const meta = typeof notification.metadata === 'string' ? JSON.parse(notification.metadata || '{}') : (notification.metadata || {});
+        if (meta.senderId) {
+            await authService.sendNotification(meta.senderId, {
+                type: 'connect_accepted',
+                title: 'Connection Accepted',
+                message: `${user.name} accepted your connection request.`,
+                metadata: { senderId: user.id, senderName: user.name }
+            });
+        }
+        // Mark this notification as actioned (remove from unread list)
+        setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true, status: 'accepted' } : n));
+    };
+
+    const declineConnection = (notificationId) => {
+        setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true, status: 'declined' } : n));
+    };
+
     const applyForJob = async (jobId) => {
         if (!user) return;
 
@@ -296,6 +315,8 @@ export function RealAuthProvider({ children }) {
             addNotification,
             sendTargetedNotification,
             markAllRead,
+            acceptConnection,
+            declineConnection,
             appliedJobs,
             applyForJob,
             updateProfile

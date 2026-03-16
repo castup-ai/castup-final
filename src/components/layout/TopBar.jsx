@@ -1,10 +1,10 @@
-import { MessageSquare, Bell, CheckCheck, Briefcase, AlertCircle } from 'lucide-react'
+import { MessageSquare, Bell, CheckCheck, Briefcase, AlertCircle, UserPlus } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/RealAuthContext'
 
 export default function TopBar() {
-    const { isAuthenticated, requireAuth, notifications, markAllRead } = useAuth()
+    const { isAuthenticated, requireAuth, notifications, markAllRead, acceptConnection, declineConnection } = useAuth()
     const [showNotifs, setShowNotifs] = useState(false)
     const [showMessages, setShowMessages] = useState(false)
     const notifRef = useRef(null)
@@ -29,6 +29,7 @@ export default function TopBar() {
     const getNotifIcon = (type) => {
         if (type === 'applied') return <Briefcase size={16} />
         if (type === 'alert') return <AlertCircle size={16} />
+        if (type === 'connect' || type === 'connect_accepted') return <UserPlus size={16} />
         return <Bell size={16} />
     }
 
@@ -121,8 +122,8 @@ export default function TopBar() {
                                         }
                                         setShowNotifs(false);
                                     }}>
-                                    <div className="flex gap-3">
-                                        <div className={`avatar avatar-sm shrink-0 ${n.type === 'applied' ? 'bg-success/20 text-success' : 'bg-primary/20 text-primary'}`}>
+                                         <div className="flex gap-3">
+                                        <div className={`avatar avatar-sm shrink-0 ${n.type === 'applied' ? 'bg-success/20 text-success' : n.type === 'connect' || n.type === 'connect_accepted' ? 'bg-accent/20 text-accent' : 'bg-primary/20 text-primary'}`}>
                                             {getNotifIcon(n.type)}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -135,6 +136,32 @@ export default function TopBar() {
                                                 )}
                                             </p>
                                             <p className="text-xs mt-0.5 leading-snug" style={{ color: 'var(--color-text-dim)' }}>{n.message}</p>
+                                            {/* Accept/Decline buttons for connection requests */}
+                                            {n.type === 'connect' && !n.status && (
+                                                <div className="flex gap-2 mt-2" onClick={e => e.stopPropagation()}>
+                                                    <button
+                                                        className="px-3 py-1 text-xs font-bold bg-primary text-white rounded-lg hover:bg-primary/80 transition-all"
+                                                        onClick={() => acceptConnection(n)}
+                                                    >
+                                                        Accept
+                                                    </button>
+                                                    <button
+                                                        className="px-3 py-1 text-xs font-bold bg-bg-offset border border-border rounded-lg hover:border-danger hover:text-danger transition-all"
+                                                        onClick={() => declineConnection(n.id)}
+                                                    >
+                                                        Decline
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {n.type === 'connect' && n.status === 'accepted' && (
+                                                <span className="inline-block mt-2 text-xs font-bold text-success">✓ Accepted</span>
+                                            )}
+                                            {n.type === 'connect' && n.status === 'declined' && (
+                                                <span className="inline-block mt-2 text-xs font-bold text-text-muted">Declined</span>
+                                            )}
+                                            {n.type === 'connect_accepted' && (
+                                                <span className="inline-block mt-2 text-xs font-bold text-success">✓ You are now connected!</span>
+                                            )}
                                             <p className="text-[10px] mt-1.5 font-medium" style={{ color: 'var(--color-text-muted)' }}>{timeAgo(n.timestamp)}</p>
                                         </div>
                                         {!n.read && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1" />}

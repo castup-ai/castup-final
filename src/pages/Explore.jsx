@@ -6,7 +6,7 @@ import {
     Search, Filter, X, Mail, MessageSquare, Share2,
     MapPin, Calendar, Award, Briefcase, Globe, Star,
     ChevronDown, Languages, CheckCircle, Heart, MoreHorizontal,
-    User, Camera, Instagram, Youtube, Linkedin, Twitter, ExternalLink,
+    User, UserCheck, Camera, Instagram, Youtube, Linkedin, Twitter, ExternalLink,
     Play, Clock, Ruler, Droplets, Image as ImageIcon, Clapperboard, Eye, FileVideo,
     X as CloseIcon, ChevronLeft, ChevronRight
 } from 'lucide-react'
@@ -57,6 +57,7 @@ export default function Explore() {
     const [portfolioData, setPortfolioData] = useState(null)
     const [fetchingPortfolio, setFetchingPortfolio] = useState(false)
     const [lightbox, setLightbox] = useState(null) // { project, fileIndex }
+    const [sentConnections, setSentConnections] = useState(new Set()) // track pending requests per session
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -93,6 +94,7 @@ export default function Explore() {
         setActionLoading(prev => ({ ...prev, connect: false }))
         if (success) {
             setActionStatus(prev => ({ ...prev, connect: 'Sent' }))
+            setSentConnections(prev => new Set([...prev, targetUserId])) // mark as pending
             setActiveAction(null)
             setCustomMessage('')
             addNotification({
@@ -589,12 +591,21 @@ export default function Explore() {
                                         <div className="flex flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
                                             {!activeAction ? (
                                                 <>
-                                                    <button 
-                                                        onClick={() => setActiveAction('connect')}
-                                                        className="flex-1 md:flex-none h-11 px-6 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-                                                    >
-                                                        <User size={16} /> Connect
-                                                    </button>
+                                                    {sentConnections.has(String(selectedProfile.id)) ? (
+                                                        <button
+                                                            disabled
+                                                            className="flex-1 md:flex-none h-11 px-6 bg-bg-offset text-text-muted border border-border rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed"
+                                                        >
+                                                            <UserCheck size={16} /> Pending...
+                                                        </button>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={() => setActiveAction('connect')}
+                                                            className="flex-1 md:flex-none h-11 px-6 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                                                        >
+                                                            <User size={16} /> Connect
+                                                        </button>
+                                                    )}
                                                     <button 
                                                         onClick={() => setActiveAction('message')}
                                                         className="flex-1 md:flex-none h-11 px-6 bg-bg border border-border text-text-main rounded-xl font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2"
