@@ -176,12 +176,19 @@ export const forgotPassword = async (req, res) => {
         );
 
         // Generate reset link
-        const resetUrl = `${process.env.CLIENT_URL || 'https://castup-frontend.vercel.app'}/reset-password/${token}`;
+        const resetUrl = `${process.env.CLIENT_URL || 'https://castup-final.vercel.app'}/reset-password/${token}`;
         console.log('Reset URL generated:', resetUrl);
 
+        // Check if SMTP is configured
+        if (!process.env.SMTP_PASS) {
+            console.warn('⚠️ SMTP_PASS not set — skipping email. Reset URL:', resetUrl);
+            return res.json({
+                success: true,
+                message: 'If an account exists with this email, you will receive a password reset link.'
+            });
+        }
+
         // Send password reset email
-        // We MUST await this. On cloud hosts like Render/Vercel, un-awaited promises 
-        // after the response is sent are often killed, resulting in silent email failures.
         const sent = await sendEmail({
             to: user.email,
             subject: 'CastUp - Reset Your Password',
