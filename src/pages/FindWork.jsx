@@ -861,7 +861,12 @@ export default function FindWork() {
                                         </div>
                                     </div>
 
-                                    <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 flex items-center justify-between">
+                                    <a
+                                        href={`/profile/${user?.id}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="bg-primary/5 p-4 rounded-xl border border-primary/10 flex items-center justify-between hover:border-primary/40 transition-colors cursor-pointer no-underline block"
+                                    >
                                         <div className="flex items-center gap-3">
                                             <div className="bg-white p-1.5 rounded-md shadow-sm">
                                                 <LinkIcon size={14} className="text-primary" />
@@ -871,7 +876,8 @@ export default function FindWork() {
                                                 <span className="text-[10px] font-bold text-primary">/profile/{user?.id}</span>
                                             </div>
                                         </div>
-                                    </div>
+                                        <ExternalLink size={12} className="text-primary opacity-60" />
+                                    </a>
                                 </div>
 
                                 <div className="form-group mb-0 mt-6 pt-2 border-t border-border/10">

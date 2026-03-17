@@ -854,15 +854,20 @@ export default function Explore() {
                                             </div>
 
                                             {/* CastUp Profile Linked section */}
-                                            <div className="mt-12 bg-bg rounded-xl border border-border/50 p-5 flex items-center gap-4">
+                                            <a
+                                                href={`/profile/${selectedProfile.id}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="mt-12 bg-bg rounded-xl border border-border/50 p-5 flex items-center gap-4 hover:border-primary transition-colors cursor-pointer no-underline block"
+                                            >
                                                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
                                                     <ExternalLink size={20} className="text-primary" />
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">CastUp Profile Linked</p>
-                                                    <p className="text-primary text-sm font-medium break-all">/profile/{selectedProfile.id || '1772644890603'}</p>
+                                                    <p className="text-primary text-sm font-medium break-all">/profile/{selectedProfile.id}</p>
                                                 </div>
-                                            </div>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
