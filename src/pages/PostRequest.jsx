@@ -101,7 +101,13 @@ export default function PostRequest() {
             lastDateToApply: form.lastDateToApply,
             payRate: form.payRate,
             requirements: form.requirements,
-            documents: form.documents
+            // Map File objects to serializable metadata since we're sending JSON
+            documents: form.documents.map(f => ({
+                name: f.name,
+                type: f.type,
+                size: f.size,
+                lastModified: f.lastModified
+            }))
         }
 
         try {

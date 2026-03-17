@@ -33,7 +33,7 @@ const CREW_ROLES = [
 const PROJECT_TYPES = ['Feature Film', 'Short Film', 'Web Series', 'Documentary', 'Music Video', 'Commercial', 'Ad Film', 'Corporate Video', 'Other']
 
 export default function FindWork() {
-    const { allJobs, isAuthenticated, requireAuth, user, deleteJob, appliedJobs, applyForJob } = useAuth()
+    const { allJobs, isAuthenticated, requireAuth, user, deleteJob, appliedJobs, applyForJob, jobsLoading } = useAuth()
     const navigate = useNavigate()
     const [selectedJob, setSelectedJob] = useState(null)
     const [showApply, setShowApply] = useState(false)
@@ -291,24 +291,25 @@ export default function FindWork() {
             </AnimatePresence>
 
             {/* Job listings / Data Wall */}
-            {!isAuthenticated ? (
-                <div className="card text-center py-24 bg-bg-offset border-border/50 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary"></div>
-                    <div className="max-w-md mx-auto relative z-10">
-                        <div className="w-16 h-16 bg-primary/20 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Briefcase size={32} />
+            {jobsLoading ? (
+                <div className="flex flex-col gap-8">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="card overflow-hidden border-0 shadow-lg flex flex-col md:flex-row min-h-[220px] bg-card animate-pulse">
+                            <div className="md:w-64 bg-primary/5 flex items-center justify-center">
+                                <div className="w-24 h-24 bg-primary/10 rounded-3xl"></div>
+                            </div>
+                            <div className="flex-1 p-8">
+                                <div className="h-4 bg-primary/10 rounded w-1/4 mb-4"></div>
+                                <div className="h-8 bg-primary/10 rounded w-3/4 mb-4"></div>
+                                <div className="h-4 bg-primary/10 rounded w-full mb-2"></div>
+                                <div className="h-4 bg-primary/10 rounded w-5/6 mb-8"></div>
+                                <div className="flex gap-4">
+                                    <div className="h-10 bg-primary/10 rounded w-24"></div>
+                                    <div className="h-10 bg-primary/10 rounded w-24"></div>
+                                </div>
+                            </div>
                         </div>
-                        <h3 className="text-2xl font-black mb-3">Login to Find Work</h3>
-                        <p className="text-sm text-text-muted leading-relaxed mb-8">
-                            Browse through hundreds of casting calls and crew opportunities. Join the CastUp community to start applying.
-                        </p>
-                        <button 
-                            className="h-12 px-10 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30"
-                            onClick={() => requireAuth()}
-                        >
-                            Sign In / Register
-                        </button>
-                    </div>
+                    ))}
                 </div>
             ) : (
                 <div className="flex flex-col gap-8">
@@ -377,7 +378,7 @@ export default function FindWork() {
                                         {job.title}
                                     </h2>
                                     <p className="text-sm text-text-dim mb-6 line-clamp-2 leading-relaxed italic opacity-80">
-                                        Looking for professional {job.subCategory} for our upcoming {job.projectType}. Join a team of passionate creators and bring visions to life.
+                                        {job.description || `Looking for professional ${job.subCategory} for our upcoming ${job.projectType}. Join a team of passionate creators and bring visions to life.`}
                                     </p>
 
                                     {/* Info Row - Refined Separated Specs */}

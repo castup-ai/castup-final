@@ -35,6 +35,8 @@ export function RealAuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [allUsers, setAllUsers] = useState([]);
     const [usersLoading, setUsersLoading] = useState(true);
+    const [jobsLoading, setJobsLoading] = useState(true);
+    const [worksLoading, setWorksLoading] = useState(true);
 
     const [notifications, setNotifications] = useState([]);
     const [appliedJobs, setAppliedJobs] = useState([]);
@@ -45,19 +47,31 @@ export function RealAuthProvider({ children }) {
     const refreshPlatformData = async () => {
         try {
             setUsersLoading(true);
+            setJobsLoading(true);
+            setWorksLoading(true);
+
+            // Fetch concurrently but handle individually
+            const jobsPromise = castingService.getAll();
+            const usersPromise = authService.getAllUsers();
+            const worksPromise = adminService.getAllWorks();
+
             const [jobsRes, usersRes, worksRes] = await Promise.all([
-                castingService.getAll(),
-                authService.getAllUsers(),
-                adminService.getAllWorks()
+                jobsPromise, usersPromise, worksPromise
             ]);
 
             if (jobsRes.success) setAllJobs(jobsRes.data || []);
+            setJobsLoading(false);
+
             if (usersRes.success) setAllUsers(usersRes.data || []);
+            setUsersLoading(false);
+
             if (worksRes.success) setAllWorks(worksRes.data || []);
+            setWorksLoading(false);
         } catch (error) {
             console.error("Error refreshing platform data:", error);
-        } finally {
             setUsersLoading(false);
+            setJobsLoading(false);
+            setWorksLoading(false);
         }
     };
 
@@ -315,6 +329,8 @@ export function RealAuthProvider({ children }) {
             isAuthenticated: !!user,
             loading,
             usersLoading,
+            jobsLoading,
+            worksLoading,
             showAuthModal, setShowAuthModal,
             allUsers,
             allJobs,

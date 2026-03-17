@@ -389,32 +389,7 @@ export default function Explore() {
                     </AnimatePresence>
 
                     {/* Results / Data Wall */}
-                    {!isAuthenticated ? (
-                        <div className="card text-center py-24 bg-bg-offset border-border/50 relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-accent to-primary"></div>
-                            <div className="max-w-md mx-auto relative z-10">
-                                <div className="w-16 h-16 bg-primary/20 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <User size={32} />
-                                </div>
-                                <h3 className="text-2xl font-black mb-3">Login to Explore Talent</h3>
-                                <p className="text-sm text-text-muted leading-relaxed mb-8">
-                                    Join the CastUp community to view professional profiles, message creators, and build your network.
-                                </p>
-                                <button 
-                                    className="h-12 px-10 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30"
-                                    onClick={() => requireAuth()}
-                                >
-                                    Sign In / Register
-                                </button>
-                            </div>
-                            {/* Blurred background preview items */}
-                            <div className="absolute inset-0 opacity-5 pointer-events-none select-none blur-sm -z-10 flex flex-col gap-4 p-8">
-                                {[1, 2].map(i => (
-                                    <div key={i} className="h-32 bg-white rounded-2xl w-full"></div>
-                                ))}
-                            </div>
-                        </div>
-                    ) : usersLoading ? (
+                    {usersLoading ? (
                         /* Skeleton loading cards */
                         <div className="flex flex-col gap-6">
                             {[...Array(4)].map((_, i) => (
