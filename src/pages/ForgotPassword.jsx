@@ -41,7 +41,13 @@ export default function ForgotPassword() {
             setStep(2);
         } catch (err) {
             console.error('SMS Error:', err);
-            setError('Failed to send SMS. Please check the number and try again.');
+            // Show more detailed error for debugging
+            const errorMessage = err.code === 'auth/unauthorized-domain' 
+                ? 'Domain not authorized in Firebase Console. Please add "castup-final.vercel.app" to Authorized Domains.'
+                : (err.message || 'Failed to send SMS. Please check the number and try again.');
+            
+            setError(errorMessage);
+            
             // Reset recaptcha on error
             if (window.recaptchaVerifier) {
                 window.recaptchaVerifier.render().then(widgetId => {
