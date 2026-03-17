@@ -176,11 +176,11 @@ export const forgotPassword = async (req, res) => {
         // Find user
         const userResult = await pool.query('SELECT id, email, name FROM users WHERE email = $1', [email]);
 
-        // Always return success to prevent email enumeration
+        // Check if user exists
         if (userResult.rows.length === 0) {
-            return res.json({
-                success: true,
-                message: 'If an account exists with this email, you will receive a password reset link.'
+            console.warn(`⚠️ Forgot password attempt for non-existent email: ${email}`);
+            return res.status(404).json({
+                error: 'This email is not registered with us.'
             });
         }
 
