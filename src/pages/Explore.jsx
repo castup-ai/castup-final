@@ -656,43 +656,43 @@ export default function Explore() {
                                         <div>
                                             <label className="text-text-muted text-xs font-bold mb-2 block">Age</label>
                                             <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px]">
-                                                {selectedProfile.age || '25'} Years
+                                                {selectedProfile.age ? `${selectedProfile.age} Years` : '—'}
                                             </div>
                                         </div>
                                         <div>
                                             <label className="text-text-muted text-xs font-bold mb-2 block">Gender</label>
                                             <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium capitalize flex items-center min-h-[48px]">
-                                                {selectedProfile.gender || 'Not specified'}
+                                                {selectedProfile.gender || '—'}
                                             </div>
                                         </div>
                                         <div>
                                             <label className="text-text-muted text-xs font-bold mb-2 block">Height</label>
                                             <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px]">
-                                                {selectedProfile.height || '175 cm'}
+                                                {selectedProfile.height || '—'}
                                             </div>
                                         </div>
                                         <div>
                                             <label className="text-text-muted text-xs font-bold mb-2 block">Weight</label>
                                             <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px]">
-                                                {selectedProfile.weight || '70 kg'}
+                                                {selectedProfile.weight || '—'}
                                             </div>
                                         </div>
                                         <div>
                                             <label className="text-text-muted text-xs font-bold mb-2 block">Experience</label>
                                             <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px]">
-                                                {selectedProfile.yearsOfExperience || '1+'} Years
+                                                {selectedProfile.yearsOfExperience ? `${selectedProfile.yearsOfExperience} Years` : '—'}
                                             </div>
                                         </div>
                                         <div>
                                             <label className="text-text-muted text-xs font-bold mb-2 block">Availability</label>
                                             <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px]">
-                                                {selectedProfile.availability || 'Available Now'}
+                                                {selectedProfile.availability || '—'}
                                             </div>
                                         </div>
                                         <div className="col-span-2 md:col-span-2">
                                             <label className="text-text-muted text-xs font-bold mb-2 block">Languages</label>
                                             <div className="bg-bg rounded-xl border border-border/50 p-3 text-sm font-medium flex items-center min-h-[48px] truncate">
-                                                {selectedProfile.languages?.join(', ') || 'English, Malayalam'}
+                                                {selectedProfile.languages?.length ? selectedProfile.languages.join(', ') : '—'}
                                             </div>
                                         </div>
                                     </div>
@@ -700,7 +700,7 @@ export default function Explore() {
                                     <div className="mt-6">
                                         <label className="text-text-muted text-xs font-bold mb-2 block">About</label>
                                         <div className="bg-bg rounded-xl border border-border/50 p-4 text-sm font-medium min-h-[100px] text-text-main whitespace-pre-wrap">
-                                            {selectedProfile.bio || 'This professional is ready for exciting new projects and collaborations. Reach out to discuss potential opportunities!'}
+                                            {selectedProfile.bio || '—'}
                                         </div>
                                     </div>
 
