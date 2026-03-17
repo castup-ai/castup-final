@@ -35,6 +35,41 @@ const PROJECT_TYPES = ['Feature Film', 'Short Film', 'Web Series', 'Documentary'
 export default function FindWork() {
     const { allJobs, isAuthenticated, requireAuth, user, deleteJob, appliedJobs, applyForJob, jobsLoading, isProfileComplete } = useAuth()
 
+    // Missing State declarations restored
+    const [searchQuery, setSearchQuery] = useState('')
+    const [statusFilter, setStatusFilter] = useState('All')
+    const [showFilters, setShowFilters] = useState(false)
+    const [filters, setFilters] = useState({
+        sortBy: 'newest',
+        projectType: '',
+        subCategory: '',
+        experience: '',
+        country: '',
+        state: ''
+    })
+    const [selectedJob, setSelectedJob] = useState(null)
+    const [showApply, setShowApply] = useState(false)
+    const [applied, setApplied] = useState(false)
+    const [applyForm, setApplyForm] = useState({
+        category: 'Artist',
+        role: '',
+        age: '',
+        gender: '',
+        phone: user?.phone || '',
+        whatsapp: '',
+        gmail: user?.email || '',
+        address: '',
+        photo: null,
+        portfolioFiles: [],
+        additionalInfo: '',
+        socialLinks: {
+            instagram: '',
+            linkedin: '',
+            youtube: '',
+            other: ''
+        }
+    })
+
     // Derived lists for filters
     const uniqueCountries = useMemo(() => [...new Set(allJobs.map(j => j.country).filter(Boolean))].sort(), [allJobs])
     const uniqueStates = useMemo(() => {
