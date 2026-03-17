@@ -9,10 +9,16 @@ const sendEmail = async ({ to, subject, html }) => {
     let pass = process.env.SMTP_PASS;
 
     if (pass) pass = pass.replace(/\s+/g, '');
+    
+    // Diagnostic logging for Render Console (helps user verify their settings)
+    const passLen = pass ? pass.length : 0;
+    const passMasked = passLen > 4 ? `${pass.substring(0, 2)}...${pass.substring(passLen - 2)}` : '****';
+    console.log(`📡 SMTP Diagnostic: User=${user}, PassLength=${passLen}, PassMasked=${passMasked}`);
+
     if (!pass) return { success: false, error: 'SMTP_PASS missing' };
 
     const trySend = async (port, secure) => {
-        console.log(`✉️ Trying email send via Port ${port} (secure: ${secure})...`);
+        console.log(`✉️ Trying email send via Port ${port} (secure: ${secure}). Time: ${new Date().toLocaleTimeString()}`);
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
             port,
@@ -22,31 +28,30 @@ const sendEmail = async ({ to, subject, html }) => {
         });
 
         try {
+            // Extended 45-second timeout for each port attempt (Critical for Render's networking)
             const info = await Promise.race([
                 transporter.sendMail({ from: `"CastUp" <${user}>`, to, subject, html }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 20000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 45000))
             ]);
-            console.log(`✅ Success on Port ${port}!`);
+            console.log(`✅ Success on Port ${port}! MessageId: ${info.messageId}`);
             return { success: true, messageId: info.messageId };
         } catch (err) {
-            console.warn(`⚠️ Failed on Port ${port}: ${err.message}`);
+            console.warn(`⚠️ Failed on Port ${port}: ${err.message}. Duration: ~45s? ${err.message === 'TIMEOUT'}`);
             return { success: false, error: err.message };
         }
     };
 
     // Failover Sequence
-    // 1. Try Port 465 (SSL)
     const res1 = await trySend(465, true);
     if (res1.success) return { success: true };
 
-    // 2. Try Port 587 (TLS)
-    console.log('🔄 Failing over to Port 587...');
+    console.log('🔄 Failing over to Port 587 (Wait 45s)...');
     const res2 = await trySend(587, false);
     if (res2.success) return { success: true };
 
     return { 
         success: false, 
-        error: `All delivery attempts failed. (465: ${res1.error}, 587: ${res2.error})` 
+        error: `All attempts failed. Gmail took too long to respond on both 465 and 587. (465: ${res1.error}, 587: ${res2.error})` 
     };
 };
 
@@ -220,7 +225,8 @@ export const forgotPassword = async (req, res) => {
             if (mailResult.success) {
                 return res.json({ success: true, message: 'Reset link sent.' });
             } else {
-                return res.status(500).json({ error: `Email Error: ${mailResult.error || 'Unknown SMTP error'}. Please verify your SMTP settings in Render.` });
+                console.error(`🆘 EMERGENCY FALLBACK: Email failed for ${user.email}. Reset URL: ${resetUrl}`);
+                return res.status(500).json({ error: `Email Error: ${mailResult.error || 'Unknown SMTP error'}. Check backend logs for the manual reset link.` });
             }
         } catch (error) {
             console.error('Forgot password inner error:', error);
@@ -228,9 +234,9 @@ export const forgotPassword = async (req, res) => {
         }
     };
 
-    // Overall 50s timeout to allow for Port 465 + Port 587 attempts
+    // Overall 100s timeout to allow for two 45s SMTP attempts + cold start
     const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), 50000)
+        setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), 100000)
     );
 
     try {
