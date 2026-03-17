@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
-import { FileText, Upload, Calendar, X, CheckCircle, Trash2 } from 'lucide-react'
+import { FileText, Upload, Calendar, X, CheckCircle, Trash2, MapPin } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const projectTypes = ['Feature Film', 'Short Film', 'Web Series', 'Documentary', 'Music Video', 'Commercial', 'Ad Film', 'Corporate Video', 'Other']
@@ -321,6 +321,115 @@ export default function PostRequest() {
                     </button>
                 </div>
             </form>
+
+            {/* My Posted Requests History Table */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-16 mb-20">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 className="text-2xl font-black tracking-tight">My Posted Requests</h2>
+                        <p className="text-sm font-medium opacity-50">Manage your active and previous crew calls</p>
+                    </div>
+                    <div className="badge badge-primary font-bold px-4 py-2">
+                        {allJobs.filter(j => j.createdBy?.id === user?.id).length} Active
+                    </div>
+                </div>
+
+                <div className="card overflow-hidden border-0 shadow-2xl" style={{ background: 'var(--color-card)' }}>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest opacity-40">Job Info</th>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest opacity-40">Location</th>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest opacity-40">Deadline</th>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest opacity-40">Status</th>
+                                    <th className="p-4 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {allJobs.filter(j => j.createdBy?.id === user?.id).length === 0 ? (
+                                    <tr>
+                                        <td colSpan="5" className="p-12 text-center">
+                                            <div className="flex flex-col items-center opacity-20">
+                                                <FileText size={48} className="mb-4" />
+                                                <p className="text-sm font-bold">No requests posted yet.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    allJobs.filter(j => j.createdBy?.id === user?.id).map((job) => (
+                                        <tr key={job.id} className="hover:bg-white/[0.02] transition-colors group">
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black shadow-inner">
+                                                        {job.title[0].toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-sm leading-tight mb-0.5">{job.title}</div>
+                                                        <div className="text-[10px] font-bold text-primary/60 uppercase tracking-tighter italic">
+                                                            {job.projectType} • {job.subCategory}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-1.5 text-xs font-bold opacity-70">
+                                                    <MapPin size={12} className="text-primary" />
+                                                    {job.city || job.location || 'Remote'}
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-1.5 text-xs font-bold opacity-70">
+                                                    <Calendar size={12} className="text-accent" />
+                                                    {job.lastDateToApply ? new Date(job.lastDateToApply).toLocaleDateString() : 'N/A'}
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md tracking-tighter ${job.status === 'open' ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'}`}>
+                                                    {job.status || 'open'}
+                                                </span>
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button 
+                                                        onClick={() => navigate('/find-work', { state: { selectedJobId: job.id } })}
+                                                        className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                                        title="View Details"
+                                                    >
+                                                        <FileText size={14} className="opacity-60" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            if (window.confirm('Are you sure you want to delete this job posting?')) {
+                                                                deleteJob(job.id);
+                                                            }
+                                                        }}
+                                                        className="w-8 h-8 rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                                        title="Delete Post"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div className="mt-8 flex items-center justify-center gap-8">
+                    <div className="flex items-center gap-2 opacity-30">
+                        <div className="w-1.5 h-1.5 rounded-full bg-success"></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Live Monitoring Active</span>
+                    </div>
+                    <div className="flex items-center gap-2 opacity-30">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Cloud Encrypted</span>
+                    </div>
+                </div>
+            </motion.div>
         </div>
     )
 }
