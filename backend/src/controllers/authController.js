@@ -15,15 +15,32 @@ const createTransporter = () => nodemailer.createTransport({
 
 const sendEmail = async ({ to, subject, html }) => {
     try {
-        const transporter = createTransporter();
+        const user = process.env.SMTP_USER || 'castupaiapp@gmail.com';
+        const pass = process.env.SMTP_PASS;
+
+        console.log(`✉️ Preparing email transport: user=${user}, pass=${pass ? 'DEFINED' : 'MISSING'}`);
+
+        if (!pass) {
+            console.error('❌ SMTP_PASS environment variable is missing!');
+            return false;
+        }
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user, pass }
+        });
+
         await transporter.sendMail({
-            from: `"CastUp" <${process.env.SMTP_USER || 'castupaiapp@gmail.com'}>`,
+            from: `"CastUp" <${user}>`,
             to, subject, html
         });
         console.log(`✅ Email sent to ${to}`);
         return true;
     } catch (err) {
         console.error('❌ Email send failed:', err.message);
+        if (err.code === 'EAUTH') {
+            console.error('❌ SMTP Authentication Error - verify app password');
+        }
         return false;
     }
 };
