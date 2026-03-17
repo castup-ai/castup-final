@@ -113,7 +113,10 @@ export const initializeDatabase = async () => {
             ['city', 'VARCHAR(100)'],
             ['last_date_to_apply', 'DATE'],
             ['service_duration', 'JSONB DEFAULT \'{}\''],
-            ['documents', 'JSONB DEFAULT \'[]\'']
+            ['documents', 'JSONB DEFAULT \'[]\''],
+            ['pay_rate', 'VARCHAR(255)'],
+            ['start_date', 'DATE'],
+            ['end_date', 'DATE']
         ];
 
         for (const [col, type] of newCastingCols) {
