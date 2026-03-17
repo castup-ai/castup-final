@@ -44,6 +44,8 @@ export default function PostRequest() {
     const [applicants, setApplicants] = useState([])
     const [loadingApplicants, setLoadingApplicants] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [deleteId, setDeleteId] = useState(null)
+    const [uploadingDocs, setUploadingDocs] = useState(false)
     
     // Get today's date in YYYY-MM-DD format for date input mins
     const today = new Date().toISOString().split('T')[0];
@@ -64,6 +66,40 @@ export default function PostRequest() {
             }, 100)
         }
     }, [isAuthenticated, isProfileComplete, navigate, requireAuth])
+
+    const uploadDocuments = async (files) => {
+        if (!files || files.length === 0) return [];
+        
+        setUploadingDocs(true);
+        const uploaded = [];
+        
+        try {
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('name', file.name);
+                
+                const res = await api.post('/files/upload', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                
+                if (res.data.success) {
+                    uploaded.push({
+                        name: res.data.file.name,
+                        url: res.data.file.file_url,
+                        type: file.type
+                    });
+                }
+            }
+            return uploaded;
+        } catch (error) {
+            console.error("Error uploading documents:", error);
+            alert("Some documents failed to upload. Creating post without them.");
+            return uploaded;
+        } finally {
+            setUploadingDocs(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -90,6 +126,13 @@ export default function PostRequest() {
             return
         }
 
+        setIsSubmitting(true)
+        
+        let uploadedDocs = [];
+        if (form.documents.length > 0) {
+            uploadedDocs = await uploadDocuments(form.documents);
+        }
+
         const jobData = {
             title: form.title,
             description: form.projectDetails,
@@ -106,16 +149,8 @@ export default function PostRequest() {
             lastDateToApply: form.lastDateToApply,
             payRate: form.payRate,
             requirements: form.requirements,
-            // Map File objects to serializable metadata since we're sending JSON
-            documents: form.documents.map(f => ({
-                name: f.name,
-                type: f.type,
-                size: f.size,
-                lastModified: f.lastModified
-            }))
+            documents: uploadedDocs
         }
-
-        setIsSubmitting(true)
         try {
             const result = await addJob(jobData)
             if (result.success) {
@@ -567,6 +602,43 @@ export default function PostRequest() {
                                 className="btn btn-secondary btn-sm px-6"
                             >
                                 Close
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Deletion Confirmation Modal */}
+            {deleteId && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="card w-full max-w-md p-8 text-center border-white/10 shadow-3xl"
+                    >
+                        <div className="w-20 h-20 rounded-3xl bg-danger/10 text-danger flex items-center justify-center mx-auto mb-6">
+                            <Trash2 size={40} />
+                        </div>
+                        <h3 className="text-2xl font-black mb-2">Are you sure?</h3>
+                        <p className="text-sm font-medium opacity-60 mb-8 max-w-[280px] mx-auto leading-relaxed">
+                            This action cannot be undone. All applicant data for this job will also be removed.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button 
+                                onClick={() => setDeleteId(null)}
+                                className="h-14 rounded-2xl bg-white/5 border border-white/10 text-sm font-bold hover:bg-white/10 transition-all uppercase tracking-widest"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={async () => {
+                                    const jobToDelete = deleteId;
+                                    setDeleteId(null);
+                                    await deleteJob(jobToDelete);
+                                }}
+                                className="h-14 rounded-2xl bg-danger text-white text-sm font-black hover:bg-danger-dark transition-all shadow-lg shadow-danger/20 uppercase tracking-widest"
+                            >
+                                Delete Now
                             </button>
                         </div>
                     </motion.div>
