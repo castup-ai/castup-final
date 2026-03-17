@@ -12,7 +12,7 @@ const ADMIN_EMAILS = ['castup4862446@gmail.com', 'castupaiapp@gmail.com']
 
 export default function AdminDashboard() {
     const { 
-        user, allUsers, allJobs, allWorks, 
+        user, allUsers, allJobs, allWorks, contactMessages,
         deleteJob, deleteUser, deleteWork, 
         refreshPlatformData 
     } = useAuth()
@@ -92,16 +92,16 @@ export default function AdminDashboard() {
     }
 
     const handleDeleteWork = async (id, name) => {
-        if (!window.confirm(`Are you sure you want to delete the work "\${name}"?`)) return
+        if (!window.confirm(`Are you sure you want to delete the work "${name}"?`)) return
         
         const workItem = allWorks.find(w => w.id === id);
         const { success, error } = await deleteWork(id, workItem?.user_id, workItem?.is_portfolio);
         
         if (success) {
-            setDeletedMsg(`Work "\${name}" deleted successfully`)
+            setDeletedMsg(`Work "${name}" deleted successfully`)
             setTimeout(() => setDeletedMsg(''), 3000)
         } else {
-            alert(`Error deleting work: \${error}`)
+            alert(`Error deleting work: ${error}`)
         }
     }
 
@@ -110,6 +110,7 @@ export default function AdminDashboard() {
         { key: 'users', label: `Users (${allUsers.length})`, icon: Users },
         { key: 'jobs', label: `Jobs (${allJobs.length})`, icon: Briefcase },
         { key: 'works', label: `Works (${allWorks.length})`, icon: Video },
+        { key: 'messages', label: `Messages (${contactMessages.length})`, icon: Mail },
     ]
 
     return (
@@ -386,6 +387,87 @@ export default function AdminDashboard() {
                                         <div className="ml-auto text-[10px] font-mono opacity-30 uppercase">
                                             Uploaded: {new Date(work.created_at).toLocaleDateString()}
                                         </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Messages Management */}
+                {activeTab === 'messages' && (
+                    <div className="grid gap-4">
+                        {contactMessages.length === 0 ? (
+                            <div className="card p-12 text-center font-bold opacity-50">No incoming messages at this time</div>
+                        ) : contactMessages.map(msg => (
+                            <motion.div key={msg.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                className="card p-6 border-0 shadow-lg hover:shadow-2xl transition-all flex flex-col gap-4 group">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${msg.status === 'unread' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
+                                            <Mail size={18} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-black">{msg.subject}</h3>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-text-dim">{msg.category}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                         <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md tracking-tighter ${msg.status === 'unread' ? 'bg-primary/20 text-primary' : 'bg-success/20 text-success'}`}>
+                                            {msg.status}
+                                        </span>
+                                        <span className="text-[10px] font-mono opacity-50">{new Date(msg.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                                <div className="bg-bg-offset rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap border border-border/30">
+                                    {msg.message}
+                                </div>
+                                <div className="flex items-center justify-between pt-2">
+                                    <div className="flex items-center gap-4">
+                                        <div className="text-xs">
+                                            <span className="text-text-dim">From:</span> <span className="font-bold">{msg.email}</span>
+                                        </div>
+                                        {msg.phone && (
+                                            <div className="text-xs">
+                                                <span className="text-text-dim">Phone:</span> <span className="font-bold">{msg.phone}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        {(() => {
+                                            let attachments = [];
+                                            try {
+                                                attachments = typeof msg.attachments === 'string' ? JSON.parse(msg.attachments || '[]') : (msg.attachments || []);
+                                            } catch (e) { attachments = []; }
+                                            
+                                            return attachments.length > 0 && (
+                                                <div className="flex gap-2">
+                                                    {attachments.map((att, idx) => (
+                                                        <button 
+                                                            key={idx}
+                                                            onClick={() => setPreview({ url: att.url, type: att.type || 'image/png', name: att.name })}
+                                                            className="h-8 px-3 rounded-lg bg-primary/5 text-primary text-[10px] font-bold border border-primary/20 hover:bg-primary/10 transition-all flex items-center gap-2"
+                                                        >
+                                                            <FileText size={12} /> View Attachment
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })()}
+                                        {msg.status === 'unread' && (
+                                            <button 
+                                                onClick={async () => {
+                                                    try {
+                                                        const { api } = await import('@/services/api');
+                                                        const res = await api.patch(`/admin/contacts/${msg.id}`, { status: 'read' });
+                                                        if (res.data.success) refreshPlatformData();
+                                                    } catch (e) { console.error('Status update error:', e); }
+                                                }}
+                                                className="h-8 px-4 rounded-lg bg-success text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all"
+                                            >
+                                                Mark Read
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>

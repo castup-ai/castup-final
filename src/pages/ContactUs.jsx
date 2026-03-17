@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Phone, Mail, CheckCircle, X, Upload, Send, Trash2, FileText } from 'lucide-react'
+import { Phone, Mail, CheckCircle, X, Upload, Send, Trash2, FileText, Loader2 } from 'lucide-react'
+import axios from 'axios'
 
 const subCategories = ['General Inquiry', 'Technical Support', 'Account Issues', 'Partnership', 'Report a Bug', 'Feature Request', 'Billing', 'Other']
 
 export default function ContactUs() {
     const [submitted, setSubmitted] = useState(false)
+    const [loading, setLoading] = useState(false)
     const initialForm = {
         email: '', phone: '', subject: '', subCategory: '', message: '', attachments: []
     }
@@ -14,9 +16,43 @@ export default function ContactUs() {
     const resetForm = () => setForm(initialForm)
     const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        setSubmitted(true)
+        setLoading(true)
+        
+        try {
+            // 1. Upload files first
+            const uploadedFiles = []
+            if (form.attachments.length > 0) {
+                for (const file of form.attachments) {
+                    const formData = new FormData()
+                    formData.append('file', file)
+                    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/files/upload`, formData)
+                    if (res.data.success) {
+                        uploadedFiles.push({
+                            name: file.name,
+                            url: res.data.fileUrl,
+                            type: file.type
+                        })
+                    }
+                }
+            }
+
+            // 2. Submit message
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/contact`, {
+                ...form,
+                attachments: uploadedFiles
+            })
+
+            if (res.data.success) {
+                setSubmitted(true)
+            }
+        } catch (error) {
+            console.error('Contact submit error:', error)
+            alert('Failed to send message. Please try again.')
+        } finally {
+            setLoading(false)
+        }
     }
 
     if (submitted) {
@@ -52,24 +88,24 @@ export default function ContactUs() {
                             <div className="form-group">
                                 <label>Email *</label>
                                 <input type="email" placeholder="your@email.com" required value={form.email}
-                                    onChange={e => update('email', e.target.value)} />
+                                    onChange={e => update('email', e.target.value)} disabled={loading} />
                             </div>
                             <div className="form-group">
                                 <label>Phone Number</label>
                                 <input type="tel" placeholder="+91 98765 43210" value={form.phone}
-                                    onChange={e => update('phone', e.target.value)} />
+                                    onChange={e => update('phone', e.target.value)} disabled={loading} />
                             </div>
                         </div>
 
                         <div className="form-group">
                             <label>Subject *</label>
                             <input placeholder="What's this about?" required value={form.subject}
-                                onChange={e => update('subject', e.target.value)} />
+                                onChange={e => update('subject', e.target.value)} disabled={loading} />
                         </div>
 
                         <div className="form-group">
                             <label>Category *</label>
-                            <select required value={form.subCategory} onChange={e => update('subCategory', e.target.value)}>
+                            <select required value={form.subCategory} onChange={e => update('subCategory', e.target.value)} disabled={loading}>
                                 <option value="">Select category</option>
                                 {subCategories.map(c => <option key={c}>{c}</option>)}
                             </select>
@@ -78,16 +114,16 @@ export default function ContactUs() {
                         <div className="form-group">
                             <label>Message *</label>
                             <textarea rows={5} placeholder="Tell us more..." required value={form.message}
-                                onChange={e => update('message', e.target.value)} />
+                                onChange={e => update('message', e.target.value)} disabled={loading} />
                         </div>
 
                         <div className="form-group">
                             <label>Attach Files</label>
-                            <div className="file-upload" onClick={() => document.getElementById('contact-file')?.click()}>
+                            <div className={`file-upload ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => !loading && document.getElementById('contact-file')?.click()}>
                                 <Upload size={20} className="mx-auto mb-2" />
                                 <p className="text-sm">Click to attach files</p>
                             </div>
-                            <input type="file" id="contact-file" multiple style={{ display: 'none' }}
+                            <input type="file" id="contact-file" multiple style={{ display: 'none' }} disabled={loading}
                                 onChange={e => {
                                     const newFiles = Array.from(e.target.files);
                                     update('attachments', [...form.attachments, ...newFiles]);
@@ -105,6 +141,7 @@ export default function ContactUs() {
                                             </div>
                                             <button
                                                 type="button"
+                                                disabled={loading}
                                                 onClick={() => {
                                                     const updated = form.attachments.filter((_, i) => i !== idx);
                                                     update('attachments', updated);
@@ -120,11 +157,11 @@ export default function ContactUs() {
                         </div>
 
                         <div className="flex gap-3 pt-2">
-                            <button type="button" className="btn btn-secondary flex-1" onClick={resetForm}>
+                            <button type="button" className="btn btn-secondary flex-1" onClick={resetForm} disabled={loading}>
                                 <X size={16} /> Cancel
                             </button>
-                            <button type="submit" className="btn btn-primary flex-1">
-                                <Send size={16} /> Submit
+                            <button type="submit" className="btn btn-primary flex-1" disabled={loading}>
+                                {loading ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />} {loading ? 'Submitting...' : 'Submit'}
                             </button>
                         </div>
                     </div>

@@ -351,6 +351,23 @@ export const getConnectionCount = async (req, res) => {
     }
 };
 
+// Get list of connected user IDs
+export const getConnectedUserIds = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const result = await pool.query(
+            `SELECT CASE WHEN user_id_1 = $1 THEN user_id_2 ELSE user_id_1 END as "peerId"
+             FROM connections
+             WHERE (user_id_1 = $1 OR user_id_2 = $1) AND status = 'connected'`,
+            [userId]
+        );
+        res.json({ success: true, ids: result.rows.map(r => r.peerId) });
+    } catch (error) {
+        console.error('Get connected user IDs error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
 // Get stats for the home dashboard
 export const getUserStats = async (req, res) => {
     try {

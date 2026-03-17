@@ -62,5 +62,29 @@ export const adminService = {
                 error: error.response?.data?.error || 'Failed to delete work'
             };
         }
+    },
+
+    getContactMessages: async () => {
+        try {
+            const response = await api.get('/admin/contacts');
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.error || 'Failed to fetch contact messages'
+            };
+        }
+    },
+
+    updateContactStatus: async (messageId, status) => {
+        try {
+            const response = await api.patch(`/admin/contacts/${messageId}`, { status });
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.error || 'Failed to update message status'
+            };
+        }
     }
 };

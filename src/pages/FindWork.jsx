@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
 import {
@@ -33,11 +34,13 @@ const CREW_ROLES = [
 const PROJECT_TYPES = ['Feature Film', 'Short Film', 'Web Series', 'Documentary', 'Music Video', 'Commercial', 'Ad Film', 'Corporate Video', 'Other']
 
 export default function FindWork() {
-    const { allJobs, isAuthenticated, requireAuth, user, deleteJob, appliedJobs, applyForJob, jobsLoading, isProfileComplete } = useAuth()
+    const { allJobs, isAuthenticated, requireAuth, user, deleteJob, appliedJobs, userApplications, applyForJob, jobsLoading, authLoading, isProfileComplete } = useAuth()
+    const [searchParams, setSearchParams] = useSearchParams()
+    const navigate = useNavigate()
 
     // Missing State declarations restored
     const [searchQuery, setSearchQuery] = useState('')
-    const [statusFilter, setStatusFilter] = useState('All')
+    const [statusFilter, setStatusFilter] = useState('open')
     const [showFilters, setShowFilters] = useState(false)
     const [filters, setFilters] = useState({
         sortBy: 'newest',
@@ -49,7 +52,7 @@ export default function FindWork() {
     })
     const [selectedJob, setSelectedJob] = useState(null)
     const [showApply, setShowApply] = useState(false)
-    const [applied, setApplied] = useState(false)
+    const [isEditingApplication, setIsEditingApplication] = useState(false)
     const [applyForm, setApplyForm] = useState({
         category: 'Artist',
         role: '',
@@ -105,11 +108,29 @@ export default function FindWork() {
         })
     }, [allJobs, searchQuery, filters, statusFilter])
 
+    const [processedJobId, setProcessedJobId] = useState(null)
+
+    // Handle initial jobId from URL or state
+    useEffect(() => {
+        if (jobsLoading) return;
+        
+        const jobId = searchParams.get('jobId') || window.history.state?.usr?.selectedJobId;
+        if (jobId && jobId !== processedJobId) {
+            const job = allJobs.find(j => String(j.id) === String(jobId));
+            if (job) {
+                setSelectedJob(job);
+                setProcessedJobId(jobId);
+                // Clear the param from URL without refreshing to keep it clean
+                // setSearchParams({}, { replace: true });
+            }
+        }
+    }, [allJobs, jobsLoading, searchParams, processedJobId]);
+
     const handleApply = (e) => {
         e.preventDefault()
 
-        // Check if already applied
-        if (selectedJob && appliedJobs.includes(selectedJob.id)) {
+        // Check if already applied (allow if editing within 5 mins)
+        if (selectedJob && appliedJobs.includes(selectedJob.id) && !isEditingApplication) {
             alert('You have already applied for this job!');
             return;
         }
@@ -144,10 +165,90 @@ export default function FindWork() {
         }
 
         // Record application
-        if (selectedJob) applyForJob(selectedJob.id);
-        setApplied(true)
+        if (selectedJob) {
+            const applicationData = {
+                category: applyForm.category,
+                role: applyForm.role,
+                age: applyForm.age,
+                gender: applyForm.gender,
+                whatsapp: applyForm.whatsapp,
+                address: applyForm.address,
+                photo: applyForm.photo,
+                portfolioFiles: applyForm.portfolioFiles,
+                additionalInfo: applyForm.additionalInfo,
+                gmail: applyForm.gmail || user?.email || '',
+                phone: applyForm.phone || user?.phone || ''
+            };
+            applyForJob(selectedJob.id, applicationData);
+        }
         setShowApply(false)
+        setIsEditingApplication(false)
     }
+
+    // Effect to populate form when editing an application
+    useEffect(() => {
+        if (showApply && selectedJob) {
+            const myApp = userApplications?.find(a => a.job_id === selectedJob.id);
+            if (myApp) {
+                setApplyForm({
+                    category: myApp.category || 'Artist',
+                    role: myApp.role || '',
+                    age: myApp.age || '',
+                    gender: myApp.gender || '',
+                    phone: myApp.phone || '',
+                    whatsapp: myApp.whatsapp || '',
+                    gmail: myApp.email || '',
+                    address: myApp.address || '',
+                    photo: myApp.photo_url || null,
+                    portfolioFiles: typeof myApp.portfolio_files === 'string' ? JSON.parse(myApp.portfolio_files || '[]') : (myApp.portfolio_files || []),
+                    additionalInfo: myApp.message || ''
+                });
+                setIsEditingApplication(true);
+            } else {
+                setApplyForm({
+                    category: user?.category || 'Artist',
+                    role: user?.role || '',
+                    age: user?.age || '',
+                    gender: user?.gender || '',
+                    phone: user?.phone || '',
+                    whatsapp: user?.whatsapp || '',
+                    gmail: user?.email || '',
+                    address: user?.location || '',
+                    photo: user?.photo || null,
+                    portfolioFiles: [],
+                    additionalInfo: ''
+                });
+                setIsEditingApplication(false);
+            }
+        }
+    }, [showApply, selectedJob, userApplications, user]);
+
+    const handleShare = async (job) => {
+        const shareUrl = `${window.location.origin}/find-work?jobId=${job.id}`;
+        const shareData = {
+            title: `CastUp: ${job.title}`,
+            text: `Check out this ${job.projectType} opportunity for ${job.subCategory} on CastUp!`,
+            url: shareUrl
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Link copied to clipboard!');
+            }
+        } catch (err) {
+            console.error('Sharing failed', err);
+            // Fallback for failed native share
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Link copied to clipboard!');
+            } catch (clipErr) {
+                alert('Sharing not supported on this browser.');
+            }
+        }
+    };
 
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
@@ -460,12 +561,11 @@ export default function FindWork() {
                                                 </div>
                                             ) : (
                                                 <button
-                                                    onClick={() => {
-                                                        if (!isAuthenticated) { requireAuth(); return }
+                                                    onClick={() => requireAuth(() => {
                                                         if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile?edit=true'); return }
                                                         setSelectedJob(job);
                                                         setShowApply(true);
-                                                    }}
+                                                    })}
                                                     className="h-12 px-8 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest transition-all hover:opacity-90 shadow-xl shadow-primary/20 flex items-center justify-center gap-2 flex-1 sm:flex-initial"
                                                 >
                                                     <ArrowRight size={16} /> Apply Now
@@ -510,7 +610,13 @@ export default function FindWork() {
 
                             {/* Top Right Actions */}
                             <div className="absolute top-6 right-6 flex gap-2 z-10">
-                                <button className="btn-ghost btn-icon bg-bg-offset shadow-sm" title="Share"><Share2 size={16} /></button>
+                                <button
+                                    className="btn-ghost btn-icon bg-bg-offset shadow-sm"
+                                    title="Share"
+                                    onClick={() => handleShare(selectedJob)}
+                                >
+                                    <Share2 size={16} />
+                                </button>
                                 <button className="btn-ghost btn-icon bg-bg-offset shadow-sm" onClick={() => setSelectedJob(null)}><X size={16} /></button>
                             </div>
 
@@ -565,7 +671,7 @@ export default function FindWork() {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest opacity-40">Details</label>
                                         <p className="text-sm leading-relaxed text-text-muted font-medium bg-bg-offset/50 p-4 rounded-2xl border border-border/50">
-                                            {selectedJob.details}
+                                            {selectedJob.description}
                                         </p>
                                     </div>
                                 </div>
@@ -640,25 +746,51 @@ export default function FindWork() {
                                     onClick={() => setSelectedJob(null)}
                                 >
                                     Cancel
-                                </button>
-                                {(!user || !selectedJob.createdBy || user.id !== selectedJob.createdBy.id) && (
-                                    appliedJobs.includes(selectedJob.id) ? (
-                                        <div className="h-12 px-10 rounded-xl bg-success/10 text-success border border-success/30 text-sm font-bold flex-[1.5] flex items-center justify-center gap-2">
-                                            <CheckCircle size={16} /> Already Applied
-                                        </div>
-                                    ) : (
-                                        <button
-                                            className="h-12 px-10 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest flex-[1.5] transition-all hover:scale-[1.02] shadow-xl shadow-primary/20"
-                                            onClick={() => {
-                                                if (!isAuthenticated) { requireAuth(); return }
-                                                if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile?edit=true'); return }
-                                                setShowApply(true)
-                                            }}
-                                        >
-                                            Apply Now
-                                        </button>
-                                    )
-                                )}
+                                </button>                                 {(user && selectedJob.createdBy && user.id === selectedJob.createdBy.id) ? (
+                                     <button
+                                         className="h-12 px-10 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest flex-[1.5] transition-all hover:scale-[1.02] shadow-xl shadow-primary/20 flex items-center justify-center gap-2"
+                                         onClick={() => navigate('/post-request', { state: { editJob: selectedJob } })}
+                                     >
+                                         <Edit3 size={16} /> Edit My Post
+                                     </button>
+                                 ) : (
+                                     (() => {
+                                         if (!appliedJobs.includes(selectedJob.id)) {
+                                             return (
+                                                 <button
+                                                     className="h-12 px-10 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest flex-[1.5] transition-all hover:scale-[1.02] shadow-xl shadow-primary/20"
+                                                     onClick={() => requireAuth(() => {
+                                                         if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile?edit=true'); return }
+                                                         setShowApply(true)
+                                                     })}
+                                                 >
+                                                     Apply Now
+                                                 </button>
+                                             );
+                                         }
+                                         
+                                         const myApp = userApplications?.find(a => a.job_id === selectedJob.id);
+                                         const appliedAt = myApp ? new Date(myApp.created_at) : null;
+                                         const diffMins = appliedAt ? (new Date() - appliedAt) / 60000 : 999;
+                                         const isEditable = diffMins < 5;
+
+                                         return (
+                                             <div className="flex-[1.5] flex gap-2">
+                                                 <div className="h-12 px-5 rounded-xl bg-success/10 text-success border border-success/30 text-xs font-bold flex-1 flex items-center justify-center gap-1.5 min-w-0">
+                                                     <CheckCircle size={14} className="shrink-0" /> <span className="truncate">Applied</span>
+                                                 </div>
+                                                 {isEditable && (
+                                                     <button 
+                                                         onClick={() => setShowApply(true)}
+                                                         className="h-12 px-5 rounded-xl bg-primary/10 text-primary border border-primary/30 text-xs font-bold flex-1 flex items-center justify-center gap-1.5 hover:bg-primary/20 transition-all min-w-0 shrink-0"
+                                                     >
+                                                         <Edit3 size={14} className="shrink-0" /> Edit
+                                                     </button>
+                                                 )}
+                                             </div>
+                                         );
+                                     })()
+                                 )}
                             </div>
                         </motion.div>
                     </motion.div>

@@ -9,6 +9,7 @@ import userRoutes from './routes/users.js';
 import castingRoutes from './routes/casting.js';
 import aiRoutes from './routes/ai.js';
 import adminRoutes from './routes/admin.js';
+import contactRoutes from './routes/contact.js';
 import initializeDatabase from './config/init-db.js';
 
 // Load environment variables
@@ -53,6 +54,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/casting', castingRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Root route - API Welcome
 app.get('/', (req, res) => {

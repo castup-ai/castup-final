@@ -19,6 +19,7 @@ router.get('/profile', authMiddleware, getProfile);
 router.get('/stats', authMiddleware, getUserStats);
 router.get('/recent', getRecentUsers);
 router.get('/connections/count', authMiddleware, getConnectionCount);
+router.get('/connections/ids', authMiddleware, getConnectedUserIds);
 router.post('/connections/accept', authMiddleware, acceptConnection);
 router.post('/connections/decline', authMiddleware, declineConnection);
 router.get('/:userId', authMiddleware, getUserById);

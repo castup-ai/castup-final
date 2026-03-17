@@ -178,6 +178,16 @@ export const initializeDatabase = async () => {
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 job_id UUID REFERENCES casting_calls(id) ON DELETE CASCADE,
                 user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                category VARCHAR(50),
+                role VARCHAR(100),
+                age INTEGER,
+                gender VARCHAR(50),
+                phone VARCHAR(50),
+                whatsapp VARCHAR(50),
+                email VARCHAR(255),
+                address TEXT,
+                photo_url TEXT,
+                portfolio_files JSONB DEFAULT '[]',
                 message TEXT,
                 status VARCHAR(50) DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -186,17 +196,26 @@ export const initializeDatabase = async () => {
             )
         `);
 
-        // Migration: Transfer existing applications from JSONB array to the new table
-        await pool.query(`
-            INSERT INTO job_applications (job_id, user_id, message, created_at)
-            SELECT c.id, (app->>'userId')::UUID, app->>'message', 
-                   CASE 
-                     WHEN app->>'appliedAt' IS NOT NULL THEN (app->>'appliedAt')::TIMESTAMP 
-                     ELSE CURRENT_TIMESTAMP 
-                   END
-            FROM casting_calls c, jsonb_array_elements(c.applications) app
-            ON CONFLICT (job_id, user_id) DO NOTHING
+        // Migration: Ensure job_applications has all columns
+        const appCols = await pool.query(`
+            SELECT column_name FROM information_schema.columns WHERE table_name = 'job_applications'
         `);
+        const existingAppCols = appCols.rows.map(r => r.column_name);
+        if (!existingAppCols.includes('category')) {
+            await pool.query(`
+                ALTER TABLE job_applications 
+                ADD COLUMN category VARCHAR(50),
+                ADD COLUMN role VARCHAR(100),
+                ADD COLUMN age INTEGER,
+                ADD COLUMN gender VARCHAR(50),
+                ADD COLUMN phone VARCHAR(50),
+                ADD COLUMN whatsapp VARCHAR(50),
+                ADD COLUMN email VARCHAR(255),
+                ADD COLUMN address TEXT,
+                ADD COLUMN photo_url TEXT,
+                ADD COLUMN portfolio_files JSONB DEFAULT '[]'
+            `);
+        }
 
         console.log('✅ Database tables initialized successfully');
     } catch (error) {

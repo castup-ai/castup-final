@@ -39,9 +39,9 @@ export const castingService = {
         }
     },
 
-    apply: async (id, message = '') => {
+    apply: async (id, data) => {
         try {
-            const response = await api.post(`/casting/${id}/apply`, { message });
+            const response = await api.post(`/casting/${id}/apply`, data);
             return { success: true, data: response.data };
         } catch (error) {
             return {
@@ -61,5 +61,22 @@ export const castingService = {
                 error: error.response?.data?.error || 'Failed to delete job posting'
             };
         }
+    },
+
+    getMyApplications: async () => {
+        try {
+            const response = await api.get('/casting/applications/me');
+            return { success: true, data: response.data.applications };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.error || 'Failed to fetch your applications'
+            };
+        }
+    },
+
+    async update(id, data) {
+        const res = await api.put(`/casting/${id}`, data);
+        return res.data;
     }
 };

@@ -5,8 +5,9 @@ import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Configure multer for file uploads
-const upload = multer({ dest: 'uploads/' });
+// Configure multer for file uploads (Memory storage for Cloud compatibility)
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 // Protected routes
 router.post('/upload', authMiddleware, upload.single('file'), uploadFile);

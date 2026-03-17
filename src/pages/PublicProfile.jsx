@@ -6,13 +6,14 @@ import api from '@/services/api'
 import {
     MapPin, Briefcase, Star, Clock, Languages, UserPlus, MessageSquare,
     Instagram, Youtube, Linkedin, Twitter, Globe, ExternalLink,
-    ChevronLeft, Film, ImageIcon, FileVideo, Eye, Award, CheckCircle
+    ChevronLeft, Film, ImageIcon, FileVideo, Eye, Award, CheckCircle,
+    Share2
 } from 'lucide-react'
 
 export default function PublicProfile() {
     const { userId } = useParams()
     const navigate = useNavigate()
-    const { user, isAuthenticated, requireAuth, sendTargetedNotification, isProfileComplete } = useAuth()
+    const { user, isAuthenticated, requireAuth, sendTargetedNotification, isProfileComplete, connectedUserIds } = useAuth()
     const [profile, setProfile] = useState(null)
     const [portfolio, setPortfolio] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -87,6 +88,32 @@ export default function PublicProfile() {
         navigate('/explore', { state: { viewProfileId: userId } })
     }
 
+    const handleShareProfile = async () => {
+        const shareUrl = window.location.href;
+        const shareData = {
+            title: `CastUp: ${profile.name}`,
+            text: `Check out ${profile.name}'s professional profile on CastUp!`,
+            url: shareUrl
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Profile link copied to clipboard!');
+            }
+        } catch (err) {
+            console.error('Sharing failed', err);
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Profile link copied to clipboard!');
+            } catch (clipErr) {
+                alert('Sharing not supported on this browser.');
+            }
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
@@ -139,6 +166,13 @@ export default function PublicProfile() {
                     <span className="font-black text-xl" style={{ color: 'var(--color-primary)' }}>CastUp</span>
                 </Link>
                 <div className="flex gap-2">
+                    <button
+                        onClick={handleShareProfile}
+                        className="btn btn-secondary btn-sm flex items-center gap-2"
+                        title="Share Profile"
+                    >
+                        <Share2 size={16} /> <span className="hidden sm:inline">Share</span>
+                    </button>
                     {isAuthenticated ? (
                         <Link to="/home" className="btn btn-primary btn-sm">Dashboard</Link>
                     ) : (
@@ -201,14 +235,24 @@ export default function PublicProfile() {
                             {/* Action buttons */}
                             {(!user || user.id !== profile.id) && (
                                 <div className="flex gap-2 shrink-0">
-                                    <button
-                                        onClick={handleConnect}
-                                        disabled={connecting || connected}
-                                        className={`btn btn-sm flex items-center gap-2 ${connected ? 'btn-secondary' : 'btn-primary'}`}
-                                    >
-                                        <UserPlus size={15} />
-                                        {connected ? 'Request Sent' : connecting ? 'Sending...' : 'Connect'}
-                                    </button>
+                                         {connectedUserIds.includes(userId) ? (
+                                             <div className="btn btn-sm btn-success flex items-center gap-2 cursor-default">
+                                                 <CheckCircle size={15} /> Connected
+                                             </div>
+                                         ) : connected ? (
+                                             <div className="btn btn-sm btn-secondary flex items-center gap-2 cursor-default">
+                                                 <UserPlus size={15} /> Request Sent
+                                             </div>
+                                         ) : (
+                                             <button
+                                                 onClick={handleConnect}
+                                                 disabled={connecting}
+                                                 className="btn btn-sm btn-primary flex items-center gap-2"
+                                             >
+                                                 <UserPlus size={15} />
+                                                 {connecting ? 'Sending...' : 'Connect'}
+                                             </button>
+                                         )}
                                     <button onClick={handleMessage} className="btn btn-secondary btn-sm flex items-center gap-2">
                                         <MessageSquare size={15} /> Message
                                     </button>

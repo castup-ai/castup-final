@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
 import { FileText, Upload, Calendar, X, CheckCircle, Trash2, MapPin, Users, Eye } from 'lucide-react'
 import api from '@/services/api'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { Share2 } from 'lucide-react'
 
 const projectTypes = ['Feature Film', 'Short Film', 'Web Series', 'Documentary', 'Music Video', 'Commercial', 'Ad Film', 'Corporate Video', 'Other']
 
@@ -31,6 +32,7 @@ const CREW_ROLES = [
 export default function PostRequest() {
     const { isAuthenticated, requireAuth, addJob, user, isProfileComplete, allJobs, deleteJob } = useAuth()
     const navigate = useNavigate()
+    const location = useLocation()
     const [submitted, setSubmitted] = useState(false)
     const initialForm = {
         title: '', projectType: '', projectDetails: '',
@@ -46,9 +48,11 @@ export default function PostRequest() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [deleteId, setDeleteId] = useState(null)
     const [uploadingDocs, setUploadingDocs] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editingId, setEditingId] = useState(null)
     
-    // Get today's date in YYYY-MM-DD format for date input mins
-    const today = new Date().toISOString().split('T')[0];
+    // Get today's date in local YYYY-MM-DD format for date input mins
+    const today = new Date().toLocaleDateString('sv-SE');
 
     const resetForm = () => setForm(initialForm)
     const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
@@ -59,13 +63,20 @@ export default function PostRequest() {
                 alert('Kindly complete your basic profile (Name & Role/Department) before posting a request.')
                 navigate('/profile?edit=true')
             }
+
+            // Check if we're coming from Find Work with an editJob state
+            if (location.state?.editJob) {
+                handleEdit(location.state.editJob);
+                // Clear state so it doesn't re-trigger on refresh
+                window.history.replaceState({}, document.title);
+            }
         } else {
             // Wait a brief moment to avoid flashing during auth check
             setTimeout(() => {
                 requireAuth()
             }, 100)
         }
-    }, [isAuthenticated, isProfileComplete, navigate, requireAuth])
+    }, [isAuthenticated, isProfileComplete, navigate, requireAuth, location.state])
 
     const uploadDocuments = async (files) => {
         if (!files || files.length === 0) return [];
@@ -98,6 +109,67 @@ export default function PostRequest() {
             return uploaded;
         } finally {
             setUploadingDocs(false);
+        }
+    };
+
+    const handleEdit = (job) => {
+        setIsEditing(true)
+        setEditingId(job.id)
+        
+        // Populate form with existing data
+        setForm({
+            title: job.title || '',
+            projectType: job.projectType || '',
+            projectDetails: job.description || '',
+            startDate: job.startDate ? new Date(job.startDate).toISOString().split('T')[0] : '',
+            endDate: job.endDate ? new Date(job.endDate).toISOString().split('T')[0] : '',
+            documents: [], // We don't repopulate files but keep existing ones in backend if not changed
+            existingDocuments: job.documents || [],
+            country: job.country || '',
+            state: job.state || '',
+            city: job.city || '',
+            category: job.category || '',
+            subCategory: job.subCategory || '',
+            serviceStart: job.serviceDuration?.start || '',
+            serviceEnd: job.serviceDuration?.end || '',
+            lastDateToApply: job.lastDateToApply ? new Date(job.lastDateToApply).toISOString().split('T')[0] : '',
+            payRate: job.payRate || '',
+            requirements: job.requirements || ''
+        })
+
+        // Scroll to form
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false)
+        setEditingId(null)
+        resetForm()
+    }
+
+    const handleShare = async (job) => {
+        const shareUrl = `${window.location.origin}/find-work?jobId=${job.id}`;
+        const shareData = {
+            title: `CastUp: ${job.title}`,
+            text: `Check out this ${job.projectType} opportunity for ${job.subCategory} on CastUp!`,
+            url: shareUrl
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Link copied to clipboard!');
+            }
+        } catch (err) {
+            console.error('Sharing failed', err);
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Link copied to clipboard!');
+            } catch (clipErr) {
+                alert('Sharing not supported on this browser.');
+            }
         }
     };
 
@@ -149,21 +221,38 @@ export default function PostRequest() {
             lastDateToApply: form.lastDateToApply,
             payRate: form.payRate,
             requirements: form.requirements,
-            documents: uploadedDocs
+            documents: isEditing 
+                ? [...(form.existingDocuments || []), ...uploadedDocs]
+                : uploadedDocs
         }
         try {
-            const result = await addJob(jobData)
+            let result;
+            if (isEditing) {
+                result = await updateJob(editingId, jobData)
+            } else {
+                result = await addJob(jobData)
+            }
+
             if (result.success) {
-                setSubmitted(true)
+                if (isEditing) {
+                    alert('Request updated successfully!')
+                    setIsEditing(false)
+                    setEditingId(null)
+                    resetForm()
+                } else {
+                    setSubmitted(true)
+                }
             } else {
                 const errorMsg = result.details 
                     ? `${result.error}: ${result.details}`
-                    : result.error || 'Failed to create request. Please try again.';
+                    : result.error || 'Failed to save request. Please try again.';
                 alert(errorMsg)
             }
         } catch (err) {
-            console.error("Job Creation Error:", err)
-            alert('An unexpected error occurred while creating the request.')
+            console.error("Job Save Error:", err)
+            alert('An unexpected error occurred while saving the request.')
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -202,11 +291,13 @@ export default function PostRequest() {
     return (
         <div className="max-w-3xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
-                <h1 className="text-2xl font-bold mb-1">Post a Request</h1>
-                <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
-                    Find the perfect crew for your next project
-                </p>
-            </motion.div>
+                    <div>
+                        <h1 className="text-2xl font-bold mb-1">{isEditing ? 'Edit Request' : 'Post a Request'}</h1>
+                        <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
+                            {isEditing ? 'Update your project details and requirements' : 'Find the perfect crew for your next project'}
+                        </p>
+                    </div>
+                </motion.div>
 
             <form onSubmit={handleSubmit}>
                 {/* Project Information */}
@@ -260,12 +351,39 @@ export default function PostRequest() {
                                     update('documents', [...form.documents, ...newFiles]);
                                 }} />
 
+                            {form.existingDocuments && form.existingDocuments.length > 0 && (
+                                <div className="space-y-2 mt-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">Existing Documents</p>
+                                    {form.existingDocuments.map((doc, idx) => (
+                                        <div key={`exist-${idx}`} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                                                    <FileText size={18} />
+                                                </div>
+                                                <span className="text-sm font-bold opacity-70 truncate max-w-[200px]">{doc.name}</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const updated = form.existingDocuments.filter((_, i) => i !== idx);
+                                                    update('existingDocuments', updated);
+                                                }}
+                                                className="w-10 h-10 rounded-xl flex items-center justify-center text-danger hover:bg-danger/10 transition-colors"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             {form.documents && form.documents.length > 0 && (
                                 <div className="space-y-2 mt-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">New Documents</p>
                                     {form.documents.map((file, idx) => (
                                         <div key={idx} className="flex items-center justify-between p-3 bg-primary/5 rounded-xl border border-primary/20 group">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-primary">
                                                     <FileText size={18} />
                                                 </div>
                                                 <span className="text-sm font-bold text-primary truncate max-w-[200px]">{file.name}</span>
@@ -370,18 +488,18 @@ export default function PostRequest() {
 
                 {/* Actions */}
                 <div className="flex gap-3 justify-end">
-                    <button type="button" className="btn btn-secondary" onClick={resetForm}>
-                        <X size={16} /> Cancel
+                    <button type="button" className="btn btn-secondary" onClick={isEditing ? handleCancelEdit : resetForm}>
+                        <X size={16} /> {isEditing ? 'Cancel Edit' : 'Cancel'}
                     </button>
                     <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                         {isSubmitting ? (
                             <>
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                Creating...
+                                {isEditing ? 'Updating...' : 'Creating...'}
                             </>
                         ) : (
                             <>
-                                <FileText size={16} /> Create
+                                <FileText size={16} /> {isEditing ? 'Update Request' : 'Create'}
                             </>
                         )}
                     </button>
@@ -455,21 +573,31 @@ export default function PostRequest() {
                                                     {job.status || 'open'}
                                                 </span>
                                             </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button 
-                                                        onClick={() => navigate('/find-work', { state: { selectedJobId: job.id } })}
+                                             <td className="p-4">
+                                                 <div className="flex items-center justify-center gap-2">
+                                                     <button 
+                                                         onClick={() => handleShare(job)}
+                                                         className="w-8 h-8 rounded-lg bg-success/10 text-success hover:bg-success hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                                         title="Share Posting"
+                                                     >
+                                                         <Share2 size={14} />
+                                                     </button>
+                                                     <button 
+                                                         onClick={() => navigate('/find-work', { state: { selectedJobId: job.id } })}
                                                         className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
                                                         title="View Details"
                                                     >
                                                         <FileText size={14} className="opacity-60" />
                                                     </button>
                                                     <button 
-                                                        onClick={() => {
-                                                            if (window.confirm('Are you sure you want to delete this job posting?')) {
-                                                                deleteJob(job.id);
-                                                            }
-                                                        }}
+                                                        onClick={() => handleEdit(job)}
+                                                        className="w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                                                        title="Edit Post"
+                                                    >
+                                                        <Upload size={14} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => setDeleteId(job.id)}
                                                         className="w-8 h-8 rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
                                                         title="Delete Post"
                                                     >
@@ -544,51 +672,94 @@ export default function PostRequest() {
                                 </div>
                             ) : (
                                 applicants.map((app, idx) => (
-                                    <div key={idx} className="group p-4 rounded-2xl bg-white/[0.03] border border-white/5 transition-all hover:bg-white/[0.06] hover:border-primary/30">
+                                    <div key={idx} className="group p-5 rounded-2xl bg-white/[0.03] border border-white/5 transition-all hover:bg-white/[0.06] hover:border-primary/30">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex items-center gap-4">
                                                 <div className="relative">
-                                                    {app.user?.photo ? (
-                                                        <img src={app.user.photo} alt="" className="w-12 h-12 rounded-xl object-cover shadow-lg" />
+                                                    {app.appliedPhoto ? (
+                                                        <img src={app.appliedPhoto} alt="" className="w-14 h-14 rounded-xl object-cover shadow-lg" />
                                                     ) : (
-                                                        <div className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-black text-lg">
+                                                        <div className="w-14 h-14 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xl">
                                                             {app.user?.name?.[0]?.toUpperCase()}
                                                         </div>
                                                     )}
-                                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-success border-2 border-[#13111c]"></div>
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-base group-hover:text-primary transition-colors">{app.user?.name}</div>
+                                                    <div className="font-bold text-lg group-hover:text-primary transition-colors">{app.user?.name} {app.user?.lastName}</div>
                                                     <div className="text-[10px] font-black text-primary/60 uppercase tracking-widest">
-                                                        {app.user?.role || app.user?.department || 'Professional'}
+                                                        {app.category} • {app.appliedRole || app.user?.role || 'Professional'}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <button 
-                                                    onClick={() => navigate(`/profile/${app.user?.id}`)}
-                                                    className="btn btn-secondary btn-sm px-4 flex items-center gap-2"
-                                                >
-                                                    <Eye size={14} /> Profile
-                                                </button>
-                                            </div>
+                                            <button 
+                                                onClick={() => navigate(`/explore`, { state: { viewProfileId: app.user?.id, fromJobs: true } })}
+                                                className="btn btn-secondary btn-xs px-3 py-1 flex items-center gap-2 h-auto"
+                                            >
+                                                <Eye size={12} /> Profile
+                                            </button>
                                         </div>
                                         
+                                        {/* Detailed Info Grid */}
+                                        <div className="mt-4 grid grid-cols-2 gap-y-3 gap-x-6 text-[11px] font-medium opacity-70">
+                                            <div className="flex items-center gap-2">
+                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Age:</span>
+                                                <span>{app.appliedAge || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Gender:</span>
+                                                <span>{app.appliedGender || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Phone:</span>
+                                                <span className="text-primary font-bold">{app.appliedPhone || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Whatsapp:</span>
+                                                <span className="text-success font-bold">{app.appliedWhatsapp || 'N/A'}</span>
+                                            </div>
+                                            <div className="col-span-2 flex items-start gap-2">
+                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black pt-0.5">Address:</span>
+                                                <span className="flex-1">{app.appliedAddress || 'N/A'}</span>
+                                            </div>
+                                        </div>
+
                                         {app.message && (
-                                            <div className="mt-4 p-3 rounded-xl bg-black/20 text-xs italic opacity-80 leading-relaxed border-l-2 border-primary/30">
+                                            <div className="mt-4 p-4 rounded-xl bg-black/30 text-xs italic opacity-90 leading-relaxed border-l-2 border-primary">
+                                                <span className="block not-italic text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Message:</span>
                                                 "{app.message}"
                                             </div>
                                         )}
+
+                                        {/* Portfolio Files */}
+                                        {app.portfolioFiles && app.portfolioFiles.length > 0 && (
+                                            <div className="mt-4 space-y-2">
+                                                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Portfolio Files</span>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {app.portfolioFiles.map((pf, i) => (
+                                                        <a key={i} href={pf.url || pf} target="_blank" rel="noreferrer" 
+                                                           className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all">
+                                                            <FileText size={12} /> {pf.name || `File ${i+1}`}
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                         
-                                        <div className="mt-4 flex items-center gap-4 text-[10px] font-bold opacity-40">
-                                            <span className="flex items-center gap-1">
-                                                <Calendar size={10} /> Applied {new Date(app.timestamp || viewingJob.created_at).toLocaleDateString()}
-                                            </span>
-                                            {app.user?.location && (
+                                        <div className="mt-6 flex items-center justify-between pt-4 border-t border-white/5">
+                                            <div className="flex items-center gap-4 text-[10px] font-bold opacity-30">
                                                 <span className="flex items-center gap-1">
-                                                    <MapPin size={10} /> {app.user.location}
+                                                    <Calendar size={10} /> Applied {new Date(app.appliedAt).toLocaleDateString()}
                                                 </span>
-                                            )}
+                                                {app.user?.location && (
+                                                    <span className="flex items-center gap-1">
+                                                        <MapPin size={10} /> {app.user.location}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button className="btn btn-primary btn-xs px-4 h-7 text-[10px] font-black uppercase tracking-widest">Hire</button>
+                                                <button className="btn btn-ghost btn-xs px-4 h-7 text-[10px] font-black uppercase tracking-widest opacity-50">Decline</button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))
@@ -609,41 +780,48 @@ export default function PostRequest() {
             )}
 
             {/* Deletion Confirmation Modal */}
-            {deleteId && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-                    <motion.div 
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="card w-full max-w-md p-8 text-center border-white/10 shadow-3xl"
-                    >
-                        <div className="w-20 h-20 rounded-3xl bg-danger/10 text-danger flex items-center justify-center mx-auto mb-6">
-                            <Trash2 size={40} />
-                        </div>
-                        <h3 className="text-2xl font-black mb-2">Are you sure?</h3>
-                        <p className="text-sm font-medium opacity-60 mb-8 max-w-[280px] mx-auto leading-relaxed">
-                            This action cannot be undone. All applicant data for this job will also be removed.
-                        </p>
-                        <div className="grid grid-cols-2 gap-3">
-                            <button 
-                                onClick={() => setDeleteId(null)}
-                                className="h-14 rounded-2xl bg-white/5 border border-white/10 text-sm font-bold hover:bg-white/10 transition-all uppercase tracking-widest"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={async () => {
-                                    const jobToDelete = deleteId;
-                                    setDeleteId(null);
-                                    await deleteJob(jobToDelete);
-                                }}
-                                className="h-14 rounded-2xl bg-danger text-white text-sm font-black hover:bg-danger-dark transition-all shadow-lg shadow-danger/20 uppercase tracking-widest"
-                            >
-                                Delete Now
-                            </button>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
+            <AnimatePresence>
+                {deleteId && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                            className="card w-full max-w-sm p-8 text-center"
+                        >
+                            <div className="w-16 h-16 rounded-2xl bg-danger/20 text-danger flex items-center justify-center mx-auto mb-6">
+                                <Trash2 size={32} />
+                            </div>
+                            <h3 className="text-2xl font-black mb-2">Delete Posting?</h3>
+                            <p className="text-sm opacity-60 mb-8">This action cannot be undone. All applications for this job will also be removed.</p>
+                            
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => setDeleteId(null)}
+                                    className="flex-1 h-12 rounded-xl border border-white/10 font-bold hover:bg-white/5 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                 <button 
+                                     onClick={async () => {
+                                         const id = deleteId;
+                                         setDeleteId(null);
+                                         const result = await deleteJob(id);
+                                         if (!result.success) {
+                                             alert(result.error || 'Failed to delete job posting.');
+                                         } else {
+                                             alert('Job posting deleted successfully.');
+                                         }
+                                     }}
+                                     className="flex-1 h-12 rounded-xl bg-danger text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-danger/20"
+                                 >
+                                     Delete
+                                 </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

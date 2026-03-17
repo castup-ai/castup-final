@@ -18,11 +18,24 @@ export const uploadFile = async (req, res) => {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        // Upload to Cloudinary
-        const result = await cloudinary.uploader.upload(file.path, {
-            folder: 'castup/files',
-            resource_type: 'auto'
-        });
+        // Upload to Cloudinary using stream for buffer (Vercel fix)
+        const uploadToCloudinary = () => {
+            return new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    {
+                        folder: 'castup/files',
+                        resource_type: 'auto'
+                    },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                );
+                stream.end(file.buffer);
+            });
+        };
+
+        const result = await uploadToCloudinary();
 
         // Save to database
         const dbResult = await pool.query(

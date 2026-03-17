@@ -1,5 +1,8 @@
 import express from 'express';
-import { getPlatformStats, deleteUser, deleteJob, getAllWorks, deleteWork } from '../controllers/adminController.js';
+import { 
+    getPlatformStats, deleteUser, deleteJob, getAllWorks, deleteWork,
+    getContactMessages, updateContactStatus
+} from '../controllers/adminController.js';
 import authMiddleware from '../middleware/auth.js';
 import adminMiddleware from '../middleware/admin.js';
 
@@ -14,5 +17,7 @@ router.delete('/users/:userId', deleteUser);
 router.delete('/jobs/:jobId', deleteJob);
 router.get('/works', getAllWorks);
 router.delete('/works/:workId', deleteWork);
+router.get('/contacts', getContactMessages);
+router.patch('/contacts/:messageId', updateContactStatus);
 
 export default router;

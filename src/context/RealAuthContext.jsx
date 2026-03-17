@@ -40,6 +40,9 @@ export function RealAuthProvider({ children }) {
 
     const [notifications, setNotifications] = useState([]);
     const [appliedJobs, setAppliedJobs] = useState([]);
+    const [userApplications, setUserApplications] = useState([]);
+    const [connectedUserIds, setConnectedUserIds] = useState([]);
+    const [contactMessages, setContactMessages] = useState([]);
     const [allJobs, setAllJobs] = useState([]);
     const [allWorks, setAllWorks] = useState([]);
     const [connectionCount, setConnectionCount] = useState(0);
@@ -96,6 +99,11 @@ export function RealAuthProvider({ children }) {
             if (worksRes.success) setAllWorks(worksRes.data || []);
             setWorksLoading(false);
             
+            if (token && ['castup4862446@gmail.com', 'castupaiapp@gmail.com'].includes(user?.email)) {
+                const contactRes = await adminService.getContactMessages();
+                if (contactRes.success) setContactMessages(contactRes.data || []);
+            }
+
             // Also fetch stats/recent
             fetchUserStats();
             fetchRecentActivity();
@@ -136,21 +144,33 @@ export function RealAuthProvider({ children }) {
     useEffect(() => {
         if (user) {
             const loadData = async () => {
-                const [notifsRes, connRes] = await Promise.all([
+                const [notifsRes, connRes, connIdsRes] = await Promise.all([
                     authService.getNotifications(),
-                    api.get('/users/connections/count').catch(() => ({ data: { count: 0 } }))
+                    api.get('/users/connections/count').catch(() => ({ data: { count: 0 } })),
+                    api.get('/users/connections/ids').catch(() => ({ data: { ids: [] } }))
                 ]);
 
                 if (notifsRes.success) {
                     setNotifications(notifsRes.data || []);
                 }
                 setConnectionCount(connRes.data?.count || 0);
+                setConnectedUserIds(connIdsRes.data?.ids || []);
 
                 // Still use localStorage for appliedJobs temporarily
                 try {
                     const userKey = `castup_data_${user.id}`;
                     const savedData = JSON.parse(localStorage.getItem(userKey) || '{}');
                     setAppliedJobs(savedData.appliedJobs || []);
+                    
+                    // Fetch full application history from server
+                    const appsRes = await castingService.getMyApplications();
+                    if (appsRes.success) {
+                        setUserApplications(appsRes.data);
+                        // Sync appliedJobs IDs
+                        const ids = appsRes.data.map(a => a.job_id);
+                        setAppliedJobs(ids);
+                        saveUserData(user.id, { appliedJobs: ids });
+                    }
                 } catch (e) {
                     console.error("Error loading local user data", e);
                 }
@@ -221,6 +241,15 @@ export function RealAuthProvider({ children }) {
             return { success: true, job: result.data };
         }
         return result; // contains success: false, error, details, code
+    }
+
+    const updateJob = async (jobId, jobData) => {
+        const result = await castingService.update(jobId, jobData);
+        if (result.success) {
+            setAllJobs(prev => prev.map(j => j.id === jobId ? result.castingCall : j));
+            return { success: true, job: result.castingCall };
+        }
+        return result;
     }
 
     const deleteJob = async (jobId) => {
@@ -316,10 +345,10 @@ export function RealAuthProvider({ children }) {
         }
     };
 
-    const applyForJob = async (jobId) => {
+    const applyForJob = async (jobId, applicationData) => {
         if (!user) return;
 
-        const { success, error } = await castingService.apply(jobId);
+        const { success, error } = await castingService.apply(jobId, applicationData);
         if (success) {
             setAppliedJobs(prev => {
                 if (prev.includes(jobId)) return prev;
@@ -389,7 +418,11 @@ export function RealAuthProvider({ children }) {
             acceptConnection,
             declineConnection,
             appliedJobs,
-            applyForJob
+            userApplications,
+            connectedUserIds,
+            contactMessages,
+            applyForJob,
+            updateJob
         }}>
             {children}
         </RealAuthContext.Provider>

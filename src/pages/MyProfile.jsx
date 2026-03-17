@@ -5,7 +5,7 @@ import { useAuth } from '@/context/RealAuthContext'
 import {
     User, Save, X, Camera, MapPin, Calendar, Award, Globe,
     Briefcase, Languages, Edit3, CheckCircle, Trash2, Film, Image as ImageIcon,
-    Play, ZoomIn, Upload, ChevronLeft, ChevronRight
+    Play, ZoomIn, Upload, ChevronLeft, ChevronRight, Share2
 } from 'lucide-react'
 import api from '@/services/api'
 
@@ -58,6 +58,8 @@ export default function MyProfile() {
         skills: '', additionalSkills: '', portfolioLink: '', socialMedia: '',
         projectType: '', projectsWorkedOn: '', photo: null
     })
+    const [portfolioLoading, setPortfolioLoading] = useState(false)
+    const { loading: authLoading } = useAuth()
 
     useEffect(() => {
         if (user) {
@@ -91,6 +93,7 @@ export default function MyProfile() {
             if (!editing) {
                 // Fetch Portfolio Media only when not in initial registration edit mode
                 const fetchPortfolio = async () => {
+                    setPortfolioLoading(true)
                     try {
                         const res = await api.get('/portfolios/me')
                         if (res.data?.success && res.data.portfolio) {
@@ -98,6 +101,8 @@ export default function MyProfile() {
                         }
                     } catch(e) {
                         console.error("Failed to load portfolio works", e)
+                    } finally {
+                        setPortfolioLoading(false)
                     }
                 }
                 fetchPortfolio()
@@ -148,9 +153,60 @@ export default function MyProfile() {
         }
     };
 
+    const handleShareProfile = async () => {
+        const shareUrl = `${window.location.origin}/profile/${user.id}`;
+        const shareData = {
+            title: `CastUp: ${user.name}`,
+            text: `Check out my professional profile on CastUp!`,
+            url: shareUrl
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Profile link copied to clipboard!');
+            }
+        } catch (err) {
+            console.error('Sharing failed', err);
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Profile link copied to clipboard!');
+            } catch (clipErr) {
+                alert('Sharing not supported on this browser.');
+            }
+        }
+    };
+
+    const Skeleton = ({ className, style }) => (
+        <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} style={{ ...style }} />
+    )
+
+    if (authLoading) return (
+        <div className="max-w-3xl mx-auto space-y-6">
+            <div className="flex items-center justify-between mb-8">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-10 w-24" />
+            </div>
+            <div className="card p-6 flex items-center gap-5">
+                <Skeleton className="w-20 h-20 rounded-2xl" />
+                <div className="flex-1 space-y-2">
+                    <Skeleton className="h-6 w-1/3" />
+                    <Skeleton className="h-4 w-1/4" />
+                </div>
+            </div>
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
+        </div>
+    )
+
     if (!user) return (
-        <div className="text-center py-20">
+        <div className="text-center py-20 card border-dashed">
+            <User size={48} className="mx-auto mb-4 opacity-20" />
             <h2 className="text-xl font-bold mb-2">Please log in to view your profile</h2>
+            <p className="text-sm opacity-60 mb-6">You need to be authenticated to manage your professional identity.</p>
+            <button className="btn btn-primary" onClick={() => navigate('/')}>Return Home</button>
         </div>
     )
 
@@ -162,9 +218,14 @@ export default function MyProfile() {
                     <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Manage your professional identity</p>
                 </div>
                 {!editing ? (
-                    <button className="btn btn-primary btn-sm" onClick={() => setEditing(true)}>
-                        <Edit3 size={14} /> Edit Profile
-                    </button>
+                    <div className="flex gap-2">
+                        <button className="btn btn-secondary btn-sm flex items-center gap-2" onClick={handleShareProfile}>
+                            <Share2 size={14} /> Share
+                        </button>
+                        <button className="btn btn-primary btn-sm" onClick={() => setEditing(true)}>
+                            <Edit3 size={14} /> Edit Profile
+                        </button>
+                    </div>
                 ) : (
                     <div className="flex gap-2">
                         <button className="btn btn-secondary btn-sm" onClick={() => setEditing(false)}>
@@ -429,7 +490,20 @@ export default function MyProfile() {
                     </button>
                 </div>
                 
-                {(!portfolio?.media || portfolio.media.length === 0) ? (
+                {portfolioLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="card overflow-hidden flex flex-col h-[320px]">
+                                <Skeleton className="w-full h-[180px] rounded-none" />
+                                <div className="p-4 flex-1 space-y-2">
+                                    <Skeleton className="h-3 w-1/4" />
+                                    <Skeleton className="h-5 w-3/4" />
+                                    <Skeleton className="h-12 w-full" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (!portfolio?.media || portfolio.media.length === 0) ? (
                     <div className="card p-8 text-center border-dashed">
                         <div className="avatar avatar-lg mx-auto mb-3" style={{ background: 'var(--color-bg-offset)', color: 'var(--color-text-dim)' }}>
                             <ImageIcon size={24} />

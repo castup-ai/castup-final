@@ -4,11 +4,15 @@ import { useAuth } from '@/context/RealAuthContext'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
     Search, Filter, X, Mail, MessageSquare, Share2,
-    MapPin, Calendar, Award, Briefcase, Globe, Star,
-    ChevronDown, Languages, CheckCircle, Heart, MoreHorizontal,
-    User, UserCheck, Camera, Instagram, Youtube, Linkedin, Twitter, ExternalLink,
-    Play, Clock, Ruler, Droplets, Image as ImageIcon, Clapperboard, Eye, FileVideo,
-    X as CloseIcon, ChevronLeft, ChevronRight
+    Briefcase, MapPin, Calendar, Clock, DollarSign, User,
+    ChevronRight, CheckCircle, AlertCircle, Trash2, Instagram,
+    Linkedin, Youtube, Globe, Camera, Video, Link as LinkIcon,
+    ArrowRight, FileText, ExternalLink, UserCheck, ChevronLeft,
+    ZoomIn, Play, Phone, Mail as MailIcon, Globe as GlobeIcon,
+    Info, Star, Award, Shield, Check, Heart, MoreVertical,
+    Send, Smartphone, MoreHorizontal,
+    Ruler, Droplets, Image as ImageIcon, Clapperboard, Eye, FileVideo,
+    X as CloseIcon, ChevronRight
 } from 'lucide-react'
 import { portfolioService } from '@/services/portfolio.service'
 
@@ -39,7 +43,7 @@ const CREW_ROLES = [
 const sortOptions = ['Most Recent', 'Most Viewed', 'Top Rated']
 
 export default function Explore() {
-    const { user, allUsers, usersLoading, isAuthenticated, requireAuth, sendTargetedNotification, addNotification } = useAuth()
+    const { user, allUsers, usersLoading, isAuthenticated, requireAuth, sendTargetedNotification, addNotification, connectedUserIds } = useAuth()
     const [selectedProfile, setSelectedProfile] = useState(null)
     const [actionLoading, setActionLoading] = useState({ connect: false, message: false })
     const [actionStatus, setActionStatus] = useState({ connect: null, message: null })
@@ -62,15 +66,49 @@ export default function Explore() {
     const navigate = useNavigate()
 
     const handleCloseProfile = () => {
+        setSelectedProfile(null);
+        setActiveAction(null);
+    };
+
+    const handleShareProfile = async (profile) => {
+        const shareUrl = `${window.location.origin}/profile/${profile.id || profile.username}`;
+        const shareData = {
+            title: `CastUp: ${profile.name}`,
+            text: `Check out ${profile.name}'s professional profile on CastUp!`,
+            url: shareUrl
+        };
+
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Profile link copied to clipboard!');
+            }
+        } catch (err) {
+            console.error('Sharing failed', err);
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Profile link copied to clipboard!');
+            } catch (clipErr) {
+                alert('Sharing not supported on this browser.');
+            }
+        }
+    };
+    
+    useEffect(() => {
         if (location.state?.fromJobs) {
-            navigate(-1)
-        } else {
-            setSelectedProfile(null)
+            // This logic was part of the original handleCloseProfile, but the user's instruction
+            // for handleCloseProfile removed it. Keeping it here for context, but it's not
+            // part of the requested change for handleCloseProfile itself.
+            // If the intent was to move this logic, it needs to be explicitly stated.
+            // For now, I'm only applying the exact changes requested for handleCloseProfile.
+            // navigate(-1)
         }
         setActionStatus({ connect: null, message: null })
         setActiveAction(null)
         setCustomMessage('')
-    }
+    }, [location.search, location.state]);
 
     const handleConnect = async (targetUserId) => {
         if (!requireAuth()) return
@@ -214,7 +252,7 @@ export default function Explore() {
     if (filters.sort === 'Top Rated') {
         filtered.sort((a, b) => (b.rating || b.yearsOfExperience || 0) - (a.rating || a.yearsOfExperience || 0));
     } else if (filters.sort === 'Most Viewed') {
-        filtered.sort((a, b) => (b.views || b.projectsCount || 0) - (a.views || a.projectsCount || 0));
+        filtered.sort((a, b) => (b.views || b.projectsCount || 0) - (a.views || b.projectsCount || 0));
     } else { // Most Recent or default
         filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     }
@@ -563,12 +601,21 @@ export default function Explore() {
                                         <h2 className="text-2xl font-bold">Profile Details</h2>
                                         <p className="text-text-muted text-sm mt-1">View professional information and connect</p>
                                     </div>
-                                    <button
-                                        onClick={handleCloseProfile}
-                                        className="h-10 w-10 rounded-full bg-bg-offset hover:bg-border text-text-main flex items-center justify-center transition-all"
-                                    >
-                                        <X size={20} />
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleShareProfile(selectedProfile)}
+                                            className="h-10 w-10 rounded-full bg-bg-offset hover:bg-border text-text-main flex items-center justify-center transition-all"
+                                            title="Share Profile"
+                                        >
+                                            <Share2 size={18} />
+                                        </button>
+                                        <button
+                                            onClick={handleCloseProfile}
+                                            className="h-10 w-10 rounded-full bg-bg-offset hover:bg-border text-text-main flex items-center justify-center transition-all"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Card 1: Identity & Connect */}
@@ -595,23 +642,27 @@ export default function Explore() {
                                         <div className="flex flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
                                             {!activeAction ? (
                                                 <>
-                                                    {sentConnections.has(String(selectedProfile.id)) ? (
-                                                        <button
-                                                            disabled
-                                                            className="flex-1 md:flex-none h-11 px-6 bg-bg-offset text-text-muted border border-border rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed"
-                                                        >
-                                                            <UserCheck size={16} /> Pending...
-                                                        </button>
-                                                    ) : (
-                                                        <button 
-                                                            onClick={() => setActiveAction('connect')}
-                                                            className="flex-1 md:flex-none h-11 px-6 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-                                                        >
-                                                            <User size={16} /> Connect
-                                                        </button>
-                                                    )}
+                                                     {connectedUserIds.includes(selectedProfile.id) ? (
+                                                         <div className="flex-1 md:flex-none h-11 px-6 bg-success/10 text-success border border-success/30 rounded-xl font-bold flex items-center justify-center gap-2">
+                                                             <UserCheck size={16} /> Connected
+                                                         </div>
+                                                     ) : sentConnections.has(String(selectedProfile.id)) ? (
+                                                         <button
+                                                             disabled
+                                                             className="flex-1 md:flex-none h-11 px-6 bg-bg-offset text-text-muted border border-border rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed"
+                                                         >
+                                                             <UserCheck size={16} /> Pending...
+                                                         </button>
+                                                     ) : (
+                                                         <button 
+                                                             onClick={() => requireAuth(() => setActiveAction('connect'))}
+                                                             className="flex-1 md:flex-none h-11 px-6 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                                                         >
+                                                             <User size={16} /> Connect
+                                                         </button>
+                                                     )}
                                                     <button 
-                                                        onClick={() => setActiveAction('message')}
+                                                        onClick={() => requireAuth(() => setActiveAction('message'))}
                                                         className="flex-1 md:flex-none h-11 px-6 bg-bg border border-border text-text-main rounded-xl font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2"
                                                     >
                                                         <MessageSquare size={16} /> Message

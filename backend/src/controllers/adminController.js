@@ -169,10 +169,49 @@ export const deleteWork = async (req, res) => {
 
         res.json({
             success: true,
-            message: `Work "\${result.rows[0].name}" deleted successfully`
+            message: `Work "${result.rows[0].name}" deleted successfully`
         });
     } catch (error) {
         console.error('Delete work error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Get all contact messages
+export const getContactMessages = async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
+        res.json({
+            success: true,
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Get contact messages error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Update contact message status
+export const updateContactStatus = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { status } = req.body;
+
+        const result = await pool.query(
+            'UPDATE contact_messages SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+            [status, messageId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+
+        res.json({
+            success: true,
+            data: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Update contact status error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 };
