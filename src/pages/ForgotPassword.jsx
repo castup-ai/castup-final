@@ -17,9 +17,9 @@ export default function ForgotPassword() {
         setError('')
 
         try {
-            // Add a safety timeout for the request (45 seconds for cold start + SMTP)
+            // Add a safety timeout for the request (70 seconds for cold start + Failover SMTP)
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('TIMEOUT')), 45000)
+                setTimeout(() => reject(new Error('TIMEOUT')), 70000)
             );
 
             const result = await Promise.race([

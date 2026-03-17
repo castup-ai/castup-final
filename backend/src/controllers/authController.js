@@ -11,40 +11,43 @@ const sendEmail = async ({ to, subject, html }) => {
     if (pass) pass = pass.replace(/\s+/g, '');
     if (!pass) return { success: false, error: 'SMTP_PASS missing' };
 
-    // Port 587 with STARTTLS is often more reliable on Render/Heroku than Port 465
-    const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // true for 465, false for other ports
-        auth: { user, pass },
-        tls: {
-            rejectUnauthorized: false // Helps with some cloud networking issues
-        }
-    });
-
-    console.log(`✉️ Starting email send to ${to} via Port 587...`);
-
-    try {
-        // 30-second timeout for the SMTP handshake + send
-        const emailPromise = transporter.sendMail({
-            from: `"CastUp" <${user}>`,
-            to, subject, html
+    const trySend = async (port, secure) => {
+        console.log(`✉️ Trying email send via Port ${port} (secure: ${secure})...`);
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port,
+            secure,
+            auth: { user, pass },
+            tls: { rejectUnauthorized: false }
         });
 
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('SMTP_TIMEOUT')), 30000)
-        );
+        try {
+            const info = await Promise.race([
+                transporter.sendMail({ from: `"CastUp" <${user}>`, to, subject, html }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 20000))
+            ]);
+            console.log(`✅ Success on Port ${port}!`);
+            return { success: true, messageId: info.messageId };
+        } catch (err) {
+            console.warn(`⚠️ Failed on Port ${port}: ${err.message}`);
+            return { success: false, error: err.message };
+        }
+    };
 
-        const info = await Promise.race([emailPromise, timeoutPromise]);
-        console.log(`✅ Email sent: ${info.messageId}`);
-        return { success: true };
-    } catch (err) {
-        console.error('❌ SMTP Error Detail:', err);
-        return { 
-            success: false, 
-            error: err.message === 'SMTP_TIMEOUT' ? 'Google SMTP took too long to respond' : err.message 
-        };
-    }
+    // Failover Sequence
+    // 1. Try Port 465 (SSL)
+    const res1 = await trySend(465, true);
+    if (res1.success) return { success: true };
+
+    // 2. Try Port 587 (TLS)
+    console.log('🔄 Failing over to Port 587...');
+    const res2 = await trySend(587, false);
+    if (res2.success) return { success: true };
+
+    return { 
+        success: false, 
+        error: `All delivery attempts failed. (465: ${res1.error}, 587: ${res2.error})` 
+    };
 };
 
 // Signup
@@ -225,9 +228,9 @@ export const forgotPassword = async (req, res) => {
         }
     };
 
-    // Overall 40s timeout for the entire request
+    // Overall 50s timeout to allow for Port 465 + Port 587 attempts
     const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), 40000)
+        setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), 50000)
     );
 
     try {
