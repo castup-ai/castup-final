@@ -327,6 +327,7 @@ export function RealAuthProvider({ children }) {
         <RealAuthContext.Provider value={{
             user, token, login, register, logout, updateProfile, requireAuth,
             isAuthenticated: !!user,
+            isProfileComplete: !!(user && user.name && (user.role || user.department)),
             loading,
             usersLoading,
             jobsLoading,

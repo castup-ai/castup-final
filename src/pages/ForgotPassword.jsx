@@ -17,7 +17,15 @@ export default function ForgotPassword() {
         setError('')
 
         try {
-            const result = await authService.forgotPassword(email);
+            // Add a safety timeout for the request
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+            );
+
+            const result = await Promise.race([
+                authService.forgotPassword(email),
+                timeoutPromise
+            ]);
 
             if (result.success) {
                 setSubmitted(true)
@@ -25,7 +33,14 @@ export default function ForgotPassword() {
                 setError(result.error || 'Failed to send reset link.')
             }
         } catch (err) {
-            setError('Could not connect to the server. Please try again.')
+            if (err.message === 'TIMEOUT') {
+                setError('The request is taking too long. If you don\'t receive an email soon, please try again.')
+                // We still set submitted to true to avoid user spamming, 
+                // but let them know it might be delayed
+                setSubmitted(true)
+            } else {
+                setError('Could not connect to the server. Please try again.')
+            }
         } finally {
             setLoading(false)
         }

@@ -43,12 +43,13 @@ const getSourceIcon = (url) => {
 }
 
 export default function UploadWork() {
-    const { isAuthenticated, requireAuth, user } = useAuth()
+    const { isAuthenticated, requireAuth, user, isProfileComplete } = useAuth()
     const navigate = useNavigate()
     const [submitted, setSubmitted] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const initialForm = {
-        title: '', type: '', description: '', castCrew: '', sourceUrl: ''
+        title: '', type: '', description: '', castCrew: '', sourceUrl: '',
+        document: null
     }
     const [form, setForm] = useState(initialForm)
 
@@ -57,7 +58,6 @@ export default function UploadWork() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            const isProfileComplete = user && user.name && (user.role || user.department);
             if (!isProfileComplete) {
                 alert('Kindly complete your basic profile (Name & Role/Department) before uploading work.');
                 navigate('/profile?edit=true');
@@ -65,13 +65,12 @@ export default function UploadWork() {
         } else {
             setTimeout(() => { requireAuth() }, 100)
         }
-    }, [isAuthenticated, user, navigate, requireAuth])
+    }, [isAuthenticated, isProfileComplete, navigate, requireAuth])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!isAuthenticated) { requireAuth(); return }
 
-        const isProfileComplete = user && user.name && (user.role || user.department);
         if (!isProfileComplete) {
             alert('Kindly complete your basic profile before uploading work.');
             navigate('/profile?edit=true');
@@ -87,14 +86,27 @@ export default function UploadWork() {
 
         setIsLoading(true)
         try {
-            await api.post('/portfolios/media', {
+            const formData = {
                 title: form.title,
                 type: form.type,
                 description: form.description,
                 castCrew: form.castCrew,
                 sourceUrl: form.sourceUrl || null,
                 sourceType: detectSourceType(form.sourceUrl)
-            })
+            };
+
+            // If there's a document, we might need to handle it differently 
+            // but for now let's send it in the body if it's small or just metadata if the backend doesn't support binary yet.
+            // Based on PostRequest.jsx, it sends metadata.
+            if (form.document) {
+                formData.document = {
+                    name: form.document.name,
+                    type: form.document.type,
+                    size: form.document.size
+                };
+            }
+
+            await api.post('/portfolios/media', formData)
             setSubmitted(true)
         } catch (error) {
             console.error('Error uploading work:', error)
@@ -159,7 +171,7 @@ export default function UploadWork() {
                                 onChange={e => update('castCrew', e.target.value)} />
                         </div>
 
-                        {/* URL Input - replaces binary file upload */}
+                        {/* URL Input */}
                         <div className="form-group">
                             <label className="flex items-center gap-2">
                                 <Link size={14} /> Video / Portfolio Link
@@ -178,17 +190,43 @@ export default function UploadWork() {
                                     </span>
                                 )}
                             </div>
-                            <div className="flex gap-3 mt-2">
-                                {[
-                                    { icon: <Youtube size={13} className="text-red-400" />, label: 'YouTube' },
-                                    { icon: <Instagram size={13} className="text-pink-400" />, label: 'Instagram' },
-                                    { icon: <Globe size={13} className="text-blue-400" />, label: 'Vimeo / Drive' },
-                                ].map(({ icon, label }) => (
-                                    <span key={label} className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-text-dim)' }}>
-                                        {icon} {label}
-                                    </span>
-                                ))}
+                        </div>
+
+                        {/* Document Upload - NEW */}
+                        <div className="form-group">
+                            <label className="flex items-center gap-2">
+                                <Upload size={14} /> Attach Script/Document
+                                <span className="text-xs font-normal" style={{ color: 'var(--color-text-muted)' }}>(optional, PDF only)</span>
+                            </label>
+                            <div 
+                                className="file-upload p-4 border-2 border-dashed rounded-xl text-center cursor-pointer hover:bg-primary/5 transition-colors"
+                                onClick={() => document.getElementById('work-doc-upload')?.click()}
+                            >
+                                {form.document ? (
+                                    <div className="flex items-center justify-between px-2">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle size={16} className="text-success" />
+                                            <span className="text-sm font-medium truncate max-w-[200px]">{form.document.name}</span>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            className="text-danger hover:text-danger/80"
+                                            onClick={(e) => { e.stopPropagation(); update('document', null); }}
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <Upload size={20} className="mx-auto mb-2 opacity-50" />
+                                        <p className="text-xs" style={{ color: 'var(--color-text-dim)' }}>Click to upload PDF document</p>
+                                    </>
+                                )}
                             </div>
+                            <input 
+                                type="file" id="work-doc-upload" accept=".pdf" className="hidden" 
+                                onChange={e => update('document', e.target.files[0])}
+                            />
                         </div>
                     </div>
                 </motion.div>

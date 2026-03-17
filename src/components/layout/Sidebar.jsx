@@ -13,7 +13,7 @@ const navItems = [
     { path: '/home', label: 'Home', icon: Home },
     { path: '/explore', label: 'Explore', icon: Compass },
     { path: '/post-request', label: 'Post a Request', icon: FileText },
-    { path: '/find-work', label: 'Find Work', icon: Briefcase },
+    { path: '/find-work', label: 'Find Job', icon: Briefcase },
     { path: '/upload-work', label: 'Upload Work', icon: Upload },
 ]
 

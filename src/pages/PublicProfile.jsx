@@ -12,7 +12,7 @@ import {
 export default function PublicProfile() {
     const { userId } = useParams()
     const navigate = useNavigate()
-    const { user, isAuthenticated, requireAuth, sendTargetedNotification } = useAuth()
+    const { user, isAuthenticated, requireAuth, sendTargetedNotification, isProfileComplete } = useAuth()
     const [profile, setProfile] = useState(null)
     const [portfolio, setPortfolio] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -46,7 +46,19 @@ export default function PublicProfile() {
     }, [userId])
 
     const handleConnect = async () => {
-        if (!isAuthenticated) { requireAuth(); return }
+        if (!isAuthenticated) { 
+            if (confirm('Please log in or register to connect with talents.')) {
+                requireAuth(); 
+            }
+            return 
+        }
+
+        if (!isProfileComplete) {
+            alert('Kindly complete your profile (Name & Role/Department) before sending connection requests.');
+            navigate('/profile?edit=true');
+            return;
+        }
+
         if (connecting || connected) return
         setConnecting(true)
         const { success } = await sendTargetedNotification(userId, {
@@ -60,7 +72,13 @@ export default function PublicProfile() {
     }
 
     const handleMessage = () => {
-        if (!isAuthenticated) { requireAuth(); return }
+        if (!isAuthenticated) { 
+            if (confirm('Please log in or register to message talents.')) {
+                requireAuth(); 
+            }
+            return 
+        }
+        
         // Navigate to explore page and open their profile
         navigate('/explore', { state: { viewProfileId: userId } })
     }

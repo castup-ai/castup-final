@@ -28,7 +28,7 @@ const CREW_ROLES = [
 ]
 
 export default function PostRequest() {
-    const { isAuthenticated, requireAuth, addJob, user } = useAuth()
+    const { isAuthenticated, requireAuth, addJob, user, isProfileComplete } = useAuth()
     const navigate = useNavigate()
     const [submitted, setSubmitted] = useState(false)
     const initialForm = {
@@ -39,14 +39,15 @@ export default function PostRequest() {
         lastDateToApply: '', payRate: '', requirements: ''
     }
     const [form, setForm] = useState(initialForm)
+    
+    // Get today's date in YYYY-MM-DD format for date input mins
+    const today = new Date().toISOString().split('T')[0];
 
     const resetForm = () => setForm(initialForm)
     const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
 
     useEffect(() => {
         if (isAuthenticated) {
-            // Relaxed check: Name and either Role or Department
-            const isProfileComplete = user && user.name && (user.role || user.department);
             if (!isProfileComplete) {
                 alert('Kindly complete your basic profile (Name & Role/Department) before posting a request.')
                 navigate('/profile?edit=true')
@@ -57,14 +58,12 @@ export default function PostRequest() {
                 requireAuth()
             }, 100)
         }
-    }, [isAuthenticated, user, navigate, requireAuth])
+    }, [isAuthenticated, isProfileComplete, navigate, requireAuth])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!isAuthenticated) { requireAuth(); return }
 
-        // Relaxed check: Name and either Role or Department
-        const isProfileComplete = user && user.name && (user.role || user.department);
         if (!isProfileComplete) {
             alert('Kindly complete your basic profile before posting a request.')
             navigate('/profile?edit=true')
@@ -181,12 +180,13 @@ export default function PostRequest() {
                             <div className="form-group">
                                 <label>Start Date *</label>
                                 <input type="date" required value={form.startDate}
+                                    min={today}
                                     onChange={e => update('startDate', e.target.value)} />
                             </div>
                             <div className="form-group">
                                 <label>End Date *</label>
                                 <input type="date" required value={form.endDate}
-                                    min={form.startDate || undefined}
+                                    min={form.startDate || today}
                                     disabled={!form.startDate}
                                     onChange={e => update('endDate', e.target.value)} />
                             </div>
@@ -276,12 +276,13 @@ export default function PostRequest() {
                             <div className="form-group">
                                 <label>Service Start Date</label>
                                 <input type="date" value={form.serviceStart}
+                                    min={today}
                                     onChange={e => update('serviceStart', e.target.value)} />
                             </div>
                             <div className="form-group">
                                 <label>Service End Date</label>
                                 <input type="date" value={form.serviceEnd}
-                                    min={form.serviceStart || undefined}
+                                    min={form.serviceStart || today}
                                     onChange={e => update('serviceEnd', e.target.value)} />
                             </div>
                         </div>
@@ -289,6 +290,7 @@ export default function PostRequest() {
                             <div className="form-group">
                                 <label>Last Date to Apply *</label>
                                 <input type="date" required value={form.lastDateToApply}
+                                    min={today}
                                     max={(() => {
                                         const dates = [form.startDate, form.serviceStart].filter(Boolean)
                                         return dates.length > 0 ? dates.sort()[0] : undefined

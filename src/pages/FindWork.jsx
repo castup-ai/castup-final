@@ -33,31 +33,7 @@ const CREW_ROLES = [
 const PROJECT_TYPES = ['Feature Film', 'Short Film', 'Web Series', 'Documentary', 'Music Video', 'Commercial', 'Ad Film', 'Corporate Video', 'Other']
 
 export default function FindWork() {
-    const { allJobs, isAuthenticated, requireAuth, user, deleteJob, appliedJobs, applyForJob, jobsLoading } = useAuth()
-    const navigate = useNavigate()
-    const [selectedJob, setSelectedJob] = useState(null)
-    const [showApply, setShowApply] = useState(false)
-    const [applied, setApplied] = useState(false)
-    const [applyForm, setApplyForm] = useState({
-        category: 'Artist', role: '', age: '', gender: '', phone: '', whatsapp: '',
-        gmail: '', address: '', additionalInfo: '', photo: null,
-        portfolioFiles: null, socialLinks: { instagram: '', linkedin: '', youtube: '', other: '' }
-    })
-
-    // Filter state
-    const [searchQuery, setSearchQuery] = useState('')
-    const [showFilters, setShowFilters] = useState(false)
-    const [statusFilter, setStatusFilter] = useState('All') // All, Open, Closed
-    const [filters, setFilters] = useState({
-        sortBy: 'newest',
-        projectType: '',
-        subCategory: '',
-        experience: '',
-        country: '',
-        state: ''
-    })
-
-    const isProfileComplete = user && user.name && (user.role || user.department);
+    const { allJobs, isAuthenticated, requireAuth, user, deleteJob, appliedJobs, applyForJob, jobsLoading, isProfileComplete } = useAuth()
 
     // Derived lists for filters
     const uniqueCountries = useMemo(() => [...new Set(allJobs.map(j => j.country).filter(Boolean))].sort(), [allJobs])
@@ -445,7 +421,7 @@ export default function FindWork() {
                                                 <button
                                                     onClick={() => {
                                                         if (!isAuthenticated) { requireAuth(); return }
-                                                        if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile'); return }
+                                                        if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile?edit=true'); return }
                                                         setSelectedJob(job);
                                                         setShowApply(true);
                                                     }}
@@ -631,7 +607,7 @@ export default function FindWork() {
                                             className="h-12 px-10 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest flex-[1.5] transition-all hover:scale-[1.02] shadow-xl shadow-primary/20"
                                             onClick={() => {
                                                 if (!isAuthenticated) { requireAuth(); return }
-                                                if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile'); return }
+                                                if (!isProfileComplete) { alert('Kindly complete your profile before applying.'); navigate('/profile?edit=true'); return }
                                                 setShowApply(true)
                                             }}
                                         >
