@@ -153,24 +153,21 @@ export const applyToCastingCall = async (req, res) => {
     try {
         const { id } = req.params;
         const { message } = req.body;
+        const userId = req.userId;
 
-        // Get casting call
-        const castingCall = await pool.query('SELECT * FROM casting_calls WHERE id = $1', [id]);
+        // Verify job exists
+        const castingCall = await pool.query('SELECT id FROM casting_calls WHERE id = $1', [id]);
         if (castingCall.rows.length === 0) {
             return res.status(404).json({ error: 'Casting call not found' });
         }
 
-        // Add application
-        const applications = castingCall.rows[0].applications || [];
-        applications.push({
-            userId: req.userId,
-            message,
-            appliedAt: new Date().toISOString()
-        });
-
+        // Insert into job_applications
         await pool.query(
-            'UPDATE casting_calls SET applications = $1 WHERE id = $2',
-            [JSON.stringify(applications), id]
+            `INSERT INTO job_applications (job_id, user_id, message) 
+             VALUES ($1, $2, $3)
+             ON CONFLICT (job_id, user_id) 
+             DO UPDATE SET message = EXCLUDED.message`,
+            [id, userId, message]
         );
 
         res.json({ success: true, message: 'Application submitted successfully' });
@@ -188,7 +185,7 @@ export const getCastingCallApplicants = async (req, res) => {
 
         // Get casting call and verify ownership
         const jobRes = await pool.query(
-            'SELECT created_by, applications FROM casting_calls WHERE id = $1',
+            'SELECT created_by FROM casting_calls WHERE id = $1',
             [id]
         );
 
@@ -198,26 +195,29 @@ export const getCastingCallApplicants = async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized to view applicants for this job' });
         }
 
-        const applications = jobRes.rows[0].applications || [];
-        if (applications.length === 0) return res.json({ success: true, applicants: [] });
+        // Fetch applications joining with users
+        const appRes = await pool.query(
+            `SELECT a.id, a.message, a.status, a.created_at as "appliedAt", a.user_id as "userId",
+                    u.name, u.lastName, u.profile_picture as "photo", u.role, u.department
+             FROM job_applications a
+             JOIN users u ON a.user_id = u.id
+             WHERE a.job_id = $1
+             ORDER BY a.created_at DESC`,
+            [id]
+        );
 
-        // Fetch user details for each applicant
-        const appWithUsers = await Promise.all(applications.map(async (app) => {
-            const userRes = await pool.query(
-                'SELECT id, name, lastName as "lastName", profile_picture as "photo", role, department FROM users WHERE id = $1',
-                [app.userId]
-            );
-            const user = userRes.rows[0];
-            return {
-                ...app,
-                user: user ? {
-                    ...user,
-                    name: `${user.name} ${user.lastName || ''}`.trim()
-                } : { name: 'Unknown User' }
-            };
+        const applicants = appRes.rows.map(row => ({
+            ...row,
+            user: {
+                id: row.userId,
+                name: `${row.name} ${row.lastName || ''}`.trim(),
+                photo: row.photo,
+                role: row.role,
+                department: row.department
+            }
         }));
 
-        res.json({ success: true, applicants: appWithUsers });
+        res.json({ success: true, applicants });
     } catch (error) {
         console.error('Get applicants error:', error);
         res.status(500).json({ error: 'Server error' });

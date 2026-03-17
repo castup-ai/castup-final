@@ -1,7 +1,8 @@
 import express from 'express';
 import { 
     acceptConnection, declineConnection, getConnectionCount, getUserStats, getRecentUsers, 
-    incrementProfileViews, getCastingCallApplicants
+    incrementProfileViews, getUsers, getUserById, getNotifications, 
+    markNotificationsRead, getProfile, sendNotification, updateProfile
 } from '../controllers/userController.js';
 import authMiddleware from '../middleware/auth.js';
 

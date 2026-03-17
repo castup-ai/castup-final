@@ -172,6 +172,32 @@ export const initializeDatabase = async () => {
             )
         `);
 
+        // Job applications table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS job_applications (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                job_id UUID REFERENCES casting_calls(id) ON DELETE CASCADE,
+                user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                message TEXT,
+                status VARCHAR(50) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(job_id, user_id)
+            )
+        `);
+
+        // Migration: Transfer existing applications from JSONB array to the new table
+        await pool.query(`
+            INSERT INTO job_applications (job_id, user_id, message, created_at)
+            SELECT c.id, (app->>'userId')::UUID, app->>'message', 
+                   CASE 
+                     WHEN app->>'appliedAt' IS NOT NULL THEN (app->>'appliedAt')::TIMESTAMP 
+                     ELSE CURRENT_TIMESTAMP 
+                   END
+            FROM casting_calls c, jsonb_array_elements(c.applications) app
+            ON CONFLICT (job_id, user_id) DO NOTHING
+        `);
+
         console.log('✅ Database tables initialized successfully');
     } catch (error) {
         console.error('❌ Error initializing database:', error);
