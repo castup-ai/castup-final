@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Phone, ArrowLeft, CheckCircle, MessageSquare, Lock } from 'lucide-react'
 import { auth } from '../config/firebase.config'
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'
+import { authService } from '../services/auth.service'
 
 export default function ForgotPassword() {
     const navigate = useNavigate()
@@ -35,6 +36,15 @@ export default function ForgotPassword() {
         const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
 
         try {
+            // STEP 1: Verify user exists in our DB
+            const check = await authService.checkPhone(formattedPhone);
+            if (!check.success) {
+                setError(check.error || 'User not found. Please register first.');
+                setLoading(false);
+                return;
+            }
+
+            // STEP 2: Send OTP via Firebase
             const appVerifier = window.recaptchaVerifier;
             const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
             setConfirmationResult(result);

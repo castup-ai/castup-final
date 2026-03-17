@@ -359,3 +359,33 @@ export const resetPassword = async (req, res) => {
         res.status(500).json({ error: 'Server error processing password update' });
     }
 };
+
+// Check if phone number exists in DB
+export const checkPhone = async (req, res) => {
+    try {
+        const { phoneNumber } = req.body;
+        if (!phoneNumber) return res.status(400).json({ error: 'Phone number is required' });
+
+        // Normalize phone number (handle cases with/without + and spaces)
+        let formattedPhone = phoneNumber.replace(/\s+/g, '');
+        if (!formattedPhone.startsWith('+')) {
+            formattedPhone = '+' + formattedPhone;
+        }
+
+        console.log(`🔍 Checking if phone exists: ${formattedPhone}`);
+
+        const result = await pool.query('SELECT name FROM users WHERE phone = $1', [formattedPhone]);
+        
+        if (result.rows.length === 0) {
+            console.warn(`❌ Phone not found in DB: ${formattedPhone}`);
+            return res.status(404).json({ error: 'User not found. Please check the number or register.' });
+        }
+
+        console.log(`✅ Phone found: ${result.rows[0].name}`);
+        res.json({ success: true, name: result.rows[0].name });
+
+    } catch (error) {
+        console.error('Check phone error:', error);
+        res.status(500).json({ error: 'Server error checking phone number' });
+    }
+};

@@ -1,7 +1,8 @@
 import express from 'express';
 import passport from '../config/passport.js';
-import { generateToken } from '../utils/jwt.js';
-import { signup, login, getCurrentUser, forgotPassword, resetPassword } from '../controllers/authController.js';
+import pool from '../config/database.js';
+import { generateToken, generateRefreshToken } from '../utils/jwt.js';
+import { signup, login, getCurrentUser, forgotPassword, resetPassword, checkPhone } from '../controllers/authController.js';
 import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
@@ -13,8 +14,9 @@ router.get('/me', authMiddleware, getCurrentUser);
 
 // Password reset routes
 router.post('/forgot-password', forgotPassword);
+router.post('/check-phone', checkPhone);
 router.post('/reset-password', resetPassword);
-router.post('/reset-password-phone', resetPassword); // We'll update the controller to handle optional token vs phone
+router.post('/reset-password-phone', resetPassword);
 
 // Google OAuth routes
 router.get('/google',

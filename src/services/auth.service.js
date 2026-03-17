@@ -135,5 +135,17 @@ export const authService = {
                 error: error.response?.data?.error || 'Failed to update password'
             };
         }
+    },
+
+    checkPhone: async (phoneNumber) => {
+        try {
+            const response = await api.post('/auth/check-phone', { phoneNumber });
+            return { success: true, data: response.data };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.error || 'User not found'
+            };
+        }
     }
 };
