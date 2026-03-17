@@ -37,7 +37,7 @@ export default function ResetPassword() {
                 result = await authService.resetPasswordWithPhone({
                     phoneNumber: state.phoneNumber,
                     idToken: state.idToken,
-                    newPassword: password
+                    password: password
                 });
             } else {
                 // Fallback to Email Link Token

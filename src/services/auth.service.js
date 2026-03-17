@@ -121,12 +121,12 @@ export const authService = {
         }
     },
 
-    resetPasswordWithPhone: async ({ phoneNumber, idToken, newPassword }) => {
+    resetPasswordWithPhone: async ({ phoneNumber, idToken, password }) => {
         try {
             const response = await api.post('/auth/reset-password-phone', { 
                 phoneNumber, 
                 idToken, 
-                newPassword 
+                password 
             });
             return { success: true, data: response.data };
         } catch (error) {
