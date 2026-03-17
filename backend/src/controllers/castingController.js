@@ -43,7 +43,7 @@ export const createCastingCall = async (req, res) => {
                 req.userId, title, description, projectType, category, 
                 subCategory, experience || 'Any', country, state, city, 
                 safeLastDate, JSON.stringify(safeServiceDuration), 
-                requirements, JSON.stringify(safeDocs),
+                JSON.stringify(requirements || ''), JSON.stringify(safeDocs),
                 payRate, safeStartDate, safeEndDate
             ]
         );

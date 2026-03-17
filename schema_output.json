@@ -1,0 +1,90 @@
+[
+  {
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "created_by",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "title",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "description",
+    "data_type": "text"
+  },
+  {
+    "column_name": "requirements",
+    "data_type": "jsonb"
+  },
+  {
+    "column_name": "status",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "applications",
+    "data_type": "jsonb"
+  },
+  {
+    "column_name": "created_at",
+    "data_type": "timestamp without time zone"
+  },
+  {
+    "column_name": "updated_at",
+    "data_type": "timestamp without time zone"
+  },
+  {
+    "column_name": "project_type",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "category",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "sub_category",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "experience",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "country",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "state",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "city",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "last_date_to_apply",
+    "data_type": "date"
+  },
+  {
+    "column_name": "service_duration",
+    "data_type": "jsonb"
+  },
+  {
+    "column_name": "documents",
+    "data_type": "jsonb"
+  },
+  {
+    "column_name": "pay_rate",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "start_date",
+    "data_type": "date"
+  },
+  {
+    "column_name": "end_date",
+    "data_type": "date"
+  }
+]
