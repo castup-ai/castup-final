@@ -245,3 +245,67 @@ export const markNotificationsRead = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
+
+// Accept a connection request - creates DB record + notifies requester
+export const acceptConnection = async (req, res) => {
+    try {
+        const { notificationId, senderId } = req.body;
+        const acceptorId = req.userId;
+
+        if (!senderId) {
+            return res.status(400).json({ error: 'senderId is required' });
+        }
+
+        // Insert connection (both directions, ignore if already exists)
+        const uid1 = acceptorId < senderId ? acceptorId : senderId;
+        const uid2 = acceptorId < senderId ? senderId : acceptorId;
+        await pool.query(
+            `INSERT INTO connections (user_id_1, user_id_2, status)
+             VALUES ($1, $2, 'connected')
+             ON CONFLICT (user_id_1, user_id_2) DO NOTHING`,
+            [uid1, uid2]
+        );
+
+        // Mark the original notification as read
+        if (notificationId) {
+            await pool.query(
+                'UPDATE notifications SET read = TRUE WHERE id = $1 AND user_id = $2',
+                [notificationId, acceptorId]
+            );
+        }
+
+        // Send acceptance notification to the original requester
+        const acceptor = await pool.query('SELECT name FROM users WHERE id = $1', [acceptorId]);
+        const acceptorName = acceptor.rows[0]?.name || 'Someone';
+
+        await pool.query(
+            `INSERT INTO notifications (user_id, type, title, message, metadata)
+             VALUES ($1, 'connect_accepted', 'Connection Accepted', $2, $3)`,
+            [
+                senderId,
+                `${acceptorName} accepted your connection request.`,
+                JSON.stringify({ senderId: acceptorId, senderName: acceptorName })
+            ]
+        );
+
+        res.json({ success: true, message: 'Connection accepted' });
+    } catch (error) {
+        console.error('Accept connection error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Get connection count for current user
+export const getConnectionCount = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT COUNT(*) as count FROM connections
+             WHERE (user_id_1 = $1 OR user_id_2 = $1) AND status = 'connected'`,
+            [req.userId]
+        );
+        res.json({ success: true, count: parseInt(result.rows[0].count) });
+    } catch (error) {
+        console.error('Get connection count error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};

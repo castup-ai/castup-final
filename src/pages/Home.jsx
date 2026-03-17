@@ -11,7 +11,7 @@ const pathways = [
 ]
 
 export default function Home() {
-    const { user, isAuthenticated, allUsers } = useAuth()
+    const { user, isAuthenticated, allUsers, connectionCount } = useAuth()
 
     const getTimeAgo = (dateStr) => {
         if (!dateStr) return 'Recently';
@@ -70,7 +70,7 @@ export default function Home() {
                     className="grid grid-cols-3 gap-4 mb-8"
                 >
                     {[
-                        { icon: Users, label: 'Connections', value: '0', color: 'var(--color-primary)' },
+                        { icon: Users, label: 'Connections', value: connectionCount, color: 'var(--color-primary)' },
                         { icon: Film, label: 'Projects', value: '0', color: 'var(--color-secondary)' },
                         { icon: TrendingUp, label: 'Profile Views', value: '0', color: 'var(--color-success)' },
                     ].map((stat, i) => (

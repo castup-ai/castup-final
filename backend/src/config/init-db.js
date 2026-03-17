@@ -160,6 +160,18 @@ export const initializeDatabase = async () => {
             )
         `);
 
+        // Connections table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS connections (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id_1 UUID REFERENCES users(id) ON DELETE CASCADE,
+                user_id_2 UUID REFERENCES users(id) ON DELETE CASCADE,
+                status VARCHAR(20) DEFAULT 'connected',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id_1, user_id_2)
+            )
+        `);
+
         console.log('✅ Database tables initialized successfully');
     } catch (error) {
         console.error('❌ Error initializing database:', error);

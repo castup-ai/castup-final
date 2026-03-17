@@ -34,14 +34,17 @@ export function RealAuthProvider({ children }) {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [allUsers, setAllUsers] = useState([]);
+    const [usersLoading, setUsersLoading] = useState(true);
 
     const [notifications, setNotifications] = useState([]);
     const [appliedJobs, setAppliedJobs] = useState([]);
     const [allJobs, setAllJobs] = useState([]);
     const [allWorks, setAllWorks] = useState([]);
+    const [connectionCount, setConnectionCount] = useState(0);
 
     const refreshPlatformData = async () => {
         try {
+            setUsersLoading(true);
             const [jobsRes, usersRes, worksRes] = await Promise.all([
                 castingService.getAll(),
                 authService.getAllUsers(),
@@ -53,6 +56,8 @@ export function RealAuthProvider({ children }) {
             if (worksRes.success) setAllWorks(worksRes.data || []);
         } catch (error) {
             console.error("Error refreshing platform data:", error);
+        } finally {
+            setUsersLoading(false);
         }
     };
 
@@ -85,13 +90,15 @@ export function RealAuthProvider({ children }) {
     useEffect(() => {
         if (user) {
             const loadData = async () => {
-                const [notifsRes] = await Promise.all([
-                    authService.getNotifications()
+                const [notifsRes, connRes] = await Promise.all([
+                    authService.getNotifications(),
+                    api.get('/users/connections/count').catch(() => ({ data: { count: 0 } }))
                 ]);
 
                 if (notifsRes.success) {
                     setNotifications(notifsRes.data || []);
                 }
+                setConnectionCount(connRes.data?.count || 0);
 
                 // Still use localStorage for appliedJobs temporarily
                 try {
@@ -234,18 +241,23 @@ export function RealAuthProvider({ children }) {
     };
 
     const acceptConnection = async (notification) => {
-        // Send an 'accepted' notification back to the sender
         const meta = typeof notification.metadata === 'string' ? JSON.parse(notification.metadata || '{}') : (notification.metadata || {});
-        if (meta.senderId) {
-            await authService.sendNotification(meta.senderId, {
-                type: 'connect_accepted',
-                title: 'Connection Accepted',
-                message: `${user.name} accepted your connection request.`,
-                metadata: { senderId: user.id, senderName: user.name }
+        try {
+            // Call backend to persist connection + mark notification read + notify sender
+            await api.post('/users/connections/accept', {
+                notificationId: notification.id,
+                senderId: meta.senderId
             });
+            // Update client-side notification state
+            setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true, status: 'accepted' } : n));
+            // Update connection count
+            setConnectionCount(prev => prev + 1);
+        } catch (e) {
+            console.error('Accept connection error:', e);
+            // Still update UI optimistically
+            setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true, status: 'accepted' } : n));
+            setConnectionCount(prev => prev + 1);
         }
-        // Mark this notification as actioned (remove from unread list)
-        setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true, status: 'accepted' } : n));
     };
 
     const declineConnection = (notificationId) => {
@@ -302,10 +314,12 @@ export function RealAuthProvider({ children }) {
             user, token, login, register, logout, updateProfile, requireAuth,
             isAuthenticated: !!user,
             loading,
+            usersLoading,
             showAuthModal, setShowAuthModal,
             allUsers,
             allJobs,
             allWorks,
+            connectionCount,
             addJob,
             deleteJob,
             deleteUser,

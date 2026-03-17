@@ -39,7 +39,7 @@ const CREW_ROLES = [
 const sortOptions = ['Most Recent', 'Most Viewed', 'Top Rated']
 
 export default function Explore() {
-    const { user, allUsers, isAuthenticated, requireAuth, sendTargetedNotification, addNotification } = useAuth()
+    const { user, allUsers, usersLoading, isAuthenticated, requireAuth, sendTargetedNotification, addNotification } = useAuth()
     const [selectedProfile, setSelectedProfile] = useState(null)
     const [actionLoading, setActionLoading] = useState({ connect: false, message: false })
     const [actionStatus, setActionStatus] = useState({ connect: null, message: null })
@@ -414,6 +414,35 @@ export default function Explore() {
                                 ))}
                             </div>
                         </div>
+                    ) : usersLoading ? (
+                        /* Skeleton loading cards */
+                        <div className="flex flex-col gap-6">
+                            {[...Array(4)].map((_, i) => (
+                                <div key={i} className="card overflow-hidden border-0 shadow-2xl flex flex-col md:flex-row min-h-[220px] animate-pulse" style={{ background: 'var(--color-card)' }}>
+                                    <div className="md:w-64 bg-primary/5 flex flex-col items-center justify-center p-6 gap-4">
+                                        <div className="w-24 h-24 rounded-3xl bg-primary/10" />
+                                        <div className="w-20 h-3 rounded-full bg-primary/10" />
+                                    </div>
+                                    <div className="flex-1 p-8 flex flex-col justify-between">
+                                        <div className="space-y-3">
+                                            <div className="w-32 h-3 rounded-full bg-border/60" />
+                                            <div className="w-48 h-6 rounded-full bg-border/60" />
+                                            <div className="w-full h-3 rounded-full bg-border/40" />
+                                            <div className="w-3/4 h-3 rounded-full bg-border/40" />
+                                            <div className="grid grid-cols-3 gap-3 mt-4">
+                                                {[1,2,3].map(j => <div key={j} className="h-14 rounded-xl bg-border/30" />)}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center pt-4 border-t border-border/10 mt-4">
+                                            <div className="flex gap-2">
+                                                {[1,2,3].map(j => <div key={j} className="w-16 h-6 rounded-md bg-border/30" />)}
+                                            </div>
+                                            <div className="w-32 h-10 rounded-xl bg-border/30" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     ) : (
                         <div className="flex flex-col gap-6">
                             {filtered.map((user, i) => (
@@ -447,7 +476,7 @@ export default function Explore() {
                                             </div>
                                         </div>
                                         <div className="mt-4 text-center">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest block \${user.availability === 'Immediately' ? 'text-success' : 'text-warning'}`}>
+                                            <span className={`text-[10px] font-black uppercase tracking-widest block ${user.availability === 'Immediately' ? 'text-success' : 'text-warning'}`}>
                                                 {user.availability ? (user.availability === 'Immediately' ? 'Available Now' : user.availability) : 'Available'}
                                             </span>
                                         </div>
@@ -520,14 +549,14 @@ export default function Explore() {
                                     </div>
                                 </motion.div>
                             ))}
-                        </div>
-                    )}
 
-                    {filtered.length === 0 && (
-                        <div className="card text-center py-20 bg-opacity-30">
-                            <p className="text-xl font-semibold mb-2" style={{ color: 'var(--color-text-muted)' }}>No professionals found</p>
-                            <p style={{ color: 'var(--color-text-dim)' }}>We couldn't find any results matching your current filters. Try relaxing some criteria.</p>
-                            <button className="btn btn-outline btn-sm mt-6" onClick={resetFilters}>Clear all filters</button>
+                            {filtered.length === 0 && (
+                                <div className="card text-center py-20 bg-opacity-30">
+                                    <p className="text-xl font-semibold mb-2" style={{ color: 'var(--color-text-muted)' }}>No professionals found</p>
+                                    <p style={{ color: 'var(--color-text-dim)' }}>We couldn't find any results matching your current filters. Try relaxing some criteria.</p>
+                                    <button className="btn btn-outline btn-sm mt-6" onClick={resetFilters}>Clear all filters</button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </main>
