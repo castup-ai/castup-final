@@ -20,6 +20,16 @@ export const createCastingCall = async (req, res) => {
         const safeStartDate = startDate || null;
         const safeEndDate = endDate || null;
 
+        // Sanitize documents — strip any base64 data, keep only name/url/type
+        const safeDocs = Array.isArray(documents)
+            ? documents.map(d => ({ name: d.name || '', url: d.url || '', type: d.type || '' }))
+            : [];
+
+        // serviceDuration must be a plain object (pg handles JSONB natively)
+        const safeServiceDuration = serviceDuration && typeof serviceDuration === 'object'
+            ? serviceDuration
+            : {};
+
         const result = await pool.query(
             `INSERT INTO casting_calls (
                 created_by, title, description, project_type, category, 
@@ -32,8 +42,8 @@ export const createCastingCall = async (req, res) => {
             [
                 req.userId, title, description, projectType, category, 
                 subCategory, experience || 'Any', country, state, city, 
-                safeLastDate, JSON.stringify(serviceDuration || {}), 
-                requirements, JSON.stringify(documents || []),
+                safeLastDate, safeServiceDuration, 
+                requirements, safeDocs,
                 payRate, safeStartDate, safeEndDate
             ]
         );
