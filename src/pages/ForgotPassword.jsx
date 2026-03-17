@@ -34,12 +34,11 @@ export default function ForgotPassword() {
             }
         } catch (err) {
             if (err.message === 'TIMEOUT') {
-                setError('The request is taking too long. If you don\'t receive an email soon, please try again.')
-                // We still set submitted to true to avoid user spamming, 
-                // but let them know it might be delayed
-                setSubmitted(true)
+                setError('The request is taking longer than expected. Please check your inbox in a few minutes or try again if no email arrives.')
+                // Don't set submitted to true on a hard timeout anymore, let them retry
+                // but keep the loading state off
             } else {
-                setError('Could not connect to the server. Please try again.')
+                setError(err.response?.data?.error || 'Could not connect to the server. Please try again.')
             }
         } finally {
             setLoading(false)
