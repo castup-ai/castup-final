@@ -231,14 +231,16 @@ export const forgotPassword = async (req, res) => {
         
         if (sent) {
             console.log(`✅ Reset email successfully sent to ${user.email}`);
+            return res.json({
+                success: true,
+                message: 'A password reset link has been sent to your email.'
+            });
         } else {
-            console.error(`❌ Failed to send reset email to ${user.email}. Check SMTP configuration.`);
+            console.error(`❌ Failed to send reset email to ${user.email}.`);
+            return res.status(500).json({
+                error: 'The server could not send the email. Please check your SMTP settings in Render (SMTP_USER/SMTP_PASS).'
+            });
         }
-
-        res.json({
-            success: true,
-            message: 'If an account exists with this email, you will receive a password reset link.'
-        });
     } catch (error) {
         console.error('Forgot password error:', error);
         res.status(500).json({ error: 'Server error processing request' });
