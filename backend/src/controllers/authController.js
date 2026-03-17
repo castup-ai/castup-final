@@ -9,8 +9,13 @@ import axios from 'axios';
 const sendEmail = async ({ to, subject, html }) => {
     // 1. Try Resend API (Professional Way - Works on Render Port 443)
     const resendKey = process.env.RESEND_API_KEY;
-    if (resendKey) {
-        console.log(`🚀 Trying Resend API for ${to}...`);
+    
+    // Diagnostic log for Resend (will show in Render logs)
+    if (!resendKey) {
+        console.log('⚠️ Resend Diagnostic: RESEND_API_KEY is null or undefined in Render environment.');
+    } else {
+        const maskedKey = resendKey.substring(0, 5) + '...' + resendKey.slice(-4);
+        console.log(`🚀 Trying Resend API (Key Detected: ${maskedKey}) for ${to}...`);
         try {
             const response = await axios.post('https://api.resend.com/emails', {
                 from: 'CastUp <onboarding@resend.dev>',
@@ -18,13 +23,18 @@ const sendEmail = async ({ to, subject, html }) => {
                 subject,
                 html
             }, {
-                headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' }
+                headers: { 
+                    'Authorization': `Bearer ${resendKey}`, 
+                    'Content-Type': 'application/json' 
+                },
+                timeout: 10000 // 10s timeout for the API call
             });
-            console.log('✅ Resend success:', response.data.id);
+            console.log(`✅ Resend API success! Email ID: ${response.data.id}`);
             return { success: true };
         } catch (err) {
-            console.warn('⚠️ Resend failed:', err.response?.data || err.message);
-            // Fall through to SMTP
+            const errDetail = err.response?.data || err.message;
+            console.error('❌ Resend API Error:', JSON.stringify(errDetail));
+            // Fall through to SMTP if Resend fails
         }
     }
 
