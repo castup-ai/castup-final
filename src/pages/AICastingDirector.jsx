@@ -101,6 +101,19 @@ export default function AICastingDirector() {
     }
 
     const handleSearch = () => {
+        // Require at least one filter or description
+        const hasFilters = criteria.role !== 'All' || criteria.category !== 'All' ||
+            (criteria.experience && criteria.experience !== 'Any') ||
+            (criteria.gender && criteria.gender !== 'Any') ||
+            criteria.location?.trim() ||
+            criteria.skills?.trim() ||
+            criteria.ageRange !== 'Any'
+
+        if (!hasFilters && !description.trim()) {
+            alert('Please enter a description or select at least one filter to search.')
+            return
+        }
+
         setSearching(true)
         setTimeout(() => {
             let matches = [...allUsers]
@@ -274,16 +287,16 @@ export default function AICastingDirector() {
                                     >
                                         <div className="flex items-start gap-4">
                                             <div className="relative shrink-0">
-                                                {talent?.profile_picture ? (
+                                                {(talent?.photo || talent?.profile_picture) ? (
                                                     <img
-                                                        src={talent.profile_picture}
+                                                        src={talent.photo || talent.profile_picture}
                                                         alt={talent.name}
                                                         className="w-14 h-14 rounded-full object-cover border-2"
                                                         style={{ borderColor: 'var(--color-accent)' }}
                                                         onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
                                                     />
                                                 ) : null}
-                                                <div className="avatar avatar-lg" style={{ display: talent?.profile_picture ? 'none' : 'flex' }}>
+                                                <div className="avatar avatar-lg" style={{ display: (talent?.photo || talent?.profile_picture) ? 'none' : 'flex' }}>
                                                     {(talent.name?.split(" ")[0])?.[0] || 'U'}{talent.lastName?.[0] || ''}
                                                 </div>
                                                 <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
