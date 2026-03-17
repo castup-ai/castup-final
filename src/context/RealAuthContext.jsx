@@ -349,8 +349,7 @@ export function RealAuthProvider({ children }) {
             acceptConnection,
             declineConnection,
             appliedJobs,
-            applyForJob,
-            updateProfile
+            applyForJob
         }}>
             {children}
         </RealAuthContext.Provider>
