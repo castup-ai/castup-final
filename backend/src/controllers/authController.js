@@ -4,54 +4,66 @@ import nodemailer from 'nodemailer';
 import pool from '../config/database.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
 
+import axios from 'axios';
+
 const sendEmail = async ({ to, subject, html }) => {
+    // 1. Try Resend API (Professional Way - Works on Render Port 443)
+    const resendKey = process.env.RESEND_API_KEY;
+    if (resendKey) {
+        console.log(`🚀 Trying Resend API for ${to}...`);
+        try {
+            const response = await axios.post('https://api.resend.com/emails', {
+                from: 'CastUp <onboarding@resend.dev>',
+                to: [to],
+                subject,
+                html
+            }, {
+                headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' }
+            });
+            console.log('✅ Resend success:', response.data.id);
+            return { success: true };
+        } catch (err) {
+            console.warn('⚠️ Resend failed:', err.response?.data || err.message);
+            // Fall through to SMTP
+        }
+    }
+
+    // 2. Fallback to Gmail SMTP (Often blocked on Render Free Tier)
     const user = process.env.SMTP_USER || 'castupaiapp@gmail.com';
     let pass = process.env.SMTP_PASS;
-
     if (pass) pass = pass.replace(/\s+/g, '');
     
-    // Diagnostic logging for Render Console (helps user verify their settings)
-    const passLen = pass ? pass.length : 0;
-    const passMasked = passLen > 4 ? `${pass.substring(0, 2)}...${pass.substring(passLen - 2)}` : '****';
-    console.log(`📡 SMTP Diagnostic: User=${user}, PassLength=${passLen}, PassMasked=${passMasked}`);
-
-    if (!pass) return { success: false, error: 'SMTP_PASS missing' };
+    if (!pass) return { success: false, error: 'No email logic configured (RESEND_API_KEY or SMTP_PASS missing)' };
 
     const trySend = async (port, secure) => {
-        console.log(`✉️ Trying email send via Port ${port} (secure: ${secure}). Time: ${new Date().toLocaleTimeString()}`);
+        console.log(`✉️ Trying SMTP via Port ${port}...`);
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
-            port,
-            secure,
+            port, secure,
             auth: { user, pass },
             tls: { rejectUnauthorized: false }
         });
 
         try {
-            // Extended 45-second timeout for each port attempt (Critical for Render's networking)
             const info = await Promise.race([
                 transporter.sendMail({ from: `"CastUp" <${user}>`, to, subject, html }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 45000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 20000))
             ]);
-            console.log(`✅ Success on Port ${port}! MessageId: ${info.messageId}`);
             return { success: true, messageId: info.messageId };
         } catch (err) {
-            console.warn(`⚠️ Failed on Port ${port}: ${err.message}. Duration: ~45s? ${err.message === 'TIMEOUT'}`);
             return { success: false, error: err.message };
         }
     };
 
-    // Failover Sequence
     const res1 = await trySend(465, true);
     if (res1.success) return { success: true };
 
-    console.log('🔄 Failing over to Port 587 (Wait 45s)...');
     const res2 = await trySend(587, false);
     if (res2.success) return { success: true };
 
     return { 
         success: false, 
-        error: `All attempts failed. Gmail took too long to respond on both 465 and 587. (465: ${res1.error}, 587: ${res2.error})` 
+        error: `All delivery attempts (Resend & SMTP) failed. Render is likely blocking email ports. Use the Emergency Log Link.` 
     };
 };
 
