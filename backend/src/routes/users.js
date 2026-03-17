@@ -7,6 +7,9 @@ import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Public route - no auth required (for public profile pages)
+router.get('/:userId/public', getUserById);
+
 // Protected routes - Now fully secured
 router.get('/', authMiddleware, getUsers);
 router.get('/notifications', authMiddleware, getNotifications);
