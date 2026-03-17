@@ -5,39 +5,39 @@ import pool from '../config/database.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
 
 const sendEmail = async ({ to, subject, html }) => {
+    const user = process.env.SMTP_USER || 'castupaiapp@gmail.com';
+    let pass = process.env.SMTP_PASS;
+
+    if (pass) pass = pass.replace(/\s+/g, '');
+    if (!pass) return { success: false, error: 'SMTP_PASS missing' };
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass }
+    });
+
+    console.log(`✉️ Starting email send to ${to}...`);
+
     try {
-        const user = process.env.SMTP_USER || 'castupaiapp@gmail.com';
-        let pass = process.env.SMTP_PASS;
-
-        if (pass) {
-            pass = pass.replace(/\s+/g, '');
-        }
-
-        if (!pass) {
-            return { success: false, error: 'SMTP_PASS is missing in server environment variables.' };
-        }
-
-        // Direct SMTP config for Gmail (SSL Port 465) is usually faster and more reliable
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true, 
-            auth: { user, pass },
-            timeout: 20000, // 20 seconds total for the operation
-        });
-
-        console.log(`✉️ Sending email to ${to} via Port 465...`);
-        const info = await transporter.sendMail({
+        // Hard 25-second timeout for the entire email operation
+        const emailPromise = transporter.sendMail({
             from: `"CastUp" <${user}>`,
-            to,
-            subject,
-            html
+            to, subject, html
         });
 
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('SMTP_TIMEOUT')), 25000)
+        );
+
+        const info = await Promise.race([emailPromise, timeoutPromise]);
+        console.log(`✅ Email sent: ${info.messageId}`);
         return { success: true };
     } catch (err) {
-        console.error('❌ Email send failed:', err.message);
-        return { success: false, error: err.message };
+        console.error('❌ Email send failed or timed out:', err.message);
+        return { 
+            success: false, 
+            error: err.message === 'SMTP_TIMEOUT' ? 'Email provider timed out' : err.message 
+        };
     }
 };
 
@@ -157,81 +157,80 @@ export const getCurrentUser = async (req, res) => {
 
 // Forgot Password - Request reset token
 export const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    console.log(`🔑 Forgot password requested for: ${email}`);
+
+    const handleRequest = async () => {
+        try {
+            if (!email) {
+                return res.status(400).json({ error: 'Email is required' });
+            }
+
+            // 1. Find user
+            console.log('  - Finding user...');
+            const userResult = await pool.query('SELECT id, email, name FROM users WHERE email = $1', [email]);
+
+            if (userResult.rows.length === 0) {
+                console.warn(`  - Email not found: ${email}`);
+                return res.status(404).json({ error: 'This email is not registered with us.' });
+            }
+
+            const user = userResult.rows[0];
+
+            // 2. Generate and store token
+            console.log('  - Generating reset token...');
+            const token = crypto.randomBytes(32).toString('hex');
+            const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+            await pool.query(
+                `INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)`,
+                [user.id, token, expiresAt]
+            );
+
+            // 3. Send email
+            const resetUrl = `${process.env.CLIENT_URL || 'https://castup-final.vercel.app'}/reset-password/${token}`;
+            console.log('Reset URL generated:', resetUrl);
+
+            const mailResult = await sendEmail({
+                to: user.email,
+                subject: 'CastUp - Reset Your Password',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #13111c; color: #e2e8f0; border-radius: 12px;">
+                        <h1 style="color: #7c3aed; font-size: 28px; margin-bottom: 8px;">CastUp</h1>
+                        <h2 style="font-size: 20px; margin-bottom: 16px;">Password Reset Request</h2>
+                        <p style="color: #94a3b8;">Hi <strong style="color: #e2e8f0;">${user.name}</strong>,</p>
+                        <p style="color: #94a3b8;">We received a request to reset your password. Click the button below to create a new password:</p>
+                        <a href="${resetUrl}" style="display: inline-block; margin: 24px 0; padding: 14px 32px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Reset My Password</a>
+                        <p style="color: #64748b; font-size: 14px;">This link will expire in <strong>15 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.</p>
+                        <hr style="border-color: #334155; margin: 24px 0;" />
+                        <p style="color: #475569; font-size: 12px;">© 2025 CastUp. Your cinema industry companion.</p>
+                    </div>
+                `
+            });
+            
+            if (mailResult.success) {
+                return res.json({ success: true, message: 'Reset link sent.' });
+            } else {
+                return res.status(500).json({ error: `Email Error: ${mailResult.error || 'Unknown SMTP error'}. Please verify your SMTP settings in Render.` });
+            }
+        } catch (error) {
+            console.error('Forgot password inner error:', error);
+            return res.status(500).json({ error: 'Server error processing request' });
+        }
+    };
+
+    // Overall 35s timeout for the entire request
+    const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), 35000)
+    );
+
     try {
-        const { email } = req.body;
-
-        if (!email) {
-            return res.status(400).json({ error: 'Email is required' });
+        await Promise.race([handleRequest(), timeoutPromise]);
+    } catch (err) {
+        if (!res.headersSent) {
+            console.error(`❌ Forgot Password timed out for ${email}`);
+            res.status(504).json({ error: 'The request timed out. Please try again.' });
         }
-
-        // Find user
-        const userResult = await pool.query('SELECT id, email, name FROM users WHERE email = $1', [email]);
-
-        // Check if user exists
-        if (userResult.rows.length === 0) {
-            console.warn(`⚠️ Forgot password attempt for non-existent email: ${email}`);
-            return res.status(404).json({
-                error: 'This email is not registered with us.'
-            });
-        }
-
-        const user = userResult.rows[0];
-
-        // Generate secure token
-        const token = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-        // Store token in database
-        await pool.query(
-            `INSERT INTO password_reset_tokens (user_id, token, expires_at) 
-             VALUES ($1, $2, $3)`,
-            [user.id, token, expiresAt]
-        );
-
-        // Generate reset link
-        const resetUrl = `${process.env.CLIENT_URL || 'https://castup-final.vercel.app'}/reset-password/${token}`;
-        console.log('Reset URL generated:', resetUrl);
-
-        // Check if SMTP is configured
-        if (!process.env.SMTP_PASS) {
-            console.warn('⚠️ SMTP_PASS not set — skipping email. Reset URL:', resetUrl);
-            return res.json({
-                success: true,
-                message: 'If an account exists with this email, you will receive a password reset link.'
-            });
-        }
-
-        // Send password reset email
-        const mailResult = await sendEmail({
-            to: user.email,
-            subject: 'CastUp - Reset Your Password',
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #13111c; color: #e2e8f0; border-radius: 12px;">
-                    <h1 style="color: #7c3aed; font-size: 28px; margin-bottom: 8px;">CastUp</h1>
-                    <h2 style="font-size: 20px; margin-bottom: 16px;">Password Reset Request</h2>
-                    <p style="color: #94a3b8;">Hi <strong style="color: #e2e8f0;">${user.name}</strong>,</p>
-                    <p style="color: #94a3b8;">We received a request to reset your password. Click the button below to create a new password:</p>
-                    <a href="${resetUrl}" style="display: inline-block; margin: 24px 0; padding: 14px 32px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Reset My Password</a>
-                    <p style="color: #64748b; font-size: 14px;">This link will expire in <strong>15 minutes</strong>. If you didn't request a password reset, you can safely ignore this email.</p>
-                    <hr style="border-color: #334155; margin: 24px 0;" />
-                    <p style="color: #475569; font-size: 12px;">© 2025 CastUp. Your cinema industry companion.</p>
-                </div>
-            `
-        });
-        
-        if (mailResult.success) {
-            return res.json({
-                success: true,
-                message: 'A password reset link has been sent to your email.'
-            });
-        } else {
-            return res.status(500).json({
-                error: `Email Error: ${mailResult.error || 'Unknown SMTP error'}. Please verify your SMTP settings in Render.`
-            });
-        }
-    } catch (error) {
-        console.error('Forgot password error:', error);
-        res.status(500).json({ error: 'Server error processing request' });
     }
 };
 
