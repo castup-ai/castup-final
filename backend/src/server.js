@@ -93,6 +93,14 @@ const startServer = async () => {
         // Initialize database tables
         await initializeDatabase();
 
+        // Diagnostic logs for SMTP
+        const smtpUser = process.env.SMTP_USER || 'castupaiapp@gmail.com';
+        const smtpPass = process.env.SMTP_PASS;
+        console.log(`📡 SMTP Diagnostic: User=${smtpUser}, Pass=${smtpPass ? 'LOADED' : 'MISSING'}`);
+        if (smtpPass && smtpPass.includes(' ')) {
+            console.warn('⚠️ WARNING: SMTP_PASS contains spaces. Removing them in code logic.');
+        }
+
         // Start server
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`

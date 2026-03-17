@@ -4,15 +4,7 @@ import nodemailer from 'nodemailer';
 import pool from '../config/database.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
 
-// Email transporter (Gmail SMTP)
-const createTransporter = () => nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.SMTP_USER || 'castupaiapp@gmail.com',
-        pass: process.env.SMTP_PASS
-    }
-});
-
+// Email helper with robust verification and logging
 const sendEmail = async ({ to, subject, html }) => {
     try {
         const user = process.env.SMTP_USER || 'castupaiapp@gmail.com';
@@ -23,30 +15,42 @@ const sendEmail = async ({ to, subject, html }) => {
             pass = pass.replace(/\s+/g, '');
         }
 
-        console.log(`✉️ Preparing email transport: user=${user}, pass=${pass ? `DEFINED (${pass.length} chars)` : 'MISSING'}`);
-
         if (!pass) {
             console.error('❌ SMTP_PASS environment variable is missing!');
-            return false;
+            return { success: false, error: 'SMTP_PASS is missing in server environment variables.' };
         }
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
-            auth: { user, pass }
+            auth: { user, pass },
+            connectionTimeout: 10000, // 10 seconds
+            greetingTimeout: 10000,
         });
 
-        await transporter.sendMail({
+        // 1. Verify connection first
+        console.log(`✉️ Verifying SMTP connection for ${user}...`);
+        try {
+            await transporter.verify();
+            console.log('✅ SMTP connection verified successfully');
+        } catch (verifyErr) {
+            console.error('❌ SMTP Verification Failed:', verifyErr.message);
+            return { success: false, error: `SMTP Verification Failed: ${verifyErr.message}` };
+        }
+
+        // 2. Send the actual email
+        console.log(`✉️ Attempting to send email to ${to}...`);
+        const info = await transporter.sendMail({
             from: `"CastUp" <${user}>`,
-            to, subject, html
+            to,
+            subject,
+            html
         });
-        console.log(`✅ Email sent to ${to}`);
-        return true;
+
+        console.log(`✅ Email sent successfully to ${to}. MessageId: ${info.messageId}`);
+        return { success: true };
     } catch (err) {
         console.error('❌ Email send failed:', err.message);
-        if (err.code === 'EAUTH') {
-            console.error('❌ SMTP Authentication Error - verify app password');
-        }
-        return false;
+        return { success: false, error: err.message };
     }
 };
 
@@ -211,8 +215,7 @@ export const forgotPassword = async (req, res) => {
         }
 
         // Send password reset email
-        console.log(`✉️ Attempting to send reset email to ${user.email}...`);
-        const sent = await sendEmail({
+        const mailResult = await sendEmail({
             to: user.email,
             subject: 'CastUp - Reset Your Password',
             html: `
@@ -229,16 +232,14 @@ export const forgotPassword = async (req, res) => {
             `
         });
         
-        if (sent) {
-            console.log(`✅ Reset email successfully sent to ${user.email}`);
+        if (mailResult.success) {
             return res.json({
                 success: true,
                 message: 'A password reset link has been sent to your email.'
             });
         } else {
-            console.error(`❌ Failed to send reset email to ${user.email}.`);
             return res.status(500).json({
-                error: 'The server could not send the email. Please check your SMTP settings in Render (SMTP_USER/SMTP_PASS).'
+                error: `Email Error: ${mailResult.error || 'Unknown SMTP error'}. Please verify your SMTP settings in Render.`
             });
         }
     } catch (error) {
