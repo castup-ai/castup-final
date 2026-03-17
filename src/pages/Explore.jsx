@@ -12,7 +12,7 @@ import {
     Info, Star, Award, Shield, Check, Heart, MoreVertical,
     Send, Smartphone, MoreHorizontal,
     Ruler, Droplets, Image as ImageIcon, Clapperboard, Eye, FileVideo,
-    X as CloseIcon, ChevronRight
+    X as CloseIcon
 } from 'lucide-react'
 import { portfolioService } from '@/services/portfolio.service'
 
