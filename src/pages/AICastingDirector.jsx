@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
-import { Video, Search, Sparkles, Filter, MapPin, Star, Mail, MessageSquare, ChevronRight } from 'lucide-react'
+import { Video, Search, Sparkles, Filter, MapPin, Star, Mail, MessageSquare, ChevronRight, X, Send } from 'lucide-react'
 
 const ageRanges = ['Any', '18-25', '26-35', '36-45', '46+']
 const genders = ['Any', 'Male', 'Female', 'Other']
@@ -28,13 +28,17 @@ const CREW_ROLES = [
 ]
 
 export default function AICastingDirector() {
-    const { allUsers } = useAuth()
+    const { allUsers, user, sendTargetedNotification } = useAuth()
     const [description, setDescription] = useState('')
     const [criteria, setCriteria] = useState({
         category: 'All', role: 'All', experience: '', ageRange: 'Any', gender: 'Any', skills: '', location: ''
     })
     const [results, setResults] = useState(null)
     const [searching, setSearching] = useState(false)
+    const [messagingUser, setMessagingUser] = useState(null) // user being messaged
+    const [messageText, setMessageText] = useState('')
+    const [messageSent, setMessageSent] = useState({})
+    const [sendingMsg, setSendingMsg] = useState(false)
 
     // Parse natural language description to auto-fill filters
     const parseDescription = () => {
@@ -260,17 +264,28 @@ export default function AICastingDirector() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {results.map((user, i) => (
+                                {results.map((talent, i) => (
                                     <motion.div
-                                        key={user.id}
+                                        key={talent.id}
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: i * 0.1 }}
                                         className="card card-interactive p-5"
                                     >
                                         <div className="flex items-start gap-4">
-                                            <div className="relative">
-                                                <div className="avatar avatar-lg">{(user.name?.split(" ")[0])?.[0] || 'U'}{user.lastName?.[0] || ''}</div>
+                                            <div className="relative shrink-0">
+                                                {talent?.profile_picture ? (
+                                                    <img
+                                                        src={talent.profile_picture}
+                                                        alt={talent.name}
+                                                        className="w-14 h-14 rounded-full object-cover border-2"
+                                                        style={{ borderColor: 'var(--color-accent)' }}
+                                                        onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
+                                                    />
+                                                ) : null}
+                                                <div className="avatar avatar-lg" style={{ display: talent?.profile_picture ? 'none' : 'flex' }}>
+                                                    {(talent.name?.split(" ")[0])?.[0] || 'U'}{talent.lastName?.[0] || ''}
+                                                </div>
                                                 <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                                                     style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}>
                                                     #{i + 1}
@@ -279,24 +294,24 @@ export default function AICastingDirector() {
                                             <div className="flex-1">
                                                 <div className="flex items-start justify-between">
                                                     <div>
-                                                        <h3 className="font-semibold text-base">{user.name}</h3>
-                                                        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.role} • {user.experience}</p>
+                                                        <h3 className="font-semibold text-base">{talent.name}</h3>
+                                                        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{talent.role} • {talent.experience}</p>
                                                         <div className="flex items-center gap-1 text-xs mt-1" style={{ color: 'var(--color-text-dim)' }}>
-                                                            <MapPin size={12} /> {user.location}
+                                                            <MapPin size={12} /> {talent.location}
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
                                                         <div className="flex items-center gap-1 text-sm font-semibold" style={{ color: 'var(--color-accent)' }}>
-                                                            <Star size={14} /> {user.yearsOfExperience} yrs exp
+                                                            <Star size={14} /> {talent.yearsOfExperience} yrs exp
                                                         </div>
-                                                        <span className={`badge text-xs mt-1 ${user.availability === 'Immediately' ? 'badge-success' : 'badge-warning'}`}>
-                                                            {user.availability}
+                                                        <span className={`badge text-xs mt-1 ${talent.availability === 'Immediately' ? 'badge-success' : 'badge-warning'}`}>
+                                                            {talent.availability}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>{user.bio}</p>
+                                                <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>{talent.bio}</p>
                                                 <div className="flex flex-wrap gap-1.5 mt-2">
-                                                    {(Array.isArray(user.skills) ? user.skills : (typeof user.skills === 'string' ? user.skills.split(',') : []))
+                                                    {(Array.isArray(talent.skills) ? talent.skills : (typeof talent.skills === 'string' ? talent.skills.split(',') : []))
                                                         .slice(0, 4)
                                                         .map(s => {
                                                             const skillName = typeof s === 'string' ? s.trim() : s;
@@ -305,7 +320,12 @@ export default function AICastingDirector() {
                                                 </div>
                                                 <div className="flex gap-2 mt-3">
                                                     <button className="btn btn-outline btn-sm"><Mail size={14} /> Connect</button>
-                                                    <button className="btn btn-primary btn-sm"><MessageSquare size={14} /> Message</button>
+                                                    <button
+                                                        className="btn btn-primary btn-sm"
+                                                        onClick={() => { setMessagingUser(talent); setMessageText(''); }}
+                                                    >
+                                                        <MessageSquare size={14} /> {messageSent[talent.id] ? 'Sent ✓' : 'Message'}
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -316,6 +336,75 @@ export default function AICastingDirector() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Message Modal */}
+            {messagingUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="w-full max-w-md rounded-2xl p-6"
+                        style={{ background: 'var(--color-bg-offset)', border: '1px solid var(--color-border)' }}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                {messagingUser.profile_picture ? (
+                                    <img src={messagingUser.profile_picture} alt={messagingUser.name} className="w-10 h-10 rounded-full object-cover" />
+                                ) : (
+                                    <div className="avatar avatar-sm">{(messagingUser.name?.split(' ')[0])?.[0] || 'U'}</div>
+                                )}
+                                <div>
+                                    <p className="font-bold text-sm">{messagingUser.name}</p>
+                                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{messagingUser.role}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setMessagingUser(null)} className="btn-ghost btn-icon">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {description && (
+                            <div className="mb-3 p-3 rounded-xl text-xs" style={{ background: 'var(--color-primary)', color: 'var(--color-bg)', opacity: 0.85 }}>
+                                <p className="font-semibold mb-1">Re: Your casting requirement</p>
+                                <p className="line-clamp-2 opacity-80">{description}</p>
+                            </div>
+                        )}
+
+                        <textarea
+                            className="w-full rounded-xl p-3 text-sm outline-none min-h-[100px]"
+                            style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
+                            placeholder={`Hi ${messagingUser.name?.split(' ')[0]}, I'm looking for a ${criteria.role !== 'All' ? criteria.role : 'professional'} for my project...`}
+                            value={messageText}
+                            onChange={e => setMessageText(e.target.value)}
+                            autoFocus
+                        />
+
+                        <div className="flex gap-2 mt-3 justify-end">
+                            <button className="btn btn-secondary btn-sm" onClick={() => setMessagingUser(null)}>Cancel</button>
+                            <button
+                                className="btn btn-primary btn-sm flex items-center gap-2 disabled:opacity-50"
+                                disabled={!messageText.trim() || sendingMsg}
+                                onClick={async () => {
+                                    if (!messageText.trim()) return;
+                                    setSendingMsg(true);
+                                    const context = description ? `Re: "${description.slice(0, 80)}${description.length > 80 ? '...' : ''}" — ` : '';
+                                    await sendTargetedNotification(messagingUser.id, {
+                                        type: 'message',
+                                        title: 'New Message from Casting Director',
+                                        message: context + messageText,
+                                        metadata: { senderId: user?.id, senderName: user?.name }
+                                    });
+                                    setSendingMsg(false);
+                                    setMessageSent(prev => ({ ...prev, [messagingUser.id]: true }));
+                                    setMessagingUser(null);
+                                }}
+                            >
+                                <Send size={14} /> {sendingMsg ? 'Sending...' : 'Send Message'}
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     )
 }
