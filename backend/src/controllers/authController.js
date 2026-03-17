@@ -289,9 +289,10 @@ export const forgotPassword = async (req, res) => {
 // Reset Password - Update password with either Email Token or Phone OTP Token
 export const resetPassword = async (req, res) => {
     try {
-        const { token, idToken, phoneNumber, password } = req.body;
+        const { token, idToken, phoneNumber, password, newPassword } = req.body;
+        const finalPassword = password || newPassword;
 
-        if (!password) return res.status(400).json({ error: 'Password is required' });
+        if (!finalPassword) return res.status(400).json({ error: 'Password is required' });
         if (!token && !idToken) return res.status(400).json({ error: 'Authentication token required' });
 
         let userId = null;
@@ -345,7 +346,7 @@ export const resetPassword = async (req, res) => {
         }
 
         // 3. Perform Password Update
-        const passwordHash = await bcrypt.hash(password, 10);
+        const passwordHash = await bcrypt.hash(finalPassword, 10);
         await pool.query(
             'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
             [passwordHash, userId]
