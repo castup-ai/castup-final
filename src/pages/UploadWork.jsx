@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
-import { Upload, Film, CheckCircle, X, Trash2, FileText, Loader2 } from 'lucide-react'
+import { Upload, Film, CheckCircle, X, Loader2, Link, Youtube, Instagram, Globe } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import api from '@/services/api'
 
@@ -28,13 +28,27 @@ const CREW_ROLES = [
     'Story Board', 'Stunt Man', 'Sync Sound', 'VFX', 'Voice Over'
 ]
 
+const detectSourceType = (url) => {
+    if (!url) return 'link'
+    if (url.includes('youtube') || url.includes('youtu.be')) return 'youtube'
+    if (url.includes('instagram')) return 'instagram'
+    return 'link'
+}
+
+const getSourceIcon = (url) => {
+    const type = detectSourceType(url)
+    if (type === 'youtube') return <Youtube size={16} className="text-red-400" />
+    if (type === 'instagram') return <Instagram size={16} className="text-pink-400" />
+    return <Globe size={16} className="text-blue-400" />
+}
+
 export default function UploadWork() {
     const { isAuthenticated, requireAuth, user } = useAuth()
     const navigate = useNavigate()
     const [submitted, setSubmitted] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const initialForm = {
-        title: '', type: '', description: '', castCrew: '', files: null
+        title: '', type: '', description: '', castCrew: '', sourceUrl: ''
     }
     const [form, setForm] = useState(initialForm)
 
@@ -43,26 +57,15 @@ export default function UploadWork() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            // Relaxed check: Just need a name and either a role or department (which are usually set on registration)
             const isProfileComplete = user && user.name && (user.role || user.department);
             if (!isProfileComplete) {
                 alert('Kindly complete your basic profile (Name & Role/Department) before uploading work.');
                 navigate('/profile?edit=true');
             }
         } else {
-            // Wait a brief moment to avoid flashing during auth check
-            setTimeout(() => {
-                requireAuth()
-            }, 100)
+            setTimeout(() => { requireAuth() }, 100)
         }
     }, [isAuthenticated, user, navigate, requireAuth])
-
-    const fileToBase64 = (file) => new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.readAsDataURL(file)
-        reader.onload = () => resolve(reader.result)
-        reader.onerror = error => reject(error)
-    })
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -77,34 +80,25 @@ export default function UploadWork() {
 
         const requiredFields = ['title', 'type', 'description', 'castCrew']
         const missing = requiredFields.filter(f => !form[f])
-
         if (missing.length > 0) {
             alert('Please complete all required project details before submitting.')
             return
         }
 
         setIsLoading(true)
-
         try {
-            // Convert files to Base64 data strings so they can be securely saved in the database
-            const filesMeta = form.files ? await Promise.all(Array.from(form.files).map(async f => ({
-                name: f.name,
-                size: f.size,
-                type: f.type,
-                data: await fileToBase64(f)
-            }))) : []
-
             await api.post('/portfolios/media', {
                 title: form.title,
                 type: form.type,
                 description: form.description,
                 castCrew: form.castCrew,
-                files: filesMeta
+                sourceUrl: form.sourceUrl || null,
+                sourceType: detectSourceType(form.sourceUrl)
             })
             setSubmitted(true)
         } catch (error) {
             console.error('Error uploading work:', error)
-            alert('Encountered an error saving your project to your portfolio. Please try again.')
+            alert('Encountered an error saving your project. Please try again.')
         } finally {
             setIsLoading(false)
         }
@@ -119,10 +113,7 @@ export default function UploadWork() {
                 </div>
                 <h2 className="text-2xl font-bold mb-2">Work Uploaded!</h2>
                 <p className="mb-6" style={{ color: 'var(--color-text-muted)' }}>Your project has been published to your portfolio.</p>
-                <button className="btn btn-primary" onClick={() => {
-                    resetForm()
-                    setSubmitted(false)
-                }}>Upload Another</button>
+                <button className="btn btn-primary" onClick={() => { resetForm(); setSubmitted(false) }}>Upload Another</button>
             </motion.div>
         )
     }
@@ -137,9 +128,6 @@ export default function UploadWork() {
             </motion.div>
 
             <form onSubmit={handleSubmit}>
-
-
-                {/* Project Details */}
                 <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                     className="card p-6 mb-6">
                     <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -170,62 +158,48 @@ export default function UploadWork() {
                                 value={form.castCrew}
                                 onChange={e => update('castCrew', e.target.value)} />
                         </div>
-                        <div className="form-group">
-                            <label>Upload Files (Videos, Images)</label>
-                            <div className="file-upload" onClick={() => document.getElementById('work-upload')?.click()}>
-                                <Upload size={24} className="mx-auto mb-2" />
-                                <p className="text-sm font-medium">Click to upload or drag files here</p>
-                                <p className="text-xs mt-1" style={{ color: 'var(--color-text-dim)' }}>MP4, MOV, JPG, PNG supported</p>
-                            </div>
-                            <input type="file" id="work-upload" multiple accept="video/*,image/*" style={{ display: 'none' }}
-                                onChange={e => {
-                                    const newFiles = Array.from(e.target.files);
-                                    setForm(prev => ({
-                                        ...prev,
-                                        files: prev.files ? [...Array.from(prev.files), ...newFiles] : newFiles
-                                    }));
-                                }} />
 
-                            {form.files && form.files.length > 0 && (
-                                <div className="space-y-2 mt-4">
-                                    {Array.from(form.files).map((file, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-3 bg-secondary/5 rounded-xl border border-secondary/10 group">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
-                                                    <FileText size={14} />
-                                                </div>
-                                                <div className="overflow-hidden">
-                                                    <div className="text-xs font-bold text-secondary truncate max-w-[200px]">{file.name}</div>
-                                                    <div className="text-[10px] text-text-dim">{(file.size / (1024 * 1024)).toFixed(2)} MB</div>
-                                                </div>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    const updated = Array.from(form.files).filter((_, i) => i !== idx);
-                                                    update('files', updated.length > 0 ? updated : null);
-                                                }}
-                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-danger hover:bg-danger/10 transition-colors"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                        {/* URL Input - replaces binary file upload */}
+                        <div className="form-group">
+                            <label className="flex items-center gap-2">
+                                <Link size={14} /> Video / Portfolio Link
+                                <span className="text-xs font-normal" style={{ color: 'var(--color-text-muted)' }}>(optional)</span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    placeholder="YouTube, Instagram, Vimeo, or Google Drive link..."
+                                    value={form.sourceUrl}
+                                    onChange={e => update('sourceUrl', e.target.value)}
+                                    className="pr-10"
+                                />
+                                {form.sourceUrl && (
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                                        {getSourceIcon(form.sourceUrl)}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex gap-3 mt-2">
+                                {[
+                                    { icon: <Youtube size={13} className="text-red-400" />, label: 'YouTube' },
+                                    { icon: <Instagram size={13} className="text-pink-400" />, label: 'Instagram' },
+                                    { icon: <Globe size={13} className="text-blue-400" />, label: 'Vimeo / Drive' },
+                                ].map(({ icon, label }) => (
+                                    <span key={label} className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-text-dim)' }}>
+                                        {icon} {label}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Actions */}
                 <div className="flex gap-3 justify-end">
                     <button type="button" className="btn btn-secondary" onClick={resetForm} disabled={isLoading}>
                         <X size={16} /> Cancel
                     </button>
                     <button type="submit" className="btn btn-primary" disabled={isLoading}>
-                        {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />} 
-                        {isLoading ? 'Uploading...' : 'Upload'}
+                        {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                        {isLoading ? 'Saving...' : 'Upload'}
                     </button>
                 </div>
             </form>

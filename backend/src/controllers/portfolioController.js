@@ -89,7 +89,7 @@ export const getMyPortfolio = async (req, res) => {
 // Add project/media to portfolio (From UploadWork.jsx)
 export const addPortfolioMedia = async (req, res) => {
     try {
-        const { title, type, description, castCrew, files } = req.body;
+        const { title, type, description, castCrew, sourceUrl, sourceType } = req.body;
 
         // Ensure portfolio exists first
         let existing = await pool.query(
@@ -109,7 +109,6 @@ export const addPortfolioMedia = async (req, res) => {
             currentMedia = insertResult.rows[0].media || [];
         } else {
             currentMedia = existing.rows[0].media || [];
-            // Handle cases where media might not be an array
             if (!Array.isArray(currentMedia)) {
                 try {
                     currentMedia = typeof currentMedia === 'string' ? JSON.parse(currentMedia) : [];
@@ -120,30 +119,44 @@ export const addPortfolioMedia = async (req, res) => {
             }
         }
 
+        const projectId = crypto.randomUUID();
         const newProject = {
-            id: crypto.randomUUID(),
+            id: projectId,
             title,
             type,
             description,
             castCrew,
-            files: files || [],
+            sourceUrl: sourceUrl || null,
+            sourceType: sourceType || 'link',
             createdAt: new Date().toISOString()
         };
 
-        currentMedia.unshift(newProject); // put newest at top
+        currentMedia.unshift(newProject);
 
-        const result = await pool.query(
+        await pool.query(
             `UPDATE portfolios 
              SET media = $1, updated_at = CURRENT_TIMESTAMP
-             WHERE user_id = $2
-             RETURNING *`,
+             WHERE user_id = $2`,
             [JSON.stringify(currentMedia), req.userId]
+        );
+
+        // Also write to files table so it shows in Admin & files view
+        const detectedSourceType = sourceUrl
+            ? (sourceUrl.includes('youtube') || sourceUrl.includes('youtu.be') ? 'youtube'
+            : sourceUrl.includes('instagram') ? 'instagram'
+            : 'computer')
+            : 'computer';
+
+        await pool.query(
+            `INSERT INTO files (user_id, name, description, source_type, source_url)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [req.userId, title, description, detectedSourceType, sourceUrl || null]
         );
 
         res.json({
             success: true,
             message: 'Project uploaded successfully',
-            portfolio: result.rows[0]
+            project: newProject
         });
     } catch (error) {
         console.error('Add portfolio media error:', error);
