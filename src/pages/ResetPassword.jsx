@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Lock, ArrowLeft, CheckCircle, Eye, EyeOff } from 'lucide-react'
 import { authService } from '../services/auth.service'
 
 export default function ResetPassword() {
     const { token } = useParams()
+    const { state } = useLocation() // Get idToken/phoneNumber from ForgotPassword.jsx
     const navigate = useNavigate()
+    
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [showPw, setShowPw] = useState(false)
@@ -29,19 +31,27 @@ export default function ResetPassword() {
         setError('')
 
         try {
-            const result = await authService.resetPassword(token, password);
+            let result;
+            if (state?.idToken) {
+                // Reset using Phone OTP Token
+                result = await authService.resetPasswordWithPhone({
+                    phoneNumber: state.phoneNumber,
+                    idToken: state.idToken,
+                    newPassword: password
+                });
+            } else {
+                // Fallback to Email Link Token
+                result = await authService.resetPassword(token, password);
+            }
 
             if (result.success) {
                 setSubmitted(true)
-                // Auto redirect after 3 seconds
-                setTimeout(() => {
-                    navigate('/login')
-                }, 3000)
+                setTimeout(() => navigate('/login'), 2000)
             } else {
-                setError(result.error || 'Failed to reset password. Link may be expired.')
+                setError(result.error || 'Failed to update password. Please try again.')
             }
         } catch (err) {
-            setError('Could not connect to the server. Please try again.')
+            setError(err.response?.data?.error || 'Could not connect to the server.')
         } finally {
             setLoading(false)
         }
@@ -62,19 +72,16 @@ export default function ResetPassword() {
                             <div className="avatar avatar-lg mx-auto mt-6 mb-4" style={{ background: 'rgba(16,185,129,0.15)', color: 'var(--color-success)' }}>
                                 <CheckCircle size={28} />
                             </div>
-                            <h1 className="text-2xl font-bold mb-2">Password Reset Successful</h1>
+                            <h1 className="text-2xl font-bold mb-2">Success!</h1>
                             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
                                 Your password has been updated. Redirecting you to login...
                             </p>
-                            <Link to="/login" className="btn btn-primary w-full mt-6">
-                                <ArrowLeft size={16} /> Login Now
-                            </Link>
                         </>
                     ) : (
                         <>
-                            <h1 className="text-2xl font-bold mt-4 mb-2">Reset Password</h1>
+                            <h1 className="text-2xl font-bold mt-4 mb-2">Set New Password</h1>
                             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                                Enter your new password below.
+                                {state?.phoneNumber ? `Account: ${state.phoneNumber}` : "Enter your new password below."}
                             </p>
                         </>
                     )}
@@ -119,7 +126,7 @@ export default function ResetPassword() {
                         </button>
                         
                         <Link to="/login" className="btn btn-ghost w-full" style={{ color: 'var(--color-text-muted)' }}>
-                            <ArrowLeft size={16} /> Back to Login
+                            <ArrowLeft size={16} /> Cancel
                         </Link>
                     </form>
                 )}

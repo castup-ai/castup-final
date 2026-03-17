@@ -14,6 +14,7 @@ router.get('/me', authMiddleware, getCurrentUser);
 // Password reset routes
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.post('/reset-password-phone', resetPassword); // We'll update the controller to handle optional token vs phone
 
 // Google OAuth routes
 router.get('/google',

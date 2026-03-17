@@ -119,5 +119,21 @@ export const authService = {
                 error: error.response?.data?.error || 'Failed to reset password'
             };
         }
+    },
+
+    resetPasswordWithPhone: async ({ phoneNumber, idToken, newPassword }) => {
+        try {
+            const response = await api.post('/auth/reset-password-phone', { 
+                phoneNumber, 
+                idToken, 
+                newPassword 
+            });
+            return { success: true, data: response.data };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.error || 'Failed to update password'
+            };
+        }
     }
 };

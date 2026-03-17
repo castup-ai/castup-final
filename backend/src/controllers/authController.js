@@ -3,8 +3,23 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import pool from '../config/database.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
-
 import axios from 'axios';
+import admin from 'firebase-admin';
+
+// Initialize Firebase Admin (Secure way to verify OTP on backend)
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        console.log('✅ Firebase Admin initialized successfully');
+    } catch (err) {
+        console.error('❌ Failed to initialize Firebase Admin:', err.message);
+    }
+} else {
+    console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT not found. Phone OTP verification will be disabled.');
+}
 
 const sendEmail = async ({ to, subject, html }) => {
     // 1. Try Resend API (Professional Way - Works on Render Port 443)
@@ -271,66 +286,76 @@ export const forgotPassword = async (req, res) => {
     }
 };
 
-// Reset Password - Update password with token
+// Reset Password - Update password with either Email Token or Phone OTP Token
 export const resetPassword = async (req, res) => {
     try {
-        const { token, password } = req.body;
+        const { token, idToken, phoneNumber, password } = req.body;
 
-        if (!token || !password) {
-            return res.status(400).json({ error: 'Token and password are required' });
+        if (!password) return res.status(400).json({ error: 'Password is required' });
+        if (!token && !idToken) return res.status(400).json({ error: 'Authentication token required' });
+
+        let userId = null;
+
+        // CASE 1: Reset using Phone OTP (idToken)
+        if (idToken) {
+            console.log(`🔐 Phone Reset requested for: ${phoneNumber}`);
+            if (!admin.apps.length) {
+                return res.status(500).json({ error: 'Firebase Admin not configured on server. Contact admin.' });
+            }
+
+            try {
+                const decodedToken = await admin.auth().verifyIdToken(idToken);
+                const phoneFromToken = decodedToken.phone_number;
+
+                // Security check: Match phone number
+                if (phoneNumber && phoneFromToken !== phoneNumber) {
+                    return res.status(401).json({ error: 'Phone number mismatch' });
+                }
+
+                // Find user by phone
+                const userResult = await pool.query('SELECT id FROM users WHERE phone = $1', [phoneFromToken]);
+                if (userResult.rows.length === 0) {
+                    return res.status(404).json({ error: 'No user found with this phone number' });
+                }
+                userId = userResult.rows[0].id;
+            } catch (err) {
+                console.error('🔥 Firebase Token Error:', err.message);
+                return res.status(401).json({ error: 'Invalid or expired OTP token' });
+            }
+        } 
+        
+        // CASE 2: Reset using Email Link (token)
+        else if (token) {
+            console.log(`📧 Email Reset requested with token: ${token.substring(0, 8)}...`);
+            const tokenResult = await pool.query(
+                `SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = $1`,
+                [token]
+            );
+
+            if (tokenResult.rows.length === 0) return res.status(400).json({ error: 'Invalid reset link' });
+            
+            const resetData = tokenResult.rows[0];
+            if (new Date() > new Date(resetData.expires_at)) return res.status(400).json({ error: 'Reset link expired' });
+            if (resetData.used) return res.status(400).json({ error: 'Link already used' });
+
+            userId = resetData.user_id;
+
+            // Mark email token as used
+            await pool.query('UPDATE password_reset_tokens SET used = TRUE WHERE token = $1', [token]);
         }
 
-        if (password.length < 6) {
-            return res.status(400).json({ error: 'Password must be at least 6 characters' });
-        }
-
-        // Find valid token
-        const tokenResult = await pool.query(
-            `SELECT user_id, expires_at, used 
-             FROM password_reset_tokens 
-             WHERE token = $1`,
-            [token]
-        );
-
-        if (tokenResult.rows.length === 0) {
-            return res.status(400).json({ error: 'Invalid or expired reset token' });
-        }
-
-        const resetToken = tokenResult.rows[0];
-
-        // Check if token is expired
-        if (new Date() > new Date(resetToken.expires_at)) {
-            return res.status(400).json({ error: 'Invalid or expired reset token' });
-        }
-
-        // Check if token was already used
-        if (resetToken.used) {
-            return res.status(400).json({ error: 'This reset link has already been used' });
-        }
-
-        // Hash new password
+        // 3. Perform Password Update
         const passwordHash = await bcrypt.hash(password, 10);
-
-        // Update user password
         await pool.query(
             'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-            [passwordHash, resetToken.user_id]
+            [passwordHash, userId]
         );
 
-        // Mark token as used
-        await pool.query(
-            'UPDATE password_reset_tokens SET used = TRUE WHERE token = $1',
-            [token]
-        );
+        console.log(`✅ Password updated for user: ${userId}`);
+        res.json({ success: true, message: 'Password updated successfully' });
 
-        console.log(`✅ Password reset successful for user ID: ${resetToken.user_id}`);
-
-        res.json({
-            success: true,
-            message: 'Password has been reset successfully'
-        });
     } catch (error) {
-        console.error('Reset password error:', error);
-        res.status(500).json({ error: 'Server error processing request' });
+        console.error('Reset password global error:', error);
+        res.status(500).json({ error: 'Server error processing password update' });
     }
 };

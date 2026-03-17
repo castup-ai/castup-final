@@ -1,43 +1,79 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
-import { authService } from '../services/auth.service'
-import api from '../services/api'
+import { Phone, ArrowLeft, CheckCircle, MessageSquare, Lock } from 'lucide-react'
+import { auth } from '../config/firebase.config'
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth'
 
 export default function ForgotPassword() {
-    const [email, setEmail] = useState('')
-    const [submitted, setSubmitted] = useState(false)
+    const navigate = useNavigate()
+    const [phoneNumber, setPhoneNumber] = useState('')
+    const [otp, setOtp] = useState('')
+    const [step, setStep] = useState(1) // 1: Phone, 2: OTP
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [confirmationResult, setConfirmationResult] = useState(null)
 
-    const handleSubmit = async (e) => {
+    // Setup ReCAPTCHA
+    useEffect(() => {
+        if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                'size': 'invisible',
+                'callback': (response) => {
+                    // reCAPTCHA solved, allow signInWithPhoneNumber.
+                }
+            });
+        }
+    }, []);
+
+    const handleSendOTP = async (e) => {
+        e.preventDefault()
+        setLoading(true)
+        setError('')
+
+        // Format phone number if missing +
+        const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+
+        try {
+            const appVerifier = window.recaptchaVerifier;
+            const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+            setConfirmationResult(result);
+            setStep(2);
+        } catch (err) {
+            console.error('SMS Error:', err);
+            setError('Failed to send SMS. Please check the number and try again.');
+            // Reset recaptcha on error
+            if (window.recaptchaVerifier) {
+                window.recaptchaVerifier.render().then(widgetId => {
+                    window.grecaptcha.reset(widgetId);
+                });
+            }
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleVerifyOTP = async (e) => {
         e.preventDefault()
         setLoading(true)
         setError('')
 
         try {
-            // Add a safety timeout for the request (120 seconds for cold start + Extended Failover SMTP)
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('TIMEOUT')), 120000)
-            );
-
-            const result = await Promise.race([
-                authService.forgotPassword(email),
-                timeoutPromise
-            ]);
-
-            if (result.success) {
-                setSubmitted(true)
-            } else {
-                setError(result.error || 'This email is not registered or the server is busy.')
-            }
+            const result = await confirmationResult.confirm(otp);
+            const user = result.user;
+            const idToken = await user.getIdToken();
+            
+            // Success! Store token and redirect to reset password page
+            // We pass the token and phone to the reset page
+            navigate('/reset-password', { 
+                state: { 
+                    idToken, 
+                    phoneNumber: phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`
+                } 
+            });
         } catch (err) {
-            if (err.message === 'TIMEOUT') {
-                setError('The server is taking too long to respond. This usually happens on the first try. Please wait a moment and try again.')
-            } else {
-                setError(err.response?.data?.error || 'Could not connect to the server. Please try again.')
-            }
+            console.error('OTP Error:', err);
+            setError('Invalid OTP code. Please try again.');
         } finally {
             setLoading(false)
         }
@@ -52,53 +88,70 @@ export default function ForgotPassword() {
             >
                 <div className="text-center mb-8">
                     <Link to="/" className="text-2xl font-bold gradient-text">CastUp</Link>
-
-                    {submitted ? (
-                        <>
-                            <div className="avatar avatar-lg mx-auto mt-6 mb-4" style={{ background: 'rgba(16,185,129,0.15)', color: 'var(--color-success)' }}>
-                                <CheckCircle size={28} />
-                            </div>
-                            <h1 className="text-2xl font-bold mb-2">Check Your Email</h1>
-                            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                                We've sent a password reset link to <strong>{email}</strong>. Please check your inbox and follow the instructions.
-                            </p>
-                            <Link to="/login" className="btn btn-primary w-full mt-6">
-                                <ArrowLeft size={16} /> Back to Login
-                            </Link>
-                        </>
-                    ) : (
-                        <>
-                            <h1 className="text-2xl font-bold mt-4 mb-2">Forgot Password?</h1>
-                            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                                Enter your email and we'll send you a link to reset your password.
-                            </p>
-                        </>
-                    )}
+                    <h1 className="text-2xl font-bold mt-4 mb-2">Forgot Password?</h1>
+                    <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                        {step === 1 
+                            ? "Enter your registered phone number to receive an OTP."
+                            : `Enter the 6-digit code sent to your phone.`}
+                    </p>
                 </div>
 
-                {!submitted && (
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {error && (
-                            <div className="p-3 rounded-lg text-sm mb-4" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                                {error}
-                            </div>
-                        )}
+                <div id="recaptcha-container"></div>
+
+                {error && (
+                    <div className="p-3 rounded-lg text-sm mb-4" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                        {error}
+                    </div>
+                )}
+
+                {step === 1 ? (
+                    <form onSubmit={handleSendOTP} className="space-y-4">
                         <div className="form-group">
-                            <label>Email Address</label>
+                            <label>Phone Number</label>
+                            <div className="relative">
+                                <input
+                                    type="tel" placeholder="+91 9876543210" required
+                                    value={phoneNumber}
+                                    onChange={e => setPhoneNumber(e.target.value)}
+                                    className="pl-4"
+                                />
+                            </div>
+                            <p className="text-xs mt-1 text-muted">Include country code (e.g., +91)</p>
+                        </div>
+                        <button type="submit" className="btn btn-primary w-full" disabled={loading || !phoneNumber}>
+                            {loading ? 'Sending OTP...' : <><MessageSquare size={16} /> Send OTP</>}
+                        </button>
+                    </form>
+                ) : (
+                    <form onSubmit={handleVerifyOTP} className="space-y-4">
+                        <div className="form-group">
+                            <label>Enter 6-digit OTP</label>
                             <input
-                                type="email" placeholder="your@email.com" required
-                                value={email}
-                                onChange={e => setEmail(e.target.value)}
+                                type="text" placeholder="123456" required
+                                value={otp}
+                                onChange={e => setOtp(e.target.value)}
+                                maxLength={6}
+                                className="text-center text-2xl tracking-[0.5em] font-bold"
                             />
                         </div>
-                        <button type="submit" className="btn btn-primary w-full" disabled={loading}>
-                            {loading ? 'Sending...' : <><Mail size={16} /> Send Reset Link</>}
+                        <button type="submit" className="btn btn-primary w-full" disabled={loading || otp.length < 6}>
+                            {loading ? 'Verifying...' : <><Lock size={16} /> Verify & Continue</>}
                         </button>
-                        <Link to="/login" className="btn btn-ghost w-full" style={{ color: 'var(--color-text-muted)' }}>
-                            <ArrowLeft size={16} /> Back to Login
-                        </Link>
+                        <button 
+                            type="button" 
+                            onClick={() => setStep(1)}
+                            className="btn btn-ghost w-full text-xs"
+                        >
+                            Change Phone Number
+                        </button>
                     </form>
                 )}
+
+                <div className="mt-6 text-center">
+                    <Link to="/login" className="text-sm inline-flex items-center gap-2" style={{ color: 'var(--color-text-muted)' }}>
+                        <ArrowLeft size={14} /> Back to Login
+                    </Link>
+                </div>
             </motion.div>
         </div>
     )
