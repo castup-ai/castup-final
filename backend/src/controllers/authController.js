@@ -189,6 +189,7 @@ export const forgotPassword = async (req, res) => {
         }
 
         // Send password reset email
+        console.log(`✉️ Attempting to send reset email to ${user.email}...`);
         const sent = await sendEmail({
             to: user.email,
             subject: 'CastUp - Reset Your Password',
@@ -205,11 +206,12 @@ export const forgotPassword = async (req, res) => {
                 </div>
             `
         });
-
-        if (sent) console.log(`✅ Reset email successfully sent to ${user.email}`);
-        else console.error(`❌ Failed to send reset email to ${user.email}`);
-
-        console.log(`ℹ️ Responding to client for forgot-password request (${user.email})`);
+        
+        if (sent) {
+            console.log(`✅ Reset email successfully sent to ${user.email}`);
+        } else {
+            console.error(`❌ Failed to send reset email to ${user.email}. Check SMTP configuration.`);
+        }
 
         res.json({
             success: true,
