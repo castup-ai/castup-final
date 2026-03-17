@@ -11,32 +11,38 @@ const sendEmail = async ({ to, subject, html }) => {
     if (pass) pass = pass.replace(/\s+/g, '');
     if (!pass) return { success: false, error: 'SMTP_PASS missing' };
 
+    // Port 587 with STARTTLS is often more reliable on Render/Heroku than Port 465
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user, pass }
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: { user, pass },
+        tls: {
+            rejectUnauthorized: false // Helps with some cloud networking issues
+        }
     });
 
-    console.log(`✉️ Starting email send to ${to}...`);
+    console.log(`✉️ Starting email send to ${to} via Port 587...`);
 
     try {
-        // Hard 25-second timeout for the entire email operation
+        // 30-second timeout for the SMTP handshake + send
         const emailPromise = transporter.sendMail({
             from: `"CastUp" <${user}>`,
             to, subject, html
         });
 
         const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('SMTP_TIMEOUT')), 25000)
+            setTimeout(() => reject(new Error('SMTP_TIMEOUT')), 30000)
         );
 
         const info = await Promise.race([emailPromise, timeoutPromise]);
         console.log(`✅ Email sent: ${info.messageId}`);
         return { success: true };
     } catch (err) {
-        console.error('❌ Email send failed or timed out:', err.message);
+        console.error('❌ SMTP Error Detail:', err);
         return { 
             success: false, 
-            error: err.message === 'SMTP_TIMEOUT' ? 'Email provider timed out' : err.message 
+            error: err.message === 'SMTP_TIMEOUT' ? 'Google SMTP took too long to respond' : err.message 
         };
     }
 };
@@ -219,9 +225,9 @@ export const forgotPassword = async (req, res) => {
         }
     };
 
-    // Overall 35s timeout for the entire request
+    // Overall 40s timeout for the entire request
     const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), 35000)
+        setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), 40000)
     );
 
     try {
