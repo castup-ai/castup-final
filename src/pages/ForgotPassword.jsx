@@ -17,9 +17,9 @@ export default function ForgotPassword() {
         setError('')
 
         try {
-            // Add a safety timeout for the request
+            // Add a safety timeout for the request (45 seconds for cold start + SMTP)
             const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+                setTimeout(() => reject(new Error('TIMEOUT')), 45000)
             );
 
             const result = await Promise.race([
@@ -30,13 +30,11 @@ export default function ForgotPassword() {
             if (result.success) {
                 setSubmitted(true)
             } else {
-                setError(result.error || 'Failed to send reset link.')
+                setError(result.error || 'This email is not registered or the server is busy.')
             }
         } catch (err) {
             if (err.message === 'TIMEOUT') {
-                setError('The request is taking longer than expected. Please check your inbox in a few minutes or try again if no email arrives.')
-                // Don't set submitted to true on a hard timeout anymore, let them retry
-                // but keep the loading state off
+                setError('The server is taking too long to respond. This usually happens on the first try. Please wait a moment and try again.')
             } else {
                 setError(err.response?.data?.error || 'Could not connect to the server. Please try again.')
             }

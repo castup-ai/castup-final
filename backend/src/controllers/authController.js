@@ -4,41 +4,29 @@ import nodemailer from 'nodemailer';
 import pool from '../config/database.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
 
-// Email helper with robust verification and logging
 const sendEmail = async ({ to, subject, html }) => {
     try {
         const user = process.env.SMTP_USER || 'castupaiapp@gmail.com';
         let pass = process.env.SMTP_PASS;
 
         if (pass) {
-            // Gmail App Passwords are 16-char codes, often shown with spaces. We must strip them.
             pass = pass.replace(/\s+/g, '');
         }
 
         if (!pass) {
-            console.error('❌ SMTP_PASS environment variable is missing!');
             return { success: false, error: 'SMTP_PASS is missing in server environment variables.' };
         }
 
+        // Direct SMTP config for Gmail (SSL Port 465) is usually faster and more reliable
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true, 
             auth: { user, pass },
-            connectionTimeout: 10000, // 10 seconds
-            greetingTimeout: 10000,
+            timeout: 20000, // 20 seconds total for the operation
         });
 
-        // 1. Verify connection first
-        console.log(`✉️ Verifying SMTP connection for ${user}...`);
-        try {
-            await transporter.verify();
-            console.log('✅ SMTP connection verified successfully');
-        } catch (verifyErr) {
-            console.error('❌ SMTP Verification Failed:', verifyErr.message);
-            return { success: false, error: `SMTP Verification Failed: ${verifyErr.message}` };
-        }
-
-        // 2. Send the actual email
-        console.log(`✉️ Attempting to send email to ${to}...`);
+        console.log(`✉️ Sending email to ${to} via Port 465...`);
         const info = await transporter.sendMail({
             from: `"CastUp" <${user}>`,
             to,
@@ -46,7 +34,6 @@ const sendEmail = async ({ to, subject, html }) => {
             html
         });
 
-        console.log(`✅ Email sent successfully to ${to}. MessageId: ${info.messageId}`);
         return { success: true };
     } catch (err) {
         console.error('❌ Email send failed:', err.message);
