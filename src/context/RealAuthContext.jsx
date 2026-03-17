@@ -43,6 +43,32 @@ export function RealAuthProvider({ children }) {
     const [allJobs, setAllJobs] = useState([]);
     const [allWorks, setAllWorks] = useState([]);
     const [connectionCount, setConnectionCount] = useState(0);
+    const [userStats, setUserStats] = useState({ connections: 0, projects: 0, profileViews: 0 });
+    const [recentActivity, setRecentActivity] = useState([]);
+
+    const fetchUserStats = async () => {
+        if (!token) return;
+        try {
+            const res = await api.get('/users/stats');
+            if (res.data.success) {
+                setUserStats(res.data.stats);
+                setConnectionCount(res.data.stats.connections);
+            }
+        } catch (e) {
+            console.error("Error fetching user stats:", e);
+        }
+    };
+
+    const fetchRecentActivity = async () => {
+        try {
+            const res = await api.get('/users/recent');
+            if (res.data.success) {
+                setRecentActivity(res.data.data);
+            }
+        } catch (e) {
+            console.error("Error fetching recent activity:", e);
+        }
+    };
 
     const refreshPlatformData = async () => {
         try {
@@ -52,6 +78,8 @@ export function RealAuthProvider({ children }) {
 
             // Fetch concurrently but handle individually
             const jobsPromise = castingService.getAll();
+            // Only fetch all users and all works if needed (e.g. for Explore or Admin)
+            // For general hydration, we'll fetch stats and recent activity instead
             const usersPromise = authService.getAllUsers();
             const worksPromise = adminService.getAllWorks();
 
@@ -67,6 +95,10 @@ export function RealAuthProvider({ children }) {
 
             if (worksRes.success) setAllWorks(worksRes.data || []);
             setWorksLoading(false);
+            
+            // Also fetch stats/recent
+            fetchUserStats();
+            fetchRecentActivity();
         } catch (error) {
             console.error("Error refreshing platform data:", error);
             setUsersLoading(false);
@@ -192,7 +224,7 @@ export function RealAuthProvider({ children }) {
     }
 
     const deleteJob = async (jobId) => {
-        const { success, error } = await adminService.deleteJob(jobId);
+        const { success, error } = await castingService.delete(jobId);
         if (success) {
             setAllJobs(prev => prev.filter(j => j.id !== jobId));
             return { success: true };
@@ -274,8 +306,14 @@ export function RealAuthProvider({ children }) {
         }
     };
 
-    const declineConnection = (notificationId) => {
-        setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true, status: 'declined' } : n));
+    const declineConnection = async (notificationId) => {
+        try {
+            await api.post('/users/connections/decline', { notificationId });
+            setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true, status: 'declined' } : n));
+        } catch (e) {
+            console.error('Decline connection error:', e);
+            setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true, status: 'declined' } : n));
+        }
     };
 
     const applyForJob = async (jobId) => {
@@ -336,7 +374,9 @@ export function RealAuthProvider({ children }) {
             allUsers,
             allJobs,
             allWorks,
-            connectionCount,
+            connections: connectionCount,
+            userStats,
+            recentActivity,
             addJob,
             deleteJob,
             deleteUser,

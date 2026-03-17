@@ -49,5 +49,17 @@ export const castingService = {
                 error: error.response?.data?.error || 'Failed to apply'
             };
         }
+    },
+
+    delete: async (id) => {
+        try {
+            await api.delete(`/casting/${id}`);
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.error || 'Failed to delete job posting'
+            };
+        }
     }
 };

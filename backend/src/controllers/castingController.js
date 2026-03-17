@@ -179,3 +179,75 @@ export const applyToCastingCall = async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 };
+
+// Get applicants for a casting call (only for creator)
+export const getCastingCallApplicants = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.userId;
+
+        // Get casting call and verify ownership
+        const jobRes = await pool.query(
+            'SELECT created_by, applications FROM casting_calls WHERE id = $1',
+            [id]
+        );
+
+        if (jobRes.rows.length === 0) return res.status(404).json({ error: 'Job not found' });
+        
+        if (jobRes.rows[0].created_by !== userId) {
+            return res.status(403).json({ error: 'Unauthorized to view applicants for this job' });
+        }
+
+        const applications = jobRes.rows[0].applications || [];
+        if (applications.length === 0) return res.json({ success: true, applicants: [] });
+
+        // Fetch user details for each applicant
+        const appWithUsers = await Promise.all(applications.map(async (app) => {
+            const userRes = await pool.query(
+                'SELECT id, name, lastName as "lastName", profile_picture as "photo", role, department FROM users WHERE id = $1',
+                [app.userId]
+            );
+            const user = userRes.rows[0];
+            return {
+                ...app,
+                user: user ? {
+                    ...user,
+                    name: `${user.name} ${user.lastName || ''}`.trim()
+                } : { name: 'Unknown User' }
+            };
+        }));
+
+        res.json({ success: true, applicants: appWithUsers });
+    } catch (error) {
+        console.error('Get applicants error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Delete casting call (Owner or Admin)
+export const deleteCastingCall = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.userId;
+
+        // Check if job exists and get creator
+        const jobRes = await pool.query('SELECT created_by FROM casting_calls WHERE id = $1', [id]);
+        if (jobRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Casting call not found' });
+        }
+
+        const creatorId = jobRes.rows[0].created_by;
+
+        // Verify ownership (or could add admin check here if needed)
+        if (creatorId !== userId) {
+            return res.status(403).json({ error: 'Unauthorized to delete this casting call' });
+        }
+
+        await pool.query('DELETE FROM casting_calls WHERE id = $1', [id]);
+        
+        res.json({ success: true, message: 'Casting call deleted successfully' });
+    } catch (error) {
+        console.error('Delete casting call error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};

@@ -1,0 +1,266 @@
+[
+  {
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "email",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "password_hash",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "department",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "auth_provider",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "profile_picture",
+    "data_type": "text"
+  },
+  {
+    "column_name": "created_at",
+    "data_type": "timestamp without time zone"
+  },
+  {
+    "column_name": "updated_at",
+    "data_type": "timestamp without time zone"
+  },
+  {
+    "column_name": "country",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "phone",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "role",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "category",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "experience",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "availability",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "location",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "languages",
+    "data_type": "ARRAY"
+  },
+  {
+    "column_name": "age",
+    "data_type": "integer"
+  },
+  {
+    "column_name": "gender",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "height",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "weight",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "next_available",
+    "data_type": "date"
+  },
+  {
+    "column_name": "bio",
+    "data_type": "text"
+  },
+  {
+    "column_name": "years_of_experience",
+    "data_type": "integer"
+  },
+  {
+    "column_name": "awards",
+    "data_type": "text"
+  },
+  {
+    "column_name": "skills",
+    "data_type": "ARRAY"
+  },
+  {
+    "column_name": "portfolio_link",
+    "data_type": "text"
+  },
+  {
+    "column_name": "social_media",
+    "data_type": "jsonb"
+  },
+  {
+    "column_name": "project_type",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "projects_worked_on",
+    "data_type": "text"
+  },
+  {
+    "column_name": "additional_skills",
+    "data_type": "text"
+  },
+  {
+    "column_name": "instance_id",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "aud",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "role",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "email",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "encrypted_password",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "email_confirmed_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "invited_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "confirmation_token",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "confirmation_sent_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "recovery_token",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "recovery_sent_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "email_change_token_new",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "email_change",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "email_change_sent_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "last_sign_in_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "raw_app_meta_data",
+    "data_type": "jsonb"
+  },
+  {
+    "column_name": "raw_user_meta_data",
+    "data_type": "jsonb"
+  },
+  {
+    "column_name": "is_super_admin",
+    "data_type": "boolean"
+  },
+  {
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "phone",
+    "data_type": "text"
+  },
+  {
+    "column_name": "phone_confirmed_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "phone_change",
+    "data_type": "text"
+  },
+  {
+    "column_name": "phone_change_token",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "phone_change_sent_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "confirmed_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "email_change_token_current",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "email_change_confirm_status",
+    "data_type": "smallint"
+  },
+  {
+    "column_name": "banned_until",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "reauthentication_token",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "reauthentication_sent_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "is_sso_user",
+    "data_type": "boolean"
+  },
+  {
+    "column_name": "deleted_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "is_anonymous",
+    "data_type": "boolean"
+  }
+]

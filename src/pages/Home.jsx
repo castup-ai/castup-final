@@ -11,7 +11,7 @@ const pathways = [
 ]
 
 export default function Home() {
-    const { user, isAuthenticated, allUsers, connectionCount } = useAuth()
+    const { user, isAuthenticated, userStats, recentActivity } = useAuth()
 
     const getTimeAgo = (dateStr) => {
         if (!dateStr) return 'Recently';
@@ -29,17 +29,13 @@ export default function Home() {
         return Math.floor(seconds) + " seconds ago";
     };
 
-    const recentActivity = (allUsers || [])
-        .filter(u => u.createdAt)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 3)
-        .map(u => ({
-            text: `New ${u.role || (u.category === 'Crew' ? 'crew member' : 'talent')} joined: ${u.name}${u.location ? ` from ${u.location}` : ''}`,
-            time: getTimeAgo(u.createdAt)
-        }));
+    const displayActivity = (recentActivity || []).map(u => ({
+        text: `New ${u.role || (u.category === 'Crew' ? 'crew member' : 'talent')} joined: ${u.name}${u.location ? ` from ${u.location}` : ''}`,
+        time: getTimeAgo(u.createdAt)
+    }));
 
-    if (recentActivity.length === 0) {
-        recentActivity.push({ text: 'Welcome to CastUp!', time: 'Just now' });
+    if (displayActivity.length === 0) {
+        displayActivity.push({ text: 'Welcome to CastUp!', time: 'Just now' });
     }
 
     return (
@@ -70,9 +66,9 @@ export default function Home() {
                     className="grid grid-cols-3 gap-4 mb-8"
                 >
                     {[
-                        { icon: Users, label: 'Connections', value: connectionCount, color: 'var(--color-primary)' },
-                        { icon: Film, label: 'Projects', value: '0', color: 'var(--color-secondary)' },
-                        { icon: TrendingUp, label: 'Profile Views', value: '0', color: 'var(--color-success)' },
+                        { icon: Users, label: 'Connections', value: userStats.connections, color: 'var(--color-primary)' },
+                        { icon: Film, label: 'Projects', value: userStats.projects, color: 'var(--color-secondary)' },
+                        { icon: TrendingUp, label: 'Profile Views', value: userStats.profileViews, color: 'var(--color-success)' },
                     ].map((stat, i) => (
                         <div key={i} className="card p-4 flex items-center gap-4">
                             <div className="avatar avatar-sm" style={{ background: `${stat.color}22`, color: stat.color }}>
@@ -136,7 +132,7 @@ export default function Home() {
             >
                 <h2 className="section-title">Recent on CastUp</h2>
                 <div className="space-y-3">
-                    {recentActivity.map((activity, i) => (
+                    {displayActivity.map((activity, i) => (
                         <div key={i} className="card p-4 flex items-center justify-between">
                             <span className="text-sm">{activity.text}</span>
                             <span className="text-xs whitespace-nowrap ml-4" style={{ color: 'var(--color-text-dim)' }}>{activity.time}</span>

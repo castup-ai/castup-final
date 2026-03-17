@@ -381,7 +381,10 @@ export default function FindWork() {
                                         </span>
                                         <div className="h-px bg-primary/10 flex-1"></div>
                                         <span className="text-[11px] font-bold text-text-dim uppercase tracking-widest flex items-center gap-2">
-                                            <Calendar size={12} /> {job.endDate || job.lastDateToApply}
+                                            <Calendar size={12} /> {(() => {
+                                                const d = new Date(job.endDate || job.lastDateToApply);
+                                                return isNaN(d.getTime()) ? (job.endDate || job.lastDateToApply) : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                                            })()}
                                         </span>
                                     </div>
 
@@ -412,7 +415,10 @@ export default function FindWork() {
                                             <span className="text-[9px] font-black text-accent/60 uppercase tracking-widest mb-1">End Date</span>
                                             <div className="flex items-center gap-2">
                                                 <Calendar size={12} className="text-accent" />
-                                                <span className="text-xs font-bold leading-none">{job.endDate || job.lastDateToApply}</span>
+                                                <span className="text-xs font-bold leading-none">{(() => {
+                                                    const d = new Date(job.endDate || job.lastDateToApply);
+                                                    return isNaN(d.getTime()) ? (job.endDate || job.lastDateToApply) : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                                                })()}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -584,7 +590,10 @@ export default function FindWork() {
                                         </div>
                                         <div className="space-y-1 text-sm">
                                             <span className="font-bold opacity-40 block text-[10px] uppercase tracking-wider">Last date to apply</span>
-                                            <span className="font-black text-accent">{selectedJob.lastDateToApply}</span>
+                                            <span className="font-black text-accent">{(() => {
+                                                const d = new Date(selectedJob.lastDateToApply);
+                                                return isNaN(d.getTime()) ? selectedJob.lastDateToApply : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+                                            })()}</span>
                                         </div>
                                     </div>
 

@@ -266,11 +266,20 @@ export const acceptConnection = async (req, res) => {
             [uid1, uid2]
         );
 
-        // Mark the original notification as read
+        // Mark the original notification as read and update status in metadata
         if (notificationId) {
+            const currentNotif = await pool.query('SELECT metadata FROM notifications WHERE id = $1', [notificationId]);
+            let metadata = {};
+            if (currentNotif.rows.length > 0) {
+                metadata = typeof currentNotif.rows[0].metadata === 'string' 
+                    ? JSON.parse(currentNotif.rows[0].metadata || '{}') 
+                    : (currentNotif.rows[0].metadata || {});
+            }
+            metadata.status = 'accepted';
+
             await pool.query(
-                'UPDATE notifications SET read = TRUE WHERE id = $1 AND user_id = $2',
-                [notificationId, acceptorId]
+                'UPDATE notifications SET read = TRUE, metadata = $1 WHERE id = $2 AND user_id = $3',
+                [JSON.stringify(metadata), notificationId, acceptorId]
             );
         }
 
@@ -295,6 +304,38 @@ export const acceptConnection = async (req, res) => {
     }
 };
 
+// Decline a connection request - marks notification as read + sets status
+export const declineConnection = async (req, res) => {
+    try {
+        const { notificationId } = req.body;
+        const userId = req.userId;
+
+        if (!notificationId) {
+            return res.status(400).json({ error: 'notificationId is required' });
+        }
+
+        const currentNotif = await pool.query('SELECT metadata FROM notifications WHERE id = $1 AND user_id = $2', [notificationId, userId]);
+        if (currentNotif.rows.length === 0) {
+            return res.status(404).json({ error: 'Notification not found' });
+        }
+
+        let metadata = typeof currentNotif.rows[0].metadata === 'string' 
+            ? JSON.parse(currentNotif.rows[0].metadata || '{}') 
+            : (currentNotif.rows[0].metadata || {});
+        metadata.status = 'declined';
+
+        await pool.query(
+            'UPDATE notifications SET read = TRUE, metadata = $1 WHERE id = $2 AND user_id = $3',
+            [JSON.stringify(metadata), notificationId, userId]
+        );
+
+        res.json({ success: true, message: 'Connection declined' });
+    } catch (error) {
+        console.error('Decline connection error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
 // Get connection count for current user
 export const getConnectionCount = async (req, res) => {
     try {
@@ -306,6 +347,120 @@ export const getConnectionCount = async (req, res) => {
         res.json({ success: true, count: parseInt(result.rows[0].count) });
     } catch (error) {
         console.error('Get connection count error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Get stats for the home dashboard
+export const getUserStats = async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        // 1. Connection count
+        const connRes = await pool.query(
+            `SELECT COUNT(*) as count FROM connections
+             WHERE (user_id_1 = $1 OR user_id_2 = $1) AND status = 'connected'`,
+            [userId]
+        );
+
+        // 2. Project count (files + portfolio items)
+        const filesCount = await pool.query('SELECT COUNT(*) as count FROM files WHERE user_id = $1', [userId]);
+        
+        const portfolioRes = await pool.query('SELECT media FROM portfolios WHERE user_id = $1', [userId]);
+        let portCount = 0;
+        if (portfolioRes.rows.length > 0) {
+            let media = portfolioRes.rows[0].media;
+            if (typeof media === 'string') try { media = JSON.parse(media); } catch(e) { media = []; }
+            if (Array.isArray(media)) portCount = media.length;
+        }
+
+        // 3. Profile views
+        const viewRes = await pool.query('SELECT profile_views FROM users WHERE id = $1', [userId]);
+
+        res.json({
+            success: true,
+            stats: {
+                connections: parseInt(connRes.rows[0].count),
+                projects: parseInt(filesCount.rows[0].count) + portCount,
+                profileViews: viewRes.rows[0]?.profile_views || 0
+            }
+        });
+    } catch (error) {
+        console.error('Get user stats error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Get recently joined users for home activity feed
+export const getRecentUsers = async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT id, name, role, category, location, created_at as "createdAt"
+             FROM users
+             ORDER BY created_at DESC
+             LIMIT 3`
+        );
+        res.json({ success: true, data: result.rows });
+    } catch (error) {
+        console.error('Get recent users error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Increment profile views when someone visits a profile
+export const incrementProfileViews = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        // Don't increment if user is viewing their own profile (optional check)
+        if (req.userId === userId) return res.json({ success: true, message: 'Self view' });
+
+        await pool.query(
+            'UPDATE users SET profile_views = profile_views + 1 WHERE id = $1',
+            [userId]
+        );
+        res.json({ success: true, message: 'View counted' });
+    } catch (error) {
+        console.error('Increment views error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// NEW: Endpoint to get applicants for a casting call (only for creator)
+export const getCastingCallApplicants = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.userId;
+
+        // Get casting call and verify ownership
+        const jobRes = await pool.query(
+            'SELECT created_by, applications FROM casting_calls WHERE id = $1',
+            [id]
+        );
+
+        if (jobRes.rows.length === 0) return res.status(404).json({ error: 'Job not found' });
+        
+        if (jobRes.rows[0].created_by !== userId) {
+            return res.status(403).json({ error: 'Unauthorized to view applicants for this job' });
+        }
+
+        const applications = jobRes.rows[0].applications || [];
+        if (applications.length === 0) return res.json({ success: true, applicants: [] });
+
+        // Fetch user details for each applicant
+        const appWithUsers = await Promise.all(applications.map(async (app) => {
+            const userRes = await pool.query(
+                'SELECT id, name, profile_picture as "photo", role, department FROM users WHERE id = $1',
+                [app.userId]
+            );
+            return {
+                ...app,
+                user: userRes.rows[0] || { name: 'Unknown User' }
+            };
+        }));
+
+        res.json({ success: true, applicants: appWithUsers });
+    } catch (error) {
+        console.error('Get applicants error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 };

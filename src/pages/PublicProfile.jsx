@@ -28,6 +28,10 @@ export default function PublicProfile() {
                 const res = await api.get(`/users/${userId}/public`)
                 if (res.data?.success) {
                     setProfile(res.data.user)
+                    // Track view if viewer is not the profile owner
+                    if (user?.id !== userId) {
+                        api.post(`/users/${userId}/view`).catch(() => {})
+                    }
                 } else {
                     setNotFound(true)
                 }

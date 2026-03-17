@@ -73,7 +73,7 @@ export const getAllWorks = async (req, res) => {
     try {
         // Get files from files table
         const filesResult = await pool.query(`
-            SELECT f.id, f.name, f.file_url, f.file_type, f.source_type, f.created_at,
+            SELECT f.id, f.name, f.file_url, f.file_type, f.source_type, f.created_at, f.user_id,
                    u.name as "ownerName", u.email as "ownerEmail"
             FROM files f
             LEFT JOIN users u ON f.user_id = u.id

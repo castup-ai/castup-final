@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
-import { FileText, Upload, Calendar, X, CheckCircle, Trash2, MapPin } from 'lucide-react'
+import { FileText, Upload, Calendar, X, CheckCircle, Trash2, MapPin, Users, Eye } from 'lucide-react'
+import api from '@/services/api'
 import { useNavigate } from 'react-router-dom'
 
 const projectTypes = ['Feature Film', 'Short Film', 'Web Series', 'Documentary', 'Music Video', 'Commercial', 'Ad Film', 'Corporate Video', 'Other']
@@ -39,6 +40,10 @@ export default function PostRequest() {
         lastDateToApply: '', payRate: '', requirements: ''
     }
     const [form, setForm] = useState(initialForm)
+    const [viewingJob, setViewingJob] = useState(null)
+    const [applicants, setApplicants] = useState([])
+    const [loadingApplicants, setLoadingApplicants] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     
     // Get today's date in YYYY-MM-DD format for date input mins
     const today = new Date().toISOString().split('T')[0];
@@ -62,6 +67,7 @@ export default function PostRequest() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        if (isSubmitting) return
         if (!isAuthenticated) { requireAuth(); return }
 
         if (!isProfileComplete) {
@@ -109,6 +115,7 @@ export default function PostRequest() {
             }))
         }
 
+        setIsSubmitting(true)
         try {
             const result = await addJob(jobData)
             if (result.success) {
@@ -140,6 +147,21 @@ export default function PostRequest() {
                 }}>Post Another</button>
             </motion.div>
         )
+    }
+
+    const handleViewApplicants = async (job) => {
+        setViewingJob(job)
+        setLoadingApplicants(true)
+        try {
+            const res = await api.get(`/casting/${job.id}/applicants`)
+            if (res.data.success) {
+                setApplicants(res.data.applicants)
+            }
+        } catch (e) {
+            console.error("Error fetching applicants:", e)
+        } finally {
+            setLoadingApplicants(false)
+        }
     }
 
     return (
@@ -316,8 +338,17 @@ export default function PostRequest() {
                     <button type="button" className="btn btn-secondary" onClick={resetForm}>
                         <X size={16} /> Cancel
                     </button>
-                    <button type="submit" className="btn btn-primary">
-                        <FileText size={16} /> Create
+                    <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                Creating...
+                            </>
+                        ) : (
+                            <>
+                                <FileText size={16} /> Create
+                            </>
+                        )}
                     </button>
                 </div>
             </form>
@@ -409,6 +440,14 @@ export default function PostRequest() {
                                                     >
                                                         <Trash2 size={14} />
                                                     </button>
+                                                    <button 
+                                                        onClick={() => handleViewApplicants(job)}
+                                                        className="px-3 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white flex items-center justify-center gap-2 transition-all text-[10px] font-black uppercase tracking-tighter"
+                                                        title="View Applicants"
+                                                    >
+                                                        <Users size={14} />
+                                                        Applicants
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -430,6 +469,109 @@ export default function PostRequest() {
                     </div>
                 </div>
             </motion.div>
+
+            {/* Applicants Modal */}
+            {viewingJob && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="card w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-white/10"
+                    >
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                            <div>
+                                <h3 className="text-xl font-black">Applicants for {viewingJob.title}</h3>
+                                <p className="text-xs font-medium opacity-50 uppercase tracking-widest mt-1">
+                                    {applicants.length} Total Applications
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => { setViewingJob(null); setApplicants([]); }}
+                                className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                            {loadingApplicants ? (
+                                <div className="py-12 flex flex-col items-center gap-4">
+                                    <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                    <p className="text-sm font-bold opacity-50">Fetching applicants...</p>
+                                </div>
+                            ) : applicants.length === 0 ? (
+                                <div className="py-12 flex flex-col items-center opacity-30 text-center">
+                                    <Users size={48} className="mb-4" />
+                                    <p className="text-sm font-bold">No applications yet.</p>
+                                    <p className="text-xs max-w-xs mt-1">Once professionals apply to your request, they will appear here.</p>
+                                </div>
+                            ) : (
+                                applicants.map((app, idx) => (
+                                    <div key={idx} className="group p-4 rounded-2xl bg-white/[0.03] border border-white/5 transition-all hover:bg-white/[0.06] hover:border-primary/30">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="relative">
+                                                    {app.user?.photo ? (
+                                                        <img src={app.user.photo} alt="" className="w-12 h-12 rounded-xl object-cover shadow-lg" />
+                                                    ) : (
+                                                        <div className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-black text-lg">
+                                                            {app.user?.name?.[0]?.toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-success border-2 border-[#13111c]"></div>
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-base group-hover:text-primary transition-colors">{app.user?.name}</div>
+                                                    <div className="text-[10px] font-black text-primary/60 uppercase tracking-widest">
+                                                        {app.user?.role || app.user?.department || 'Professional'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => navigate(`/profile/${app.user?.id}`)}
+                                                    className="btn btn-secondary btn-sm px-4 flex items-center gap-2"
+                                                >
+                                                    <Eye size={14} /> Profile
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        {app.message && (
+                                            <div className="mt-4 p-3 rounded-xl bg-black/20 text-xs italic opacity-80 leading-relaxed border-l-2 border-primary/30">
+                                                "{app.message}"
+                                            </div>
+                                        )}
+                                        
+                                        <div className="mt-4 flex items-center gap-4 text-[10px] font-bold opacity-40">
+                                            <span className="flex items-center gap-1">
+                                                <Calendar size={10} /> Applied {new Date(app.timestamp || viewingJob.created_at).toLocaleDateString()}
+                                            </span>
+                                            {app.user?.location && (
+                                                <span className="flex items-center gap-1">
+                                                    <MapPin size={10} /> {app.user.location}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-4 bg-white/[0.02] border-t border-white/5 flex justify-end">
+                            <button 
+                                onClick={() => { setViewingJob(null); setApplicants([]); }}
+                                className="btn btn-secondary btn-sm px-6"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     )
 }

@@ -1,8 +1,7 @@
 import express from 'express';
 import { 
-    getUsers, getUserById, updateProfile, getProfile, 
-    getNotifications, sendNotification, markNotificationsRead,
-    acceptConnection, getConnectionCount
+    acceptConnection, declineConnection, getConnectionCount, getUserStats, getRecentUsers, 
+    incrementProfileViews, getCastingCallApplicants
 } from '../controllers/userController.js';
 import authMiddleware from '../middleware/auth.js';
 
@@ -16,10 +15,14 @@ router.get('/', authMiddleware, getUsers);
 router.get('/notifications', authMiddleware, getNotifications);
 router.post('/notifications/read', authMiddleware, markNotificationsRead);
 router.get('/profile', authMiddleware, getProfile);
+router.get('/stats', authMiddleware, getUserStats);
+router.get('/recent', getRecentUsers);
 router.get('/connections/count', authMiddleware, getConnectionCount);
 router.post('/connections/accept', authMiddleware, acceptConnection);
+router.post('/connections/decline', authMiddleware, declineConnection);
 router.get('/:userId', authMiddleware, getUserById);
 router.post('/:userId/notify', authMiddleware, sendNotification);
+router.post('/:userId/view', authMiddleware, incrementProfileViews);
 router.put('/profile', authMiddleware, updateProfile);
 
 export default router;

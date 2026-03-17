@@ -137,7 +137,7 @@ export default function TopBar() {
                                             </p>
                                             <p className="text-xs mt-0.5 leading-snug" style={{ color: 'var(--color-text-dim)' }}>{n.message}</p>
                                             {/* Accept/Decline buttons for connection requests */}
-                                            {n.type === 'connect' && !n.status && (
+                                            {n.type === 'connect' && !n.status && !meta.status && (
                                                 <div className="flex gap-2 mt-2" onClick={e => e.stopPropagation()}>
                                                     <button
                                                         className="px-3 py-1 text-xs font-bold bg-primary text-white rounded-lg hover:bg-primary/80 transition-all"
@@ -153,10 +153,10 @@ export default function TopBar() {
                                                     </button>
                                                 </div>
                                             )}
-                                            {n.type === 'connect' && n.status === 'accepted' && (
+                                            {n.type === 'connect' && (n.status === 'accepted' || meta.status === 'accepted') && (
                                                 <span className="inline-block mt-2 text-xs font-bold text-success">✓ Accepted</span>
                                             )}
-                                            {n.type === 'connect' && n.status === 'declined' && (
+                                            {n.type === 'connect' && (n.status === 'declined' || meta.status === 'declined') && (
                                                 <span className="inline-block mt-2 text-xs font-bold text-text-muted">Declined</span>
                                             )}
                                             {n.type === 'connect_accepted' && (
