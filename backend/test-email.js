@@ -8,13 +8,19 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-const createTransporter = () => nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    }
-});
+const createTransporter = () => {
+    const user = process.env.SMTP_USER;
+    let pass = process.env.SMTP_PASS;
+    if (pass) pass = pass.replace(/\s+/g, '');
+
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user,
+            pass
+        }
+    });
+};
 
 const testEmail = async () => {
     console.log('Testing email transport...');

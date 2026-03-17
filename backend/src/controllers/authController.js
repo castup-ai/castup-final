@@ -16,9 +16,14 @@ const createTransporter = () => nodemailer.createTransport({
 const sendEmail = async ({ to, subject, html }) => {
     try {
         const user = process.env.SMTP_USER || 'castupaiapp@gmail.com';
-        const pass = process.env.SMTP_PASS;
+        let pass = process.env.SMTP_PASS;
 
-        console.log(`✉️ Preparing email transport: user=${user}, pass=${pass ? 'DEFINED' : 'MISSING'}`);
+        if (pass) {
+            // Gmail App Passwords are 16-char codes, often shown with spaces. We must strip them.
+            pass = pass.replace(/\s+/g, '');
+        }
+
+        console.log(`✉️ Preparing email transport: user=${user}, pass=${pass ? `DEFINED (${pass.length} chars)` : 'MISSING'}`);
 
         if (!pass) {
             console.error('❌ SMTP_PASS environment variable is missing!');
