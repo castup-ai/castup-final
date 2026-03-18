@@ -84,6 +84,11 @@ export default function UploadWork() {
             return
         }
 
+        if (!form.document && !form.sourceUrl) {
+            alert('You must provide either a link (YouTube/Instagram) or upload a file/document to showcase your work.')
+            return
+        }
+
         setIsLoading(true)
         try {
             const formData = {

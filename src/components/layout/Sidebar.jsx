@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/RealAuthContext'
 import {
     Home, Compass, FileText, Briefcase, Upload,
-    Bot, MapPin, Video, Phone, User, ChevronLeft, ChevronRight, Sparkles, LogOut, Shield
+    Bot, MapPin, Video, Phone, User, ChevronLeft, ChevronRight, Sparkles, LogOut, Shield, MessageSquare
 } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -15,6 +15,7 @@ const navItems = [
     { path: '/post-request', label: 'Post a Request', icon: FileText },
     { path: '/find-work', label: 'Find Job', icon: Briefcase },
     { path: '/upload-work', label: 'Upload Work', icon: Upload },
+    { path: '/inbox', label: 'Inbox', icon: MessageSquare },
 ]
 
 const aiItems = [

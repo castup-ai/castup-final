@@ -19,6 +19,7 @@ import AILocationTracker from '@/pages/AILocationTracker'
 import AICastingDirector from '@/pages/AICastingDirector'
 import AdminDashboard from '@/pages/AdminDashboard'
 import PublicProfile from '@/pages/PublicProfile'
+import Inbox from '@/pages/Inbox'
 import { useAuth } from '@/context/RealAuthContext'
 
 const ProtectedRoute = ({ children }) => {
@@ -54,18 +55,23 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/profile/:userId" element={<PublicProfile />} />
 
+          {/* Guest-accessible with sidebar */}
+          <Route element={<AppLayout />}>
+              <Route path="/find-work" element={<FindWork />} />
+              <Route path="/explore" element={<Explore />} />
+          </Route>
+
           {/* App pages (with sidebar layout) */}
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/home" element={<Home />} />
-            <Route path="/explore" element={<Explore />} />
             <Route path="/post-request" element={<PostRequest />} />
-            <Route path="/find-work" element={<FindWork />} />
             <Route path="/upload-work" element={<UploadWork />} />
             <Route path="/contact" element={<ContactUs />} />
             <Route path="/profile" element={<MyProfile />} />
             <Route path="/ai-assistant" element={<AIAssistant />} />
             <Route path="/ai-location" element={<AILocationTracker />} />
             <Route path="/ai-casting" element={<AICastingDirector />} />
+            <Route path="/inbox" element={<Inbox />} />
             <Route path="/admin" element={<AdminDashboard />} />
           </Route>
 

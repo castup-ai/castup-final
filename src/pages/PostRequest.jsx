@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
 import { FileText, Upload, Calendar, X, CheckCircle, Trash2, MapPin, Users, Eye } from 'lucide-react'
 import api from '@/services/api'
+import { castingService } from '@/services/casting.service'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Share2 } from 'lucide-react'
 
@@ -56,6 +57,18 @@ export default function PostRequest() {
 
     const resetForm = () => setForm(initialForm)
     const update = (field, value) => setForm(prev => ({ ...prev, [field]: value }))
+
+    const handleViewApplicants = async (job) => {
+        setViewingJob(job)
+        setLoadingApplicants(true)
+        const res = await castingService.getJobApplicants(job.id)
+        if (res.success) {
+            setApplicants(res.data || [])
+        } else {
+            console.error(res.error)
+        }
+        setLoadingApplicants(false)
+    }
 
     useEffect(() => {
         if (isAuthenticated) {

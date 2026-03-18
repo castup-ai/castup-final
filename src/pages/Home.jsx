@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Compass, FileText, Briefcase, Upload, ArrowRight, TrendingUp, Users, Film } from 'lucide-react'
+import { Compass, FileText, Briefcase, Upload, ArrowRight, TrendingUp, Users, Film, RefreshCw } from 'lucide-react'
 import { useAuth } from '@/context/RealAuthContext'
+import React from 'react'
 
 const pathways = [
     { path: '/explore', label: 'Explore Talent', desc: 'Discover professionals by role, location & skills', icon: Compass, color: '#7c3aed' },
@@ -11,7 +12,17 @@ const pathways = [
 ]
 
 export default function Home() {
-    const { user, isAuthenticated, userStats, recentActivity } = useAuth()
+    const { user, isAuthenticated, userStats, recentActivity, fetchUserStats, fetchRecentActivity } = useAuth()
+    const [isRefreshing, setIsRefreshing] = React.useState(false)
+
+    React.useEffect(() => {
+        if (isAuthenticated) {
+            setIsRefreshing(true)
+            Promise.all([fetchUserStats(), fetchRecentActivity()]).finally(() => {
+                setIsRefreshing(false)
+            })
+        }
+    }, [isAuthenticated, fetchUserStats, fetchRecentActivity])
 
     const getTimeAgo = (dateStr) => {
         if (!dateStr) return 'Recently';

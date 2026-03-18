@@ -20,6 +20,15 @@ export default function PublicProfile() {
     const [notFound, setNotFound] = useState(false)
     const [connecting, setConnecting] = useState(false)
     const [connected, setConnected] = useState(false)
+    const [localSent, setLocalSent] = useState(false)
+    
+    // Check local storage for sent request
+    useEffect(() => {
+        if (user?.id && userId) {
+            const connectKey = `sent_connect_${user.id}_${userId}`
+            setLocalSent(localStorage.getItem(connectKey) === 'true')
+        }
+    }, [user, userId])
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -64,7 +73,7 @@ export default function PublicProfile() {
             return;
         }
 
-        if (connecting || connected) return
+        if (connecting || connected || localSent || connectedUserIds.includes(userId)) return
         setConnecting(true)
         const { success } = await sendTargetedNotification(userId, {
             type: 'connect',
@@ -73,7 +82,11 @@ export default function PublicProfile() {
             metadata: { senderId: user.id, senderName: user.name }
         })
         setConnecting(false)
-        if (success) setConnected(true)
+        if (success) {
+            setConnected(true)
+            setLocalSent(true)
+            localStorage.setItem(`sent_connect_${user.id}_${userId}`, 'true')
+        }
     }
 
     const handleMessage = () => {
@@ -239,7 +252,7 @@ export default function PublicProfile() {
                                              <div className="btn btn-sm btn-success flex items-center gap-2 cursor-default">
                                                  <CheckCircle size={15} /> Connected
                                              </div>
-                                         ) : connected ? (
+                                         ) : (connected || localSent) ? (
                                              <div className="btn btn-sm btn-secondary flex items-center gap-2 cursor-default">
                                                  <UserPlus size={15} /> Request Sent
                                              </div>

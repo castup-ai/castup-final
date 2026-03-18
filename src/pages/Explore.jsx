@@ -98,11 +98,6 @@ export default function Explore() {
     
     useEffect(() => {
         if (location.state?.fromJobs) {
-            // This logic was part of the original handleCloseProfile, but the user's instruction
-            // for handleCloseProfile removed it. Keeping it here for context, but it's not
-            // part of the requested change for handleCloseProfile itself.
-            // If the intent was to move this logic, it needs to be explicitly stated.
-            // For now, I'm only applying the exact changes requested for handleCloseProfile.
             // navigate(-1)
         }
         setActionStatus({ connect: null, message: null })
@@ -110,14 +105,30 @@ export default function Explore() {
         setCustomMessage('')
     }, [location.search, location.state]);
 
+    // Persistent sent tracking
+    useEffect(() => {
+        if (user?.id && selectedProfile?.id) {
+            const key = `sent_connect_${user.id}_${selectedProfile.id}`
+            if (localStorage.getItem(key) === 'true') {
+                setSentConnections(prev => new Set([...prev, String(selectedProfile.id)]))
+            }
+        }
+    }, [user, selectedProfile]);
+
     const handleConnect = async (targetUserId) => {
         if (!requireAuth()) return
+        
+        const { isProfileComplete } = useAuth.getState?.() || { isProfileComplete: true }; // Fallback if context not structured this way, but useAuth actually provides it
+        // Actually useAuth is already destructuring isProfileComplete from context in this component
+        
         if (!activeAction) {
             setActiveAction('connect')
             return
         }
         
-        setActionLoading(prev => ({ ...prev, connect: true }))
+        if (connectedUserIds.includes(targetUserId) || sentConnections.has(String(targetUserId))) {
+            return;
+        }
         const { success } = await sendTargetedNotification(targetUserId, {
             type: 'connect',
             title: 'Connection Request',
@@ -132,7 +143,11 @@ export default function Explore() {
         setActionLoading(prev => ({ ...prev, connect: false }))
         if (success) {
             setActionStatus(prev => ({ ...prev, connect: 'Sent' }))
-            setSentConnections(prev => new Set([...prev, targetUserId])) // mark as pending
+            const sid = String(targetUserId);
+            setSentConnections(prev => new Set([...prev, sid]))
+            if (user?.id) {
+                localStorage.setItem(`sent_connect_${user.id}_${sid}`, 'true')
+            }
             setActiveAction(null)
             setCustomMessage('')
             addNotification({

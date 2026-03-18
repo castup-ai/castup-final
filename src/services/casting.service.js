@@ -25,6 +25,18 @@ export const castingService = {
         }
     },
 
+    getJobApplicants: async (id) => {
+        try {
+            const response = await api.get(`/casting/${id}/applicants`);
+            return { success: true, data: response.data.applicants };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.error || 'Failed to fetch applicants'
+            };
+        }
+    },
+
     create: async (jobData) => {
         try {
             const response = await api.post('/casting', jobData);

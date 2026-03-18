@@ -217,6 +217,21 @@ export const initializeDatabase = async () => {
             `);
         }
 
+        // Contact Messages table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS contact_messages (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                email VARCHAR(255) NOT NULL,
+                phone VARCHAR(50),
+                subject VARCHAR(255),
+                category VARCHAR(100),
+                message TEXT NOT NULL,
+                attachments JSONB DEFAULT '[]',
+                status VARCHAR(50) DEFAULT 'new',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         console.log('✅ Database tables initialized successfully');
     } catch (error) {
         console.error('❌ Error initializing database:', error);

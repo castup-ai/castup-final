@@ -38,7 +38,15 @@ export default function AdminDashboard() {
     }, [search])
 
     // Guard: only admin can access
-    if (!user || !ADMIN_EMAILS.includes(user.email)) {
+    if (!user || user.email === undefined) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <Loader2 className="animate-spin text-primary w-10 h-10" />
+            </div>
+        );
+    }
+    
+    if (!ADMIN_EMAILS.includes(user.email)) {
         return <Navigate to="/home" replace />
     }
 

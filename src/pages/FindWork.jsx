@@ -710,32 +710,41 @@ export default function FindWork() {
                                         </p>
                                     </div>
 
-                                    {selectedJob.documents && selectedJob.documents.length > 0 && (
-                                        <div className="space-y-2 mt-4">
-                                            <span className="font-bold opacity-40 block text-[10px] uppercase tracking-wider">Attached Documents</span>
-                                            <div className="flex flex-wrap gap-2">
-                                                {selectedJob.documents.map((doc, idx) => (
-                                                    doc.url ? (
-                                                        <a
-                                                            key={idx}
-                                                            href={doc.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
-                                                        >
-                                                            <FileText size={14} /> {doc.name || `Document ${idx + 1}`}
-                                                            <ExternalLink size={10} />
-                                                        </a>
-                                                    ) : (
-                                                        <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-xs font-bold text-primary">
-                                                            <FileText size={14} />
-                                                            <span className="truncate max-w-[150px]">{doc.name || `Document ${idx + 1}`}</span>
-                                                        </div>
-                                                    )
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                    {(() => {
+                                        let docs = selectedJob.documents;
+                                        if (typeof docs === 'string') {
+                                            try { docs = JSON.parse(docs); } catch (e) { docs = []; }
+                                        }
+                                        if (docs && docs.length > 0) {
+                                            return (
+                                                <div className="space-y-2 mt-4">
+                                                    <span className="font-bold opacity-40 block text-[10px] uppercase tracking-wider">Attached Documents</span>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {docs.map((doc, idx) => (
+                                                            doc.url ? (
+                                                                <a
+                                                                    key={idx}
+                                                                    href={doc.url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+                                                                >
+                                                                    <FileText size={14} /> {doc.name || `Document ${idx + 1}`}
+                                                                    <ExternalLink size={10} />
+                                                                </a>
+                                                            ) : (
+                                                                <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-xl text-xs font-bold text-primary">
+                                                                    <FileText size={14} />
+                                                                    <span className="truncate max-w-[150px]">{doc.name || `Document ${idx + 1}`}</span>
+                                                                </div>
+                                                            )
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
                             </div>
 

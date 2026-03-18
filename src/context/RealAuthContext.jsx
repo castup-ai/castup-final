@@ -109,6 +109,7 @@ export function RealAuthProvider({ children }) {
             fetchRecentActivity();
         } catch (error) {
             console.error("Error refreshing platform data:", error);
+        } finally {
             setUsersLoading(false);
             setJobsLoading(false);
             setWorksLoading(false);
@@ -422,7 +423,9 @@ export function RealAuthProvider({ children }) {
             connectedUserIds,
             contactMessages,
             applyForJob,
-            updateJob
+            updateJob,
+            fetchUserStats,
+            fetchRecentActivity
         }}>
             {children}
         </RealAuthContext.Provider>
