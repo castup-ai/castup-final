@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Phone, Mail, CheckCircle, X, Upload, Send, Trash2, FileText, Loader2 } from 'lucide-react'
-import axios from 'axios'
+import api from '@/services/api'
 
 const subCategories = ['General Inquiry', 'Technical Support', 'Account Issues', 'Partnership', 'Report a Bug', 'Feature Request', 'Billing', 'Other']
 
@@ -27,11 +27,11 @@ export default function ContactUs() {
                 for (const file of form.attachments) {
                     const formData = new FormData()
                     formData.append('file', file)
-                    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/files/upload`, formData)
+                    const res = await api.post('/files/upload', formData)
                     if (res.data.success) {
                         uploadedFiles.push({
                             name: file.name,
-                            url: res.data.fileUrl,
+                            url: res.data.fileUrl || res.data.file?.file_url, // fallback depending on backend response struct
                             type: file.type
                         })
                     }
@@ -39,7 +39,7 @@ export default function ContactUs() {
             }
 
             // 2. Submit message
-            const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/contact`, {
+            const res = await api.post('/contact', {
                 ...form,
                 attachments: uploadedFiles
             })
