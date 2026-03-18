@@ -66,9 +66,9 @@ export default function Home() {
                     className="grid grid-cols-3 gap-4 mb-8"
                 >
                     {[
-                        { icon: Users, label: 'Connections', value: userStats.connections, color: 'var(--color-primary)' },
-                        { icon: Film, label: 'Projects', value: userStats.projects, color: 'var(--color-secondary)' },
-                        { icon: TrendingUp, label: 'Profile Views', value: userStats.profileViews, color: 'var(--color-success)' },
+                        { icon: Users, label: 'Connections', value: userStats?.connections || 0, color: 'var(--color-primary)' },
+                        { icon: Film, label: 'Projects', value: userStats?.projects || 0, color: 'var(--color-secondary)' },
+                        { icon: TrendingUp, label: 'Profile Views', value: userStats?.profileViews || 0, color: 'var(--color-success)' },
                     ].map((stat, i) => (
                         <div key={i} className="card p-4 flex items-center gap-4">
                             <div className="avatar avatar-sm" style={{ background: `${stat.color}22`, color: stat.color }}>

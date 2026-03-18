@@ -53,9 +53,9 @@ export function RealAuthProvider({ children }) {
         if (!token) return;
         try {
             const res = await api.get('/users/stats');
-            if (res.data.success) {
+            if (res.data && res.data.success && res.data.stats) {
                 setUserStats(res.data.stats);
-                setConnectionCount(res.data.stats.connections);
+                setConnectionCount(res.data.stats.connections || 0);
             }
         } catch (e) {
             console.error("Error fetching user stats:", e);
@@ -90,13 +90,13 @@ export function RealAuthProvider({ children }) {
                 jobsPromise, usersPromise, worksPromise
             ]);
 
-            if (jobsRes.success) setAllJobs(jobsRes.data || []);
+            if (jobsRes && jobsRes.success) setAllJobs(jobsRes.data || []);
             setJobsLoading(false);
 
-            if (usersRes.success) setAllUsers(usersRes.data || []);
+            if (usersRes && usersRes.success) setAllUsers(usersRes.data || []);
             setUsersLoading(false);
 
-            if (worksRes.success) setAllWorks(worksRes.data || []);
+            if (worksRes && worksRes.success) setAllWorks(worksRes.data || []);
             setWorksLoading(false);
             
             if (token && ['castup4862446@gmail.com', 'castupaiapp@gmail.com'].includes(user?.email)) {
@@ -164,7 +164,7 @@ export function RealAuthProvider({ children }) {
                     
                     // Fetch full application history from server
                     const appsRes = await castingService.getMyApplications();
-                    if (appsRes.success) {
+                    if (appsRes && appsRes.success && Array.isArray(appsRes.data)) {
                         setUserApplications(appsRes.data);
                         // Sync appliedJobs IDs
                         const ids = appsRes.data.map(a => a.job_id);

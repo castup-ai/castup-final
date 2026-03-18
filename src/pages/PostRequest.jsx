@@ -514,7 +514,7 @@ export default function PostRequest() {
                         <p className="text-sm font-medium opacity-50">Manage your active and previous crew calls</p>
                     </div>
                     <div className="badge badge-primary font-bold px-4 py-2">
-                        {allJobs.filter(j => j.createdBy?.id === user?.id).length} Active
+                        {(allJobs || []).filter(j => j.createdBy?.id === user?.id).length} Active
                     </div>
                 </div>
 
@@ -531,7 +531,7 @@ export default function PostRequest() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {allJobs.filter(j => j.createdBy?.id === user?.id).length === 0 ? (
+                                { (allJobs || []).filter(j => j.createdBy?.id === user?.id).length === 0 ? (
                                     <tr>
                                         <td colSpan="5" className="p-12 text-center">
                                             <div className="flex flex-col items-center opacity-20">
@@ -541,7 +541,7 @@ export default function PostRequest() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    allJobs.filter(j => j.createdBy?.id === user?.id).map((job) => (
+                                    (allJobs || []).filter(j => j.createdBy?.id === user?.id).map((job) => (
                                         <tr key={job.id} className="hover:bg-white/[0.02] transition-colors group">
                                             <td className="p-4">
                                                 <div className="flex items-center gap-3">

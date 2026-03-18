@@ -6,7 +6,7 @@ import {
     Briefcase, MapPin, Calendar, Clock, DollarSign, Share2, X,
     User, ChevronRight, CheckCircle, AlertCircle, Search, Sliders,
     Clapperboard, Heart, Eye, Filter, Trash2, Instagram, Linkedin, Youtube, Globe,
-    Camera, Video, Link as LinkIcon, ArrowRight, FileText, ExternalLink
+    Camera, Video, Link as LinkIcon, ArrowRight, FileText, ExternalLink, Edit3
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -74,15 +74,15 @@ export default function FindWork() {
     })
 
     // Derived lists for filters
-    const uniqueCountries = useMemo(() => [...new Set(allJobs.map(j => j.country).filter(Boolean))].sort(), [allJobs])
+    const uniqueCountries = useMemo(() => [...new Set((allJobs || []).map(j => j.country).filter(Boolean))].sort(), [allJobs])
     const uniqueStates = useMemo(() => {
-        if (!filters.country) return [...new Set(allJobs.map(j => j.state).filter(Boolean))].sort()
-        return [...new Set(allJobs.filter(j => j.country === filters.country).map(j => j.state).filter(Boolean))].sort()
+        if (!filters.country) return [...new Set((allJobs || []).map(j => j.state).filter(Boolean))].sort()
+        return [...new Set((allJobs || []).filter(j => j.country === filters.country).map(j => j.state).filter(Boolean))].sort()
     }, [allJobs, filters.country])
 
     // Filtering logic
     const filteredJobs = useMemo(() => {
-        return allJobs.filter(job => {
+        return (allJobs || []).filter(job => {
             const matchesSearch = !searchQuery ||
                 (job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     job.details?.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -116,7 +116,7 @@ export default function FindWork() {
         
         const jobId = searchParams.get('jobId') || window.history.state?.usr?.selectedJobId;
         if (jobId && jobId !== processedJobId) {
-            const job = allJobs.find(j => String(j.id) === String(jobId));
+            const job = (allJobs || []).find(j => String(j.id) === String(jobId));
             if (job) {
                 setSelectedJob(job);
                 setProcessedJobId(jobId);
@@ -1051,27 +1051,7 @@ export default function FindWork() {
                 )}
             </AnimatePresence>
 
-            {/* Applied Success */}
-            < AnimatePresence >
-                {applied && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="modal-overlay" onClick={() => { setApplied(false); setSelectedJob(null) }}>
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}
-                            className="modal-content text-center p-10" style={{ maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
-                            <div className="w-20 h-20 bg-success/10 text-success rounded-full flex items-center justify-center mx-auto mb-6">
-                                <CheckCircle size={40} />
-                            </div>
-                            <h2 className="text-2xl font-bold mb-3">Application Success!</h2>
-                            <p className="text-sm opacity-60 mb-8 leading-relaxed">
-                                Your profile and application details have been sent to the producer. They will contact you if your profile matches their requirements.
-                            </p>
-                            <button className="btn btn-primary w-full h-12 rounded-xl font-bold" onClick={() => { setApplied(false); setSelectedJob(null) }}>
-                                Return to Opportunities
-                            </button>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence >
+
         </div >
     )
 }

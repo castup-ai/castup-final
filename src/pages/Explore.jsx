@@ -12,7 +12,7 @@ import {
     Info, Star, Award, Shield, Check, Heart, MoreVertical,
     Send, Smartphone, MoreHorizontal,
     Ruler, Droplets, Image as ImageIcon, Clapperboard, Eye, FileVideo,
-    X as CloseIcon
+    X as CloseIcon, Languages
 } from 'lucide-react'
 import { portfolioService } from '@/services/portfolio.service'
 
@@ -207,14 +207,14 @@ export default function Explore() {
 
     useEffect(() => {
         if (location.state?.viewProfileId && allUsers.length > 0) {
-            const profile = allUsers.find(u => String(u.id) === String(location.state.viewProfileId));
+            const profile = (allUsers || []).find(u => String(u.id) === String(location.state.viewProfileId));
             if (profile) {
                 setSelectedProfile(profile);
             }
         }
     }, [location.key, location.state?.viewProfileId, allUsers]);
 
-    let filtered = allUsers.filter(u => {
+    let filtered = (allUsers || []).filter(u => {
         if (user && String(u.id) === String(user.id)) return false;
         
         // Category filtering (case insensitive)
