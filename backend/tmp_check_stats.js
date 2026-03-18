@@ -1,8 +1,16 @@
 import pkg from 'pg';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
 const { Pool } = pkg;
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres.ryfshmowvjyluazozexf:t5982Sg0q81iJ26h@aws-0-ap-south-1.pooler.supabase.com:6543/postgres'
+  connectionString: process.env.DATABASE_URL
 });
 
 async function run() {
@@ -26,9 +34,10 @@ async function run() {
         console.log("Files DB:", filesCount.rows[0].count);
         console.log("Profile views DB:", user.profile_views);
     } catch(e) {
-        console.error(e);
+        console.error("DB Error:", e);
     } finally {
         pool.end();
     }
 }
+
 run();

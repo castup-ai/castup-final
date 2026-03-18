@@ -36,10 +36,20 @@ export const initializeDatabase = async () => {
                 
                 auth_provider VARCHAR(50) DEFAULT 'local',
                 profile_picture TEXT,
+                profile_views INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // Migration: Ensure existing users have profile_views
+        const userCols = await pool.query(`
+            SELECT column_name FROM information_schema.columns WHERE table_name = 'users'
+        `);
+        const existingUserCols = userCols.rows.map(r => r.column_name);
+        if (!existingUserCols.includes('profile_views')) {
+            await pool.query('ALTER TABLE users ADD COLUMN profile_views INTEGER DEFAULT 0');
+        }
 
         // Portfolios table
         await pool.query(`
