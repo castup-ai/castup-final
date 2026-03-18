@@ -19,6 +19,25 @@ import AILocationTracker from '@/pages/AILocationTracker'
 import AICastingDirector from '@/pages/AICastingDirector'
 import AdminDashboard from '@/pages/AdminDashboard'
 import PublicProfile from '@/pages/PublicProfile'
+import { useAuth } from '@/context/RealAuthContext'
+
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+      return (
+          <div className="flex h-screen w-full items-center justify-center bg-bg">
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+      );
+  }
+  
+  if (!isAuthenticated) {
+      return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+};
 
 export default function App() {
   return (
@@ -36,7 +55,7 @@ export default function App() {
           <Route path="/profile/:userId" element={<PublicProfile />} />
 
           {/* App pages (with sidebar layout) */}
-          <Route element={<AppLayout />}>
+          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/home" element={<Home />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/post-request" element={<PostRequest />} />
