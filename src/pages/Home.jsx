@@ -22,7 +22,7 @@ export default function Home() {
                 setIsRefreshing(false)
             })
         }
-    }, [isAuthenticated, fetchUserStats, fetchRecentActivity])
+    }, [isAuthenticated]) // Removing non-memoized context functions from dependencies
 
     const getTimeAgo = (dateStr) => {
         if (!dateStr) return 'Recently';
