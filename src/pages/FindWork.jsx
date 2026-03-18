@@ -40,7 +40,7 @@ export default function FindWork() {
 
     // Missing State declarations restored
     const [searchQuery, setSearchQuery] = useState('')
-    const [statusFilter, setStatusFilter] = useState('open')
+    const [statusFilter, setStatusFilter] = useState('All')
     const [showFilters, setShowFilters] = useState(false)
     const [filters, setFilters] = useState({
         sortBy: 'newest',
