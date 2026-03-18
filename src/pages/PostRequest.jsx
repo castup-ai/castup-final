@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
 import { FileText, Upload, Calendar, X, CheckCircle, Trash2, MapPin, Users, Eye } from 'lucide-react'
 import api from '@/services/api'
