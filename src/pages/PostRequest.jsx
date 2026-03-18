@@ -286,21 +286,6 @@ export default function PostRequest() {
         )
     }
 
-    const handleViewApplicants = async (job) => {
-        setViewingJob(job)
-        setLoadingApplicants(true)
-        try {
-            const res = await api.get(`/casting/${job.id}/applicants`)
-            if (res.data.success) {
-                setApplicants(res.data.applicants)
-            }
-        } catch (e) {
-            console.error("Error fetching applicants:", e)
-        } finally {
-            setLoadingApplicants(false)
-        }
-    }
-
     return (
         <div className="max-w-3xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
