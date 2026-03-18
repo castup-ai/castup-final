@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, Search, Users, Film, Navigation, Star, Sparkles } from 'lucide-react'
+import { MapPin, Search, Users, Film, Navigation, Star, Sparkles, ChevronRight } from 'lucide-react'
 import { useAuth } from '../context/RealAuthContext'
+import { useNavigate } from 'react-router-dom'
 
 export default function AILocationTracker() {
     const { allUsers } = useAuth()
+    const navigate = useNavigate()
     const [search, setSearch] = useState('')
     const [description, setDescription] = useState('')
     const [selected, setSelected] = useState(null)
@@ -20,24 +22,26 @@ export default function AILocationTracker() {
             if (!rawLoc) return; // Skip users without a location
             
             // Standardize capitalization (e.g., "mumbai" -> "Mumbai")
-            const locName = rawLoc.charAt(0).toUpperCase() + rawLoc.slice(1).toLowerCase();
+            const locName = rawLoc.charAt(0).toUpperCase() + rawLoc.slice(1);
             
             if (!locMap[locName]) {
                 locMap[locName] = {
                     id: locName,
                     name: locName,
-                    region: 'India', // Could extract from Google Maps API later if needed
+                    region: 'India',
                     talent: 0,
                     active: 0,
                     roleCounts: {},
-                    popularStudios: ['Independent/Local Studios']
+                    popularStudios: ['Independent/Local Studios'],
+                    users: []
                 };
             }
             
             locMap[locName].talent += 1;
+            locMap[locName].users.push(user);
             
-            // Count active ready workers
-            if (user.availability === 'Available now' || user.availability === 'Ready to Work') {
+            // Count active ready workers — matches DB values
+            if (user.availability === 'Immediately') {
                 locMap[locName].active += 1;
             }
             
@@ -61,7 +65,8 @@ export default function AILocationTracker() {
                 talent: loc.talent,
                 active: loc.active,
                 topRoles: topRoles.length > 0 ? topRoles : ['Various'],
-                popularStudios: loc.popularStudios
+                popularStudios: loc.popularStudios,
+                users: loc.users
             };
         }).sort((a, b) => b.talent - a.talent); // Sort by highest talent pool
     }, [allUsers]);
@@ -190,7 +195,9 @@ export default function AILocationTracker() {
                         >
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="font-semibold text-sm">{loc.name}</h3>
-                                <span className="badge badge-success text-xs">{loc.active} active</span>
+                                <span className={`badge text-xs ${loc.active > 0 ? 'badge-success' : 'badge-warning'}`}>
+                                    {loc.active} active
+                                </span>
                             </div>
                             <p className="text-xs mb-2" style={{ color: 'var(--color-text-dim)' }}>{loc.region}</p>
                             <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
@@ -205,13 +212,13 @@ export default function AILocationTracker() {
             {selected && (
                 <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
                     className="card p-6 mt-6">
-                    <h3 className="text-lg font-bold mb-4">{selected.name}, {selected.region}</h3>
-                    <div className="grid md:grid-cols-3 gap-6">
+                    <h3 className="text-lg font-bold mb-2">{selected.name}, {selected.region}</h3>
+                    <div className="grid md:grid-cols-3 gap-6 mb-6">
                         <div>
                             <h4 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-text-muted)' }}>Statistics</h4>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between"><span style={{ color: 'var(--color-text-dim)' }}>Total Talent:</span> <strong>{selected.talent}</strong></div>
-                                <div className="flex justify-between"><span style={{ color: 'var(--color-text-dim)' }}>Active Projects:</span> <strong>{selected.active}</strong></div>
+                                <div className="flex justify-between"><span style={{ color: 'var(--color-text-dim)' }}>Available Now:</span> <strong style={{ color: 'var(--color-success)' }}>{selected.active}</strong></div>
                             </div>
                         </div>
                         <div>
@@ -230,6 +237,46 @@ export default function AILocationTracker() {
                                 ))}
                             </div>
                         </div>
+                    </div>
+
+                    {/* Professionals in this location */}
+                    <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+                        <Users size={14} style={{ color: 'var(--color-primary-light)' }} />
+                        Professionals in {selected.name}
+                        <span className="badge badge-primary text-xs ml-1">{selected.users.length}</span>
+                    </h4>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                        {selected.users.map(u => (
+                            <motion.div
+                                key={u.id}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center justify-between gap-3 p-3 rounded-xl cursor-pointer group transition-all"
+                                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+                                onClick={() => navigate(`/profile/${u.id}`)}
+                            >
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="avatar avatar-sm shrink-0" style={{ background: 'var(--color-primary)', color: 'white' }}>
+                                        {u.photo
+                                            ? <img src={u.photo} alt={u.name} className="w-full h-full object-cover rounded-full" />
+                                            : (u.name || 'U').substring(0, 2).toUpperCase()
+                                        }
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">{u.name}</p>
+                                        <p className="text-[10px] font-medium opacity-50 uppercase tracking-widest truncate">{u.role || u.department || 'Professional'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {u.availability === 'Immediately' && (
+                                        <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter" style={{ background: 'rgba(16,185,129,0.15)', color: 'var(--color-success)' }}>
+                                            Available
+                                        </span>
+                                    )}
+                                    <ChevronRight size={14} className="opacity-30 group-hover:opacity-70 transition-opacity" />
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
                 </motion.div>
             )}
