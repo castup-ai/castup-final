@@ -16,4 +16,18 @@ export const authMiddleware = async (req, res, next) => {
     }
 };
 
+export const optionalAuthMiddleware = async (req, res, next) => {
+    try {
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        if (token) {
+            const decoded = verifyToken(token);
+            req.userId = decoded.userId;
+        }
+        next();
+    } catch (error) {
+        // If token is invalid, we just proceed without userId
+        next();
+    }
+};
+
 export default authMiddleware;

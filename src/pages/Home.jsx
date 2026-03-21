@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Compass, FileText, Briefcase, Upload, ArrowRight, TrendingUp, Users, Film, RefreshCw } from 'lucide-react'
+import { Compass, FileText, Briefcase, Upload, ArrowRight, TrendingUp, Users, Film, RefreshCw, Shield } from 'lucide-react'
 import { useAuth } from '@/context/RealAuthContext'
 import React from 'react'
 
@@ -11,9 +11,12 @@ const pathways = [
     { path: '/upload-work', label: 'Upload Your Work', desc: 'Showcase your films, reels & portfolio', icon: Upload, color: '#10b981' },
 ]
 
+const ADMIN_EMAILS = ['castup4862446@gmail.com', 'castupaiapp@gmail.com']
+
 export default function Home() {
     const { user, isAuthenticated, userStats, recentActivity, fetchUserStats, fetchRecentActivity } = useAuth()
     const [isRefreshing, setIsRefreshing] = React.useState(false)
+    const isAdmin = ADMIN_EMAILS.includes(user?.email)
 
     React.useEffect(() => {
         if (isAuthenticated) {
@@ -69,7 +72,7 @@ export default function Home() {
             </motion.div>
 
             {/* Quick stats */}
-            {isAuthenticated && (
+            {isAuthenticated && !isAdmin && (
                 <motion.div
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -94,63 +97,84 @@ export default function Home() {
                 </motion.div>
             )}
 
+            {isAdmin && (
+                <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="card p-8 mb-8 text-center"
+                    style={{ background: 'linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-bg-offset) 100%)' }}
+                >
+                    <Shield size={48} className="mx-auto mb-4 opacity-50" />
+                    <h2 className="text-xl font-bold mb-2">Administrator Access</h2>
+                    <p className="mb-6 opacity-70">Manage users, contact messages, and platform settings from your dashboard.</p>
+                    <Link to="/admin" className="btn btn-primary inline-flex">
+                        Open Admin Dashboard <ArrowRight size={16} className="ml-2" />
+                    </Link>
+                </motion.div>
+            )}
+
             {/* Pathway cards */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-            >
-                <h2 className="section-title">Get Started</h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                    {pathways.map((item, i) => (
-                        <motion.div
-                            key={item.path}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 + i * 0.1 }}
-                        >
-                            <Link to={item.path} className="block">
-                                <div className="card card-interactive p-6 h-full flex items-start gap-4 group">
-                                    <div className="avatar" style={{
-                                        background: `${item.color}18`,
-                                        color: item.color,
-                                        flexShrink: 0,
-                                    }}>
-                                        <item.icon size={22} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="font-semibold text-base">{item.label}</h3>
-                                            <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: item.color }} />
+            {!isAdmin && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <h2 className="section-title">Get Started</h2>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        {pathways.map((item, i) => (
+                            <motion.div
+                                key={item.path}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 + i * 0.1 }}
+                            >
+                                <Link to={item.path} className="block">
+                                    <div className="card card-interactive p-6 h-full flex items-start gap-4 group">
+                                        <div className="avatar" style={{
+                                            background: `${item.color}18`,
+                                            color: item.color,
+                                            flexShrink: 0,
+                                        }}>
+                                            <item.icon size={22} />
                                         </div>
-                                        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                                            {item.desc}
-                                        </p>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h3 className="font-semibold text-base">{item.label}</h3>
+                                                <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: item.color }} />
+                                            </div>
+                                            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                                                {item.desc}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                            </Link>
-                        </motion.div>
-                    ))}
-                </div>
-            </motion.div>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
 
             {/* Recent Activity */}
-            <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-                className="mt-8"
-            >
-                <h2 className="section-title">Recent on CastUp</h2>
-                <div className="space-y-3">
-                    {displayActivity.map((activity, i) => (
-                        <div key={i} className="card p-4 flex items-center justify-between">
-                            <span className="text-sm">{activity.text}</span>
-                            <span className="text-xs whitespace-nowrap ml-4" style={{ color: 'var(--color-text-dim)' }}>{activity.time}</span>
-                        </div>
-                    ))}
-                </div>
-            </motion.div>
+            {!isAdmin && (
+                <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className="mt-8"
+                >
+                    <h2 className="section-title">Recent on CastUp</h2>
+                    <div className="space-y-3">
+                        {displayActivity.map((activity, i) => (
+                            <div key={i} className="card p-4 flex items-center justify-between">
+                                <span className="text-sm">{activity.text}</span>
+                                <span className="text-xs whitespace-nowrap ml-4" style={{ color: 'var(--color-text-dim)' }}>{activity.time}</span>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
         </div>
     )
 }

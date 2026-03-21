@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { uploadFile, uploadFromUrl, getUserFiles, shareFile, getSharedFiles } from '../controllers/fileController.js';
-import authMiddleware from '../middleware/auth.js';
+import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -9,8 +9,8 @@ const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Protected routes
-router.post('/upload', authMiddleware, upload.single('file'), uploadFile);
+// Routes
+router.post('/upload', optionalAuthMiddleware, upload.single('file'), uploadFile);
 router.post('/url', authMiddleware, uploadFromUrl);
 router.get('/', authMiddleware, getUserFiles);
 router.post('/:fileId/share', authMiddleware, shareFile);
