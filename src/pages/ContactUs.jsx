@@ -27,7 +27,9 @@ export default function ContactUs() {
                 for (const file of form.attachments) {
                     const formData = new FormData()
                     formData.append('file', file)
-                    const res = await api.post('/files/upload', formData)
+                    const res = await api.post('/files/upload', formData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    })
                     if (res.data.success) {
                         uploadedFiles.push({
                             name: file.name,
