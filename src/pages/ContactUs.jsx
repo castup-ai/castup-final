@@ -51,7 +51,7 @@ export default function ContactUs() {
             }
         } catch (error) {
             console.error('Contact submit error:', error)
-            const errorMsg = error.response?.data?.error || error.message;
+            const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message;
             alert(`Failed: ${errorMsg}. Please try again.`);
         } finally {
             setLoading(false)
