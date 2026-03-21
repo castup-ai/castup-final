@@ -462,6 +462,12 @@ export default function AdminDashboard() {
                                 <div className="bg-bg-offset rounded-xl p-4 text-sm leading-relaxed whitespace-pre-wrap border border-border/30">
                                     {msg.message}
                                 </div>
+                                {msg.reply_text && (
+                                    <div className="mt-3 bg-success/5 border border-success/10 rounded-xl p-4 text-sm relative">
+                                        <div className="absolute -top-2 left-4 px-2 bg-[#0a0a0c] text-[9px] font-black uppercase tracking-widest text-success border border-success/20 rounded-full">Our Response</div>
+                                        <p className="whitespace-pre-wrap text-success/80 leading-relaxed italic">{msg.reply_text}</p>
+                                    </div>
+                                )}
                                 <div className="flex items-center justify-between pt-2">
                                     <div className="flex items-center gap-4">
                                         <div className="text-xs">
