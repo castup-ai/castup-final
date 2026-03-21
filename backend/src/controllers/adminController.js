@@ -235,28 +235,59 @@ export const replyToContactMessage = async (req, res) => {
 
         const originalMsg = messageRes.rows[0];
 
-        // Send email
-        const emailRes = await sendEmail({
-            to: originalMsg.email,
-            subject: `Re: ${originalMsg.subject || 'Your inquiry at CastUp'}`,
-            text: replyMessage,
-            html: `
-                <div style="font-family: sans-serif; padding: 20px; color: #333;">
-                    <h2 style="color: #6366f1;">Response from CastUp Support</h2>
-                    <p style="white-space: pre-wrap;">${replyMessage}</p>
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-                    <div style="font-size: 12px; color: #666;">
-                        <p><strong>Original Message:</strong></p>
-                        <blockquote style="border-left: 2px solid #ddd; padding-left: 10px; margin-left: 0;">
-                            ${originalMsg.message}
-                        </blockquote>
-                    </div>
-                </div>
-            `
-        });
+        // 1. Try to find user by email for In-App reply
+        const userRes = await pool.query('SELECT id, name FROM users WHERE email = $1', [originalMsg.email]);
+        
+        let replyMethod = 'email';
+        if (userRes.rows.length > 0) {
+            const targetUser = userRes.rows[0];
+            const adminUserRes = await pool.query('SELECT name FROM users WHERE id = $1', [req.userId]);
+            const adminName = adminUserRes.rows[0]?.name || 'Admin Support';
 
-        if (!emailRes.success) {
-            return res.status(500).json({ error: `Failed to send email reply: ${emailRes.error}` });
+            // Insert into notifications as a 'message' type to show in user Inbox
+            await pool.query(
+                `INSERT INTO notifications (user_id, type, title, message, metadata)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [
+                    targetUser.id, 
+                    'message', 
+                    `Admin Reply: ${originalMsg.subject || 'Support Request'}`, 
+                    replyMessage, 
+                    JSON.stringify({ 
+                        senderId: req.userId, 
+                        senderName: adminName,
+                        is_admin_reply: true,
+                        originalMessage: originalMsg.message
+                    })
+                ]
+            );
+            replyMethod = 'in-app';
+        }
+
+        // 2. ONLY send email if NOT an in-app user (user said "no need of mail")
+        if (replyMethod === 'email') {
+            const emailRes = await sendEmail({
+                to: originalMsg.email,
+                subject: `Re: ${originalMsg.subject || 'Your inquiry at CastUp'}`,
+                text: replyMessage,
+                html: `
+                    <div style="font-family: sans-serif; padding: 20px; color: #333;">
+                        <h2 style="color: #6366f1;">Response from CastUp Support</h2>
+                        <p style="white-space: pre-wrap;">${replyMessage}</p>
+                        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                        <div style="font-size: 12px; color: #666;">
+                            <p><strong>Original Message:</strong></p>
+                            <blockquote style="border-left: 2px solid #ddd; padding-left: 10px; margin-left: 0;">
+                                ${originalMsg.message}
+                            </blockquote>
+                        </div>
+                    </div>
+                `
+            });
+
+            if (!emailRes.success) {
+                return res.status(500).json({ error: `Failed to send email reply: ${emailRes.error}` });
+            }
         }
 
         // Update status to 'replied'
@@ -267,7 +298,7 @@ export const replyToContactMessage = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Reply sent successfully'
+            message: replyMethod === 'in-app' ? 'Reply sent to user inbox' : 'Reply sent via email (guest user)'
         });
     } catch (error) {
         console.error('Reply to contact error:', error);
