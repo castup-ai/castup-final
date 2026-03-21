@@ -346,6 +346,11 @@ export default function PostRequest() {
                             <input type="file" id="doc-upload" multiple accept=".pdf" className="hidden" style={{ display: 'none' }}
                                 onChange={e => {
                                     const newFiles = Array.from(e.target.files);
+                                    const MAX_SIZE = 10 * 1024 * 1024;
+                                    if (newFiles.some(f => f.size > MAX_SIZE)) {
+                                        alert("One or more files exceed the 10MB limit for the free tier.");
+                                        return;
+                                    }
                                     update('documents', [...form.documents, ...newFiles]);
                                 }} />
 

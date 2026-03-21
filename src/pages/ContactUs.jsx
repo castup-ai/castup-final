@@ -129,6 +129,11 @@ export default function ContactUs() {
                             <input type="file" id="contact-file" multiple style={{ display: 'none' }} disabled={loading}
                                 onChange={e => {
                                     const newFiles = Array.from(e.target.files);
+                                    const MAX_SIZE = 10 * 1024 * 1024;
+                                    if (newFiles.some(f => f.size > MAX_SIZE)) {
+                                        alert("File too large. Maximum size for the free tier is 10MB.");
+                                        return;
+                                    }
                                     update('attachments', [...form.attachments, ...newFiles]);
                                 }} />
 

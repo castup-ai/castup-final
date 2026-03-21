@@ -230,7 +230,14 @@ export default function UploadWork() {
                             </div>
                             <input 
                                 type="file" id="work-doc-upload" accept=".pdf" className="hidden" 
-                                onChange={e => update('document', e.target.files[0])}
+                                onChange={e => {
+                                    const file = e.target.files[0];
+                                    if (file && file.size > 10 * 1024 * 1024) {
+                                        alert("File too large. Maximum size for the free tier is 10MB.");
+                                        return;
+                                    }
+                                    update('document', file);
+                                }}
                             />
                         </div>
                     </div>
