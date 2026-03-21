@@ -8,10 +8,13 @@ const adminMiddleware = async (req, res, next) => {
     }
 
     try {
-        const result = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+        const result = await pool.query('SELECT email, role FROM users WHERE id = $1', [req.userId]);
         const user = result.rows[0];
 
-        if (!user || !ADMIN_EMAILS.includes(user.email)) {
+        const isKnownAdmin = user && ADMIN_EMAILS.includes(user.email);
+        const hasAdminRole = user && (user.role === 'admin' || user.role === 'Admin');
+
+        if (!user || (!isKnownAdmin && !hasAdminRole)) {
              return res.status(403).json({ error: 'Forbidden: Admin access only' });
          }
 

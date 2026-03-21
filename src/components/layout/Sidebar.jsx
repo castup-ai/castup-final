@@ -26,7 +26,9 @@ export default function Sidebar() {
     const [collapsed, setCollapsed] = useState(false)
     const { user, requireAuth, isAuthenticated, logout } = useAuth()
     const navigate = useNavigate()
-    const isAdmin = user && ADMIN_EMAILS.includes(user.email)
+    const isKnownAdmin = user && ADMIN_EMAILS.includes(user.email)
+    const hasAdminRole = user && (user.role === 'admin' || user.role === 'Admin')
+    const isAdmin = isKnownAdmin || hasAdminRole
 
     const handleNavClick = (e, path, requiresAuth) => {
         if (requiresAuth && !isAuthenticated) {

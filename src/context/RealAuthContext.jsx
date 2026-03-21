@@ -99,7 +99,10 @@ export function RealAuthProvider({ children }) {
             if (worksRes && worksRes.success) setAllWorks(worksRes.data || []);
             setWorksLoading(false);
             
-            if (token && ['castup4862446@gmail.com', 'castupaiapp@gmail.com'].includes(user?.email)) {
+            const isKnownAdmin = ['castup4862446@gmail.com', 'castupaiapp@gmail.com'].includes(user?.email);
+            const hasAdminRole = user?.role === 'admin' || user?.role === 'Admin';
+
+            if (token && (isKnownAdmin || hasAdminRole)) {
                 const contactRes = await adminService.getContactMessages();
                 if (contactRes.success) setContactMessages(contactRes.data || []);
             }

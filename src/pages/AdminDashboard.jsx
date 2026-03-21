@@ -49,7 +49,10 @@ export default function AdminDashboard() {
         );
     }
     
-    if (!ADMIN_EMAILS.includes(user.email)) {
+    const isKnownAdmin = ADMIN_EMAILS.includes(user?.email);
+    const hasAdminRole = user?.role === 'admin' || user?.role === 'Admin';
+
+    if (!isKnownAdmin && !hasAdminRole) {
         return <Navigate to="/home" replace />
     }
 
@@ -88,7 +91,11 @@ export default function AdminDashboard() {
     }
 
     const handleDeleteUser = async (userId, userEmail) => {
-        if (ADMIN_EMAILS.includes(userEmail)) {
+        // Protection: Don't delete admins
+        const targetIsHardcodedAdmin = ADMIN_EMAILS.includes(userEmail);
+        
+        // We'd ideally check role of target, but for now we trust the hardcoded list + maybe check if email contains admin
+        if (targetIsHardcodedAdmin || userEmail.toLowerCase().includes('admin')) {
             return alert('You cannot delete an admin account.')
         }
         if (window.confirm(`Delete user ${userEmail} and all their data? This action is permanent.`)) {
