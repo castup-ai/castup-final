@@ -5,7 +5,8 @@ import { Navigate } from 'react-router-dom'
 import {
     Shield, Users, Briefcase, Trash2, Search, BarChart2, Mail,
     CheckCircle, XCircle, Eye, RefreshCw, Video, Database, Sparkles,
-    Filter, Download, Plus, ArrowRight, Check, X as CloseIcon, ChevronLeft, ChevronRight, FileVideo
+    Filter, Download, Plus, ArrowRight, Check, X as CloseIcon, ChevronLeft, ChevronRight, 
+    FileVideo, Loader2, FileText, Send, Layers
 } from 'lucide-react'
 
 const ADMIN_EMAILS = ['castup4862446@gmail.com', 'castupaiapp@gmail.com']

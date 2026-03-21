@@ -33,6 +33,8 @@ export const initializeDatabase = async () => {
                 portfolio_link TEXT,
                 social_media JSONB DEFAULT '{}',
                 project_type VARCHAR(100),
+                projects_worked_on TEXT,
+                additional_skills TEXT[],
                 
                 auth_provider VARCHAR(50) DEFAULT 'local',
                 profile_picture TEXT,
@@ -47,8 +49,15 @@ export const initializeDatabase = async () => {
             SELECT column_name FROM information_schema.columns WHERE table_name = 'users'
         `);
         const existingUserCols = userCols.rows.map(r => r.column_name);
-        if (!existingUserCols.includes('profile_views')) {
-            await pool.query('ALTER TABLE users ADD COLUMN profile_views INTEGER DEFAULT 0');
+        const missingUserCols = [
+            ['profile_views', 'INTEGER DEFAULT 0'],
+            ['projects_worked_on', 'TEXT'],
+            ['additional_skills', 'TEXT[]']
+        ];
+        for (const [col, type] of missingUserCols) {
+            if (!existingUserCols.includes(col)) {
+                await pool.query(`ALTER TABLE users ADD COLUMN ${col} ${type}`);
+            }
         }
 
         // Portfolios table
