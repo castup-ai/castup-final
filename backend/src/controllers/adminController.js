@@ -290,11 +290,21 @@ export const replyToContactMessage = async (req, res) => {
             }
         }
 
-        // Update status to 'replied' and store the reply text
+        // 3. Update status - always safe
         await pool.query(
-            'UPDATE contact_messages SET status = $1, reply_text = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
-            ['replied', replyMessage, messageId]
+            'UPDATE contact_messages SET status = $1 WHERE id = $2',
+            ['replied', messageId]
         );
+
+        // 4. Try to store reply_text - skip gracefully if column doesn't exist yet on live DB
+        try {
+            await pool.query(
+                'UPDATE contact_messages SET reply_text = $1 WHERE id = $2',
+                [replyMessage, messageId]
+            );
+        } catch (colErr) {
+            console.warn('reply_text column not yet available, skipping:', colErr.message);
+        }
 
         res.json({
             success: true,
@@ -304,8 +314,7 @@ export const replyToContactMessage = async (req, res) => {
         console.error('Reply to contact error:', error);
         res.status(500).json({ 
             error: 'Server error during reply dispatch', 
-            details: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            details: error.message
         });
     }
 };
