@@ -49,7 +49,8 @@ export default function ContactUs() {
             }
         } catch (error) {
             console.error('Contact submit error:', error)
-            alert('Failed to send message. Please try again.')
+            const errorMsg = error.response?.data?.error || error.message;
+            alert(`Failed: ${errorMsg}. Please try again.`);
         } finally {
             setLoading(false)
         }
