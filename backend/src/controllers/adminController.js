@@ -256,7 +256,7 @@ export const replyToContactMessage = async (req, res) => {
         });
 
         if (!emailRes.success) {
-            return res.status(500).json({ error: 'Failed to send email reply' });
+            return res.status(500).json({ error: `Failed to send email reply: ${emailRes.error}` });
         }
 
         // Update status to 'replied'

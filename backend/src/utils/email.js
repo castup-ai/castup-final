@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const sendEmail = async ({ to, subject, html, text }) => {
+    let lastError = 'No credentials found';
+    
     // 1. Try Resend API (Professional Way - Works on Render Port 443)
     const resendKey = process.env.RESEND_API_KEY;
     
@@ -27,7 +29,9 @@ export const sendEmail = async ({ to, subject, html, text }) => {
             console.log(`✅ Resend API success! ID: ${response.data.id}`);
             return { success: true };
         } catch (err) {
-            console.error('❌ Resend API Error:', err.response?.data || err.message);
+            const detail = err.response?.data || err.message;
+            console.error('❌ Resend API Error:', detail);
+            lastError = `Resend: ${JSON.stringify(detail)}`;
             // Fall through to SMTP
         }
     }
@@ -61,12 +65,14 @@ export const sendEmail = async ({ to, subject, html, text }) => {
 
     const res1 = await trySend(465, true);
     if (res1.success) return { success: true };
+    lastError += ` | SMTP 465: ${res1.error}`;
 
     const res2 = await trySend(587, false);
     if (res2.success) return { success: true };
+    lastError += ` | SMTP 587: ${res2.error}`;
 
     return { 
         success: false, 
-        error: `All delivery attempts failed. Render likely blocks email ports.` 
+        error: lastError
     };
 };
