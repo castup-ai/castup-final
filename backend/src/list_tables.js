@@ -9,11 +9,11 @@ const pool = new Pool({
 async function check() {
     try {
         const res = await pool.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'contact_messages'
         `);
-        console.log(JSON.stringify(res.rows, null, 2));
+        res.rows.forEach(r => console.log(`${r.column_name}: ${r.data_type}`));
         process.exit(0);
     } catch (err) {
         console.error(err);

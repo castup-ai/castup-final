@@ -1,7 +1,7 @@
 import express from 'express';
 import { 
     getPlatformStats, deleteUser, deleteJob, getAllWorks, deleteWork,
-    getContactMessages, updateContactStatus
+    getContactMessages, updateContactStatus, replyToContactMessage
 } from '../controllers/adminController.js';
 import authMiddleware from '../middleware/auth.js';
 import adminMiddleware from '../middleware/admin.js';
@@ -19,5 +19,6 @@ router.get('/works', getAllWorks);
 router.delete('/works/:workId', deleteWork);
 router.get('/contacts', getContactMessages);
 router.patch('/contacts/:messageId', updateContactStatus);
+router.post('/contacts/:messageId/reply', replyToContactMessage);
 
 export default router;

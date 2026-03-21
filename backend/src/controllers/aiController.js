@@ -1,9 +1,9 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import dotenv from 'dotenv';
 
-// Initialize the OpenAI SDK
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || 'missing-key',
-});
+dotenv.config();
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export const chat = async (req, res) => {
     try {
@@ -13,37 +13,33 @@ export const chat = async (req, res) => {
             return res.status(400).json({ error: 'Message is required' });
         }
 
-        // System instructions (prepended to history)
-        const systemPrompt = `You are CastUp's AI Assistant, an cinema industry expert. 
-        Help with finding talent, profile tips, and cinema questions. 
-        Be professional, brief, and use bullet points.`;
-
-        let fullPrompt = `SYSTEM: ${systemPrompt}\n\n`;
-        
-        if (history && history.length > 0) {
-            history.forEach(msg => {
-                fullPrompt += `${msg.role === 'ai' ? 'Assistant' : 'User'}: ${msg.content}\n\n`;
-            });
-        }
-        
-        fullPrompt += `User: ${message}\nAssistant:`;
-
-        const response = await openai.responses.create({
-            model: "gpt-5-nano",
-            input: fullPrompt,
-            store: true,
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-1.5-flash",
+            systemInstruction: "You are CastUp AI Assistant, a helpful companion for cinema industry professionals. Help users find talent, prepare for auditions, and answer questions about filmmaking. Be concise and professional."
         });
 
-        res.json({ success: true, response: response.output_text });
+        // Convert history format if needed (Gemini uses { role, parts: [{ text: '' }] })
+        const chatHistory = (history || []).map(msg => ({
+            role: msg.role === 'ai' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+        }));
+
+        const chatSession = model.startChat({
+            history: chatHistory,
+        });
+
+        const result = await chatSession.sendMessage(message);
+        const responseText = result.response.text();
+
+        res.json({
+            success: true,
+            response: responseText
+        });
     } catch (error) {
         console.error('AI Chat Error:', error);
-        
-        let errorMessage = "I'm having trouble thinking right now. Please try again later.";
-        
-        if (error.message) {
-             console.error("OpenAI Details:", error.message);
-        }
-
-        res.json({ success: true, response: errorMessage });
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to get AI response' 
+        });
     }
 };

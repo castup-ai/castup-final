@@ -1,4 +1,5 @@
 import pool from '../config/database.js';
+import { sendEmail } from '../utils/email.js';
 
 // Get platform-wide stats
 export const getPlatformStats = async (req, res) => {
@@ -212,6 +213,64 @@ export const updateContactStatus = async (req, res) => {
         });
     } catch (error) {
         console.error('Update contact status error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+// Reply to a contact message
+export const replyToContactMessage = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { replyMessage } = req.body;
+
+        if (!replyMessage) {
+            return res.status(400).json({ error: 'Reply message is required' });
+        }
+
+        // Get the original message to get sender email
+        const messageRes = await pool.query('SELECT * FROM contact_messages WHERE id = $1', [messageId]);
+        if (messageRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Original message not found' });
+        }
+
+        const originalMsg = messageRes.rows[0];
+
+        // Send email
+        const emailRes = await sendEmail({
+            to: originalMsg.email,
+            subject: `Re: ${originalMsg.subject || 'Your inquiry at CastUp'}`,
+            text: replyMessage,
+            html: `
+                <div style="font-family: sans-serif; padding: 20px; color: #333;">
+                    <h2 style="color: #6366f1;">Response from CastUp Support</h2>
+                    <p style="white-space: pre-wrap;">${replyMessage}</p>
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                    <div style="font-size: 12px; color: #666;">
+                        <p><strong>Original Message:</strong></p>
+                        <blockquote style="border-left: 2px solid #ddd; padding-left: 10px; margin-left: 0;">
+                            ${originalMsg.message}
+                        </blockquote>
+                    </div>
+                </div>
+            `
+        });
+
+        if (!emailRes.success) {
+            return res.status(500).json({ error: 'Failed to send email reply' });
+        }
+
+        // Update status to 'replied'
+        await pool.query(
+            'UPDATE contact_messages SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+            ['replied', messageId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Reply sent successfully'
+        });
+    } catch (error) {
+        console.error('Reply to contact error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 };

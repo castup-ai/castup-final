@@ -22,6 +22,9 @@ export default function AdminDashboard() {
     const [deletedMsg, setDeletedMsg] = useState('')
     const [currentPage, setCurrentPage] = useState(1)
     const [preview, setPreview] = useState(null) // { url, type, name }
+    const [replyingTo, setReplyingTo] = useState(null) // msg object
+    const [replyText, setReplyText] = useState('')
+    const [sendingReply, setSendingReply] = useState(false)
     const itemsPerPage = 10
 
     // Reset page on tab/search change
@@ -110,6 +113,27 @@ export default function AdminDashboard() {
             setTimeout(() => setDeletedMsg(''), 3000)
         } else {
             alert(`Error deleting work: ${error}`)
+        }
+    }
+
+    const handleSendReply = async () => {
+        if (!replyText.trim() || !replyingTo) return
+        setSendingReply(true)
+        try {
+            const { api } = await import('@/services/api')
+            const res = await api.post(`/admin/contacts/${replyingTo.id}/reply`, { replyMessage: replyText })
+            if (res.data.success) {
+                setDeletedMsg('Reply sent successfully')
+                setReplyingTo(null)
+                setReplyText('')
+                refreshPlatformData()
+                setTimeout(() => setDeletedMsg(''), 3000)
+            }
+        } catch (e) {
+            console.error('Reply error:', e)
+            alert(e.response?.data?.error || 'Failed to send reply')
+        } finally {
+            setSendingReply(false)
         }
     }
 
@@ -476,6 +500,15 @@ export default function AdminDashboard() {
                                                 Mark Read
                                             </button>
                                         )}
+                                        <button 
+                                            onClick={() => {
+                                                setReplyingTo(msg)
+                                                setReplyText('')
+                                            }}
+                                            className="h-8 px-4 rounded-lg bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all flex items-center gap-2"
+                                        >
+                                            <Send size={12} /> Reply
+                                        </button>
                                     </div>
                                 </div>
                             </motion.div>
@@ -538,6 +571,75 @@ export default function AdminDashboard() {
                             <div className="mt-6 text-center">
                                 <h3 className="text-xl font-black">{preview.name}</h3>
                                 <p className="text-white/40 text-sm mt-1 uppercase tracking-widest">{preview.type}</p>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Reply Modal */}
+            <AnimatePresence>
+                {replyingTo && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+                        onClick={() => !sendingReply && setReplyingTo(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="card max-w-lg w-full p-8 relative overflow-hidden"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                                    <Mail size={24} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-xl font-black">Reply to Message</h3>
+                                    <p className="text-xs truncate text-text-dim">To: {replyingTo.email}</p>
+                                </div>
+                                <button 
+                                    onClick={() => setReplyingTo(null)}
+                                    disabled={sendingReply}
+                                    className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-white/5 transition-colors"
+                                >
+                                    <CloseIcon size={20} />
+                                </button>
+                            </div>
+
+                            <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-6 max-h-[100px] overflow-y-auto text-xs italic">
+                                "{replyingTo.message}"
+                            </div>
+
+                            <div className="form-group mb-6">
+                                <label className="text-[10px] font-black uppercase tracking-widest mb-2 block opacity-50">Compose Response</label>
+                                <textarea 
+                                    autoFocus
+                                    rows={6}
+                                    placeholder="Type your reply here..."
+                                    value={replyText}
+                                    onChange={e => setReplyText(e.target.value)}
+                                    disabled={sendingReply}
+                                    className="bg-white/5 border-white/10 focus:border-primary transition-all text-sm"
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => setReplyingTo(null)}
+                                    disabled={sendingReply}
+                                    className="btn btn-secondary flex-1"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={handleSendReply}
+                                    disabled={sendingReply || !replyText.trim()}
+                                    className="btn btn-primary flex-1 gap-2"
+                                >
+                                    {sendingReply ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />} 
+                                    {sendingReply ? 'Sending...' : 'Send Reply'}
+                                </button>
                             </div>
                         </motion.div>
                     </motion.div>
