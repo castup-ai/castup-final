@@ -121,17 +121,22 @@ export default function ContactUs() {
                         </div>
 
                         <div className="form-group">
-                            <label>Attach Files</label>
+                            <label>Attach Images (optional)</label>
                             <div className={`file-upload ${loading ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => !loading && document.getElementById('contact-file')?.click()}>
                                 <Upload size={20} className="mx-auto mb-2" />
-                                <p className="text-sm">Click to attach files</p>
+                                <p className="text-sm">Click to attach images (JPG, PNG, WEBP)</p>
                             </div>
-                            <input type="file" id="contact-file" multiple style={{ display: 'none' }} disabled={loading}
+                            <input type="file" id="contact-file" multiple accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: 'none' }} disabled={loading}
                                 onChange={e => {
                                     const newFiles = Array.from(e.target.files);
                                     const MAX_SIZE = 10 * 1024 * 1024;
+                                    const invalidType = newFiles.find(f => !f.type.startsWith('image/'));
+                                    if (invalidType) {
+                                        alert(`Only image files are allowed. "${invalidType.name}" is not an image.`);
+                                        return;
+                                    }
                                     if (newFiles.some(f => f.size > MAX_SIZE)) {
-                                        alert("File too large. Maximum size for the free tier is 10MB.");
+                                        alert("Image too large. Maximum size is 10MB.");
                                         return;
                                     }
                                     update('attachments', [...form.attachments, ...newFiles]);

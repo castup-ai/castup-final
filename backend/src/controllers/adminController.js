@@ -240,28 +240,35 @@ export const replyToContactMessage = async (req, res) => {
         
         let replyMethod = 'email';
         if (userRes.rows.length > 0) {
-            const targetUser = userRes.rows[0];
-            const adminUserRes = await pool.query('SELECT name FROM users WHERE id = $1', [req.userId]);
-            const adminName = adminUserRes.rows[0]?.name || 'Admin Support';
+            try {
+                const targetUser = userRes.rows[0];
+                let adminName = 'Admin Support';
+                try {
+                    const adminUserRes = await pool.query('SELECT name FROM users WHERE id = $1', [req.userId]);
+                    adminName = adminUserRes.rows[0]?.name || 'Admin Support';
+                } catch (_) {}
 
-            // Insert into notifications as a 'message' type to show in user Inbox
-            await pool.query(
-                `INSERT INTO notifications (user_id, type, title, message, metadata)
-                 VALUES ($1, $2, $3, $4, $5)`,
-                [
-                    targetUser.id, 
-                    'message', 
-                    `Admin Reply: ${originalMsg.subject || 'Support Request'}`, 
-                    replyMessage, 
-                    JSON.stringify({ 
-                        senderId: req.userId, 
-                        senderName: adminName,
-                        is_admin_reply: true,
-                        originalMessage: originalMsg.message
-                    })
-                ]
-            );
-            replyMethod = 'in-app';
+                await pool.query(
+                    `INSERT INTO notifications (user_id, type, title, message, metadata)
+                     VALUES ($1, $2, $3, $4, $5)`,
+                    [
+                        targetUser.id, 
+                        'message', 
+                        `Admin Reply: ${originalMsg.subject || 'Support Request'}`, 
+                        replyMessage, 
+                        JSON.stringify({ 
+                            senderId: req.userId || 'admin', 
+                            senderName: adminName,
+                            is_admin_reply: true,
+                            originalMessage: originalMsg.message
+                        })
+                    ]
+                );
+                replyMethod = 'in-app';
+            } catch (inAppErr) {
+                console.error('In-app notification failed, falling back to email:', inAppErr.message);
+                // Fall through to email
+            }
         }
 
         // 2. ONLY send email if NOT an in-app user (user said "no need of mail")

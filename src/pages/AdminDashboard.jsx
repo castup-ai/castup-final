@@ -487,15 +487,17 @@ export default function AdminDashboard() {
                                             } catch (e) { attachments = []; }
                                             
                                             return attachments.length > 0 && (
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-2 flex-wrap">
                                                     {attachments.map((att, idx) => (
-                                                        <button 
+                                                        <a 
                                                             key={idx}
-                                                            onClick={() => setPreview({ url: att.url, type: att.type || 'image/png', name: att.name })}
+                                                            href={att.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
                                                             className="h-8 px-3 rounded-lg bg-primary/5 text-primary text-[10px] font-bold border border-primary/20 hover:bg-primary/10 transition-all flex items-center gap-2"
                                                         >
-                                                            <FileText size={12} /> View Attachment
-                                                        </button>
+                                                            <FileText size={12} /> {att.name || 'View Attachment'}
+                                                        </a>
                                                     ))}
                                                 </div>
                                             );
