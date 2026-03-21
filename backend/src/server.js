@@ -76,7 +76,15 @@ app.get('/', (req, res) => {
 
 // Health check (accessible at both /api/health and /health for compatibility)
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'CastUp API is running' });
+    res.json({ 
+        status: 'OK', 
+        message: 'CastUp API is running',
+        diagnostics: {
+            cloudinary: !!process.env.CLOUDINARY_CLOUD_NAME,
+            database: !!process.env.DATABASE_URL,
+            smtp: !!process.env.SMTP_PASS
+        }
+    });
 });
 
 app.get('/health', (req, res) => {
