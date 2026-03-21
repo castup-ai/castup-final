@@ -1,6 +1,9 @@
+import dotenv from 'dotenv';
+// Load environment variables immediately
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import passport from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import fileRoutes from './routes/files.js';
@@ -11,9 +14,6 @@ import aiRoutes from './routes/ai.js';
 import adminRoutes from './routes/admin.js';
 import contactRoutes from './routes/contact.js';
 import initializeDatabase from './config/init-db.js';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
