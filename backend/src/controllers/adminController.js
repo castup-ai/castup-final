@@ -227,101 +227,53 @@ export const replyToContactMessage = async (req, res) => {
             return res.status(400).json({ error: 'Reply message is required' });
         }
 
-        // Get the original message to get sender email
+        // Get the original message
         const messageRes = await pool.query('SELECT * FROM contact_messages WHERE id = $1', [messageId]);
         if (messageRes.rows.length === 0) {
             return res.status(404).json({ error: 'Original message not found' });
         }
-
         const originalMsg = messageRes.rows[0];
 
-        // 1. Try to find user by email for In-App reply
-        const userRes = await pool.query('SELECT id, name FROM users WHERE email = $1', [originalMsg.email]);
-        
-        let replyMethod = 'email';
-        if (userRes.rows.length > 0) {
-            try {
-                const targetUser = userRes.rows[0];
-                let adminName = 'Admin Support';
-                try {
-                    const adminUserRes = await pool.query('SELECT name FROM users WHERE id = $1', [req.userId]);
-                    adminName = adminUserRes.rows[0]?.name || 'Admin Support';
-                } catch (_) {}
+        // 1. Mark as replied (core operation - always runs)
+        await pool.query('UPDATE contact_messages SET status = $1 WHERE id = $2', ['replied', messageId]);
 
+        // 2. Store reply text (safe - skip if column missing)
+        try {
+            await pool.query('UPDATE contact_messages SET reply_text = $1 WHERE id = $2', [replyMessage, messageId]);
+        } catch (_) {}
+
+        // 3. Try to deliver in-app notification if user has an account
+        let delivered = false;
+        try {
+            const userRes = await pool.query('SELECT id FROM users WHERE email = $1', [originalMsg.email]);
+            if (userRes.rows.length > 0) {
+                const targetUserId = userRes.rows[0].id;
                 await pool.query(
                     `INSERT INTO notifications (user_id, type, title, message, metadata)
                      VALUES ($1, $2, $3, $4, $5)`,
                     [
-                        targetUser.id, 
-                        'message', 
-                        `Admin Reply: ${originalMsg.subject || 'Support Request'}`, 
-                        replyMessage, 
-                        JSON.stringify({ 
-                            senderId: req.userId || 'admin', 
-                            senderName: adminName,
-                            is_admin_reply: true,
-                            originalMessage: originalMsg.message
-                        })
+                        targetUserId,
+                        'message',
+                        `Admin Reply: ${originalMsg.subject || 'Support Request'}`,
+                        replyMessage,
+                        JSON.stringify({ senderId: req.userId || 'admin', senderName: 'Admin Support', is_admin_reply: true })
                     ]
                 );
-                replyMethod = 'in-app';
-            } catch (inAppErr) {
-                console.error('In-app notification failed, falling back to email:', inAppErr.message);
-                // Fall through to email
+                delivered = true;
             }
-        }
-
-        // 2. ONLY send email if NOT an in-app user (user said "no need of mail")
-        if (replyMethod === 'email') {
-            const emailRes = await sendEmail({
-                to: originalMsg.email,
-                subject: `Re: ${originalMsg.subject || 'Your inquiry at CastUp'}`,
-                text: replyMessage,
-                html: `
-                    <div style="font-family: sans-serif; padding: 20px; color: #333;">
-                        <h2 style="color: #6366f1;">Response from CastUp Support</h2>
-                        <p style="white-space: pre-wrap;">${replyMessage}</p>
-                        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-                        <div style="font-size: 12px; color: #666;">
-                            <p><strong>Original Message:</strong></p>
-                            <blockquote style="border-left: 2px solid #ddd; padding-left: 10px; margin-left: 0;">
-                                ${originalMsg.message}
-                            </blockquote>
-                        </div>
-                    </div>
-                `
-            });
-
-            if (!emailRes.success) {
-                return res.status(500).json({ error: `Failed to send email reply: ${emailRes.error}` });
-            }
-        }
-
-        // 3. Update status - always safe
-        await pool.query(
-            'UPDATE contact_messages SET status = $1 WHERE id = $2',
-            ['replied', messageId]
-        );
-
-        // 4. Try to store reply_text - skip gracefully if column doesn't exist yet on live DB
-        try {
-            await pool.query(
-                'UPDATE contact_messages SET reply_text = $1 WHERE id = $2',
-                [replyMessage, messageId]
-            );
-        } catch (colErr) {
-            console.warn('reply_text column not yet available, skipping:', colErr.message);
+        } catch (notifErr) {
+            console.warn('Could not send in-app notification:', notifErr.message);
         }
 
         res.json({
             success: true,
-            message: replyMethod === 'in-app' ? 'Reply sent to user inbox' : 'Reply sent via email (guest user)'
+            message: delivered ? 'Reply saved and sent to user inbox' : 'Reply saved (user not registered in app)'
         });
+
     } catch (error) {
         console.error('Reply to contact error:', error);
-        res.status(500).json({ 
-            error: 'Server error during reply dispatch', 
-            details: error.message
-        });
+        res.status(500).json({ error: error.message });
     }
 };
+
+
