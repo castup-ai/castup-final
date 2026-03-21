@@ -290,10 +290,10 @@ export const replyToContactMessage = async (req, res) => {
             }
         }
 
-        // Update status to 'replied'
+        // Update status to 'replied' and store the reply text
         await pool.query(
-            'UPDATE contact_messages SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-            ['replied', messageId]
+            'UPDATE contact_messages SET status = $1, reply_text = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+            ['replied', replyMessage, messageId]
         );
 
         res.json({
@@ -302,6 +302,10 @@ export const replyToContactMessage = async (req, res) => {
         });
     } catch (error) {
         console.error('Reply to contact error:', error);
-        res.status(500).json({ error: 'Server error' });
+        res.status(500).json({ 
+            error: 'Server error during reply dispatch', 
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };

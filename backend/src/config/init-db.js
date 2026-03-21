@@ -247,9 +247,23 @@ export const initializeDatabase = async () => {
                 message TEXT NOT NULL,
                 attachments JSONB DEFAULT '[]',
                 status VARCHAR(50) DEFAULT 'new',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                reply_text TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // Migration: Ensure contact_messages has reply_text
+        const msgCols = await pool.query(`
+            SELECT column_name FROM information_schema.columns WHERE table_name = 'contact_messages'
+        `);
+        const existingMsgCols = msgCols.rows.map(r => r.column_name);
+        if (!existingMsgCols.includes('reply_text')) {
+            await pool.query('ALTER TABLE contact_messages ADD COLUMN reply_text TEXT');
+        }
+        if (!existingMsgCols.includes('updated_at')) {
+            await pool.query('ALTER TABLE contact_messages ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+        }
 
         console.log('✅ Database tables initialized successfully');
     } catch (error) {
