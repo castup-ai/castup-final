@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import pool from '../config/database.js';
 import { generateToken, generateRefreshToken } from '../utils/jwt.js';
+import { sendEmail } from '../utils/email.js';
 import axios from 'axios';
 import admin from 'firebase-admin';
 
@@ -21,76 +22,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT not found. Phone OTP verification will be disabled.');
 }
 
-const sendEmail = async ({ to, subject, html }) => {
-    // 1. Try Resend API (Professional Way - Works on Render Port 443)
-    const resendKey = process.env.RESEND_API_KEY;
-    
-    // Diagnostic log for Resend (will show in Render logs)
-    if (!resendKey) {
-        console.log('⚠️ Resend Diagnostic: RESEND_API_KEY is null or undefined in Render environment.');
-    } else {
-        const maskedKey = resendKey.substring(0, 5) + '...' + resendKey.slice(-4);
-        console.log(`🚀 Trying Resend API (Key Detected: ${maskedKey}) for ${to}...`);
-        try {
-            const response = await axios.post('https://api.resend.com/emails', {
-                from: 'CastUp <onboarding@resend.dev>',
-                to: [to],
-                subject,
-                html
-            }, {
-                headers: { 
-                    'Authorization': `Bearer ${resendKey}`, 
-                    'Content-Type': 'application/json' 
-                },
-                timeout: 10000 // 10s timeout for the API call
-            });
-            console.log(`✅ Resend API success! Email ID: ${response.data.id}`);
-            return { success: true };
-        } catch (err) {
-            const errDetail = err.response?.data || err.message;
-            console.error('❌ Resend API Error:', JSON.stringify(errDetail));
-            // Fall through to SMTP if Resend fails
-        }
-    }
 
-    // 2. Fallback to Gmail SMTP (Often blocked on Render Free Tier)
-    const user = process.env.SMTP_USER || 'castupaiapp@gmail.com';
-    let pass = process.env.SMTP_PASS;
-    if (pass) pass = pass.replace(/\s+/g, '');
-    
-    if (!pass) return { success: false, error: 'No email logic configured (RESEND_API_KEY or SMTP_PASS missing)' };
-
-    const trySend = async (port, secure) => {
-        console.log(`✉️ Trying SMTP via Port ${port}...`);
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port, secure,
-            auth: { user, pass },
-            tls: { rejectUnauthorized: false }
-        });
-
-        try {
-            const info = await Promise.race([
-                transporter.sendMail({ from: `"CastUp" <${user}>`, to, subject, html }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 20000))
-            ]);
-            return { success: true, messageId: info.messageId };
-        } catch (err) {
-            return { success: false, error: err.message };
-        }
-    };
-
-    const res1 = await trySend(465, true);
-    if (res1.success) return { success: true };
-
-    const res2 = await trySend(587, false);
-    if (res2.success) return { success: true };
-
-    return { 
-        success: false, 
-        error: `All delivery attempts (Resend & SMTP) failed. Render is likely blocking email ports. Use the Emergency Log Link.` 
-    };
-};
 
 // Signup
 export const signup = async (req, res) => {
