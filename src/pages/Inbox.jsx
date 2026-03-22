@@ -28,8 +28,8 @@ export default function Inbox() {
             const peerUser = allUsers.find(u => String(u.id) === String(peerId))
             acc[peerId] = {
                 peerId,
-                peerName: peerUser?.name || msg.metadata?.senderName || 'User',
-                peerPhoto: peerUser?.photo,
+                peerName: msg.user_id === myId ? (peerUser?.name || msg.metadata?.senderName || 'User') : (msg.metadata?.recipientName || peerUser?.name || 'User'),
+                peerPhoto: peerUser?.photo || (msg.user_id === myId ? null : msg.metadata?.recipientPhoto),
                 messages: [],
                 unread: 0,
                 lastMessage: msg
@@ -59,7 +59,9 @@ export default function Inbox() {
             message: messageText,
             metadata: { 
                 senderId: user.id, 
-                senderName: user.name
+                senderName: user.name,
+                recipientName: selectedRecipient.name,
+                recipientPhoto: selectedRecipient.photo
             }
         })
         
