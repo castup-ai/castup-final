@@ -21,10 +21,11 @@ export const uploadFile = async (req, res) => {
         // Upload to Cloudinary using stream for buffer (Vercel fix)
         const uploadToCloudinary = () => {
             return new Promise((resolve, reject) => {
+                const isPdf = file.mimetype === 'application/pdf' || file.originalname?.toLowerCase().endsWith('.pdf');
                 const stream = cloudinary.uploader.upload_stream(
                     {
                         folder: 'castup/files',
-                        resource_type: 'auto'
+                        resource_type: isPdf ? 'raw' : 'auto'
                     },
                     (error, result) => {
                         if (error) reject(error);
