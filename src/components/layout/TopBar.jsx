@@ -11,7 +11,9 @@ export default function TopBar() {
     const msgRef = useRef(null)
     const navigate = useNavigate()
 
-    const unreadCount = notifications.filter(n => !n.read).length
+    const unreadMessages = notifications.filter(n => n.type === 'message' && !n.read)
+    const unreadNotifs = notifications.filter(n => n.type !== 'message' && !n.read)
+    const unreadCount = unreadNotifs.length
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -54,30 +56,23 @@ export default function TopBar() {
             }}
         >
             {/* Left: Messages */}
-            <div className="relative" ref={msgRef}>
+            <div className="relative">
                 <button
                     className="btn-ghost btn-icon relative"
                     onClick={() => {
                         if (!isAuthenticated) { requireAuth(); return }
-                        setShowMessages(!showMessages)
+                        navigate('/inbox')
                     }}
                     title="Inbox"
                 >
                     <MessageSquare size={20} />
+                    {unreadMessages.length > 0 && (
+                        <span className="absolute -top-1 -right-1 flex items-center justify-center text-[10px] font-bold text-white rounded-full bg-primary"
+                            style={{ background: 'var(--color-primary)', minWidth: '18px', height: '18px' }}>
+                            {unreadMessages.length}
+                        </span>
+                    )}
                 </button>
-
-                {showMessages && isAuthenticated && (
-                    <div className="absolute left-0 mt-2 w-72 rounded-xl shadow-xl border z-50 overflow-hidden"
-                        style={{ backgroundColor: 'var(--color-bg)', borderColor: 'var(--color-border)', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}>
-                        <div className="p-3 border-b" style={{ borderColor: 'var(--color-border)' }}>
-                            <h3 className="font-semibold text-sm">Messages</h3>
-                        </div>
-                        <div className="p-6 text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                            <MessageSquare size={28} className="mx-auto mb-2 opacity-30" />
-                            <p>Message a talent from the <Link to="/explore" className="text-primary hover:underline font-bold" onClick={() => setShowMessages(false)}>Explore</Link> page</p>
-                        </div>
-                    </div>
-                )}
             </div>
 
             {/* Right: Notifications */}

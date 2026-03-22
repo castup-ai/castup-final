@@ -202,6 +202,13 @@ export function RealAuthProvider({ children }) {
                 }
             };
             loadData();
+
+            // Background polling for notifications every 30 seconds
+            const pollId = setInterval(() => {
+                fetchNotifications();
+            }, 30000);
+
+            return () => clearInterval(pollId);
         } else {
             setNotifications([]);
             setAppliedJobs([]);
@@ -329,6 +336,14 @@ export function RealAuthProvider({ children }) {
         setNotifications(prev => [newNotif, ...prev].slice(0, 50));
     };
 
+    const deleteNotification = async (id) => {
+        const { success } = await authService.deleteNotification(id);
+        if (success) {
+            setNotifications(prev => prev.filter(n => n.id !== id));
+        }
+        return { success };
+    };
+
     const sendTargetedNotification = async (targetUserId, notifData) => {
         return await addNotification({ ...notifData, targetUserId });
     };
@@ -440,6 +455,7 @@ export function RealAuthProvider({ children }) {
             notifications,
             addNotification,
             sendTargetedNotification,
+            deleteNotification,
             markAllRead,
             acceptConnection,
             declineConnection,

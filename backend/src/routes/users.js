@@ -2,7 +2,8 @@ import express from 'express';
 import { 
     acceptConnection, declineConnection, getConnectionCount, getUserStats, getRecentUsers, 
     incrementProfileViews, getUsers, getUserById, getNotifications, 
-    markNotificationsRead, getProfile, sendNotification, updateProfile, getConnectedUserIds
+    markNotificationsRead, getProfile, sendNotification, updateProfile, getConnectedUserIds,
+    deleteNotification
 } from '../controllers/userController.js';
 import authMiddleware from '../middleware/auth.js';
 
@@ -15,6 +16,7 @@ router.get('/:userId/public', getUserById);
 router.get('/', authMiddleware, getUsers);
 router.get('/notifications', authMiddleware, getNotifications);
 router.post('/notifications/read', authMiddleware, markNotificationsRead);
+router.delete('/notifications/:id', authMiddleware, deleteNotification);
 router.get('/profile', authMiddleware, getProfile);
 router.get('/stats', authMiddleware, getUserStats);
 router.get('/recent', getRecentUsers);

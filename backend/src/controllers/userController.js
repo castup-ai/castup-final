@@ -442,3 +442,25 @@ export const incrementProfileViews = async (req, res) => {
     }
 };
 
+// Delete a notification
+export const deleteNotification = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.userId;
+
+        const result = await pool.query(
+            'DELETE FROM notifications WHERE id = $1 AND (user_id = $2 OR (metadata->>\'senderId\')::uuid = $2) RETURNING id',
+            [id, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Notification not found or access denied' });
+        }
+
+        res.json({ success: true, message: 'Notification deleted' });
+    } catch (error) {
+        console.error('Delete notification error:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+

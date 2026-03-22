@@ -96,6 +96,18 @@ export const authService = {
             };
         }
     },
+
+    deleteNotification: async (id) => {
+        try {
+            const response = await api.delete(`/users/notifications/${id}`);
+            return { success: true, data: response.data };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.error || 'Failed to delete notification'
+            };
+        }
+    },
     
     forgotPassword: async (email) => {
         try {
