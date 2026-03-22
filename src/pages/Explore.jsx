@@ -12,8 +12,9 @@ import {
     Info, Star, Award, Shield, Check, Heart, MoreVertical,
     Send, Smartphone, MoreHorizontal,
     Ruler, Droplets, Image as ImageIcon, Clapperboard, Eye, FileVideo,
-    X as CloseIcon, Languages
+    X as CloseIcon, Languages, Plus
 } from 'lucide-react'
+import api from '@/services/api'
 import { portfolioService } from '@/services/portfolio.service'
 
 const experienceLevels = ['All', 'Beginner', 'Intermediate', 'Expert']
@@ -221,13 +222,33 @@ export default function Explore() {
     }
 
     useEffect(() => {
-        if (location.state?.viewProfileId && allUsers.length > 0) {
-            const profile = (allUsers || []).find(u => String(u.id) === String(location.state.viewProfileId));
-            if (profile) {
-                setSelectedProfile(profile);
+        const checkViewProfile = async () => {
+            if (location.state?.viewProfileId) {
+                const targetId = String(location.state.viewProfileId);
+                let profile = (allUsers || []).find(u => String(u.id) === targetId);
+                
+                if (!profile && !usersLoading) {
+                    // Fetch as fallback (e.g. for Admins or users not in the first page)
+                    try {
+                        const res = await api.get(`/users/${targetId}/public`);
+                        if (res.data?.success) {
+                            profile = res.data.user;
+                        }
+                    } catch (err) {
+                        console.error("Error fetching fallback profile:", err);
+                    }
+                }
+
+                if (profile) {
+                    setSelectedProfile(profile);
+                    if (location.state?.autoMessage) {
+                        setActiveAction('message');
+                    }
+                }
             }
-        }
-    }, [location.key, location.state?.viewProfileId, allUsers]);
+        };
+        checkViewProfile();
+    }, [location.key, location.state?.viewProfileId, allUsers, usersLoading]);
 
     let filtered = (allUsers || []).filter(u => {
         if (user && String(u.id) === String(user.id)) return false;
