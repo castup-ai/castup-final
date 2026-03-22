@@ -95,15 +95,15 @@ export default function UploadWork() {
             if (form.document) {
                 // Actually upload the document to Cloudinary
                 const uploadData = new FormData();
-                uploadData.append('files', form.document);
+                uploadData.append('file', form.document);
                 
                 try {
-                    const uploadRes = await api.post('/upload', uploadData, {
+                    const uploadRes = await api.post('/files/upload', uploadData, {
                         headers: { 'Content-Type': 'multipart/form-data' }
                     });
                     
-                    if (uploadRes.data.success && uploadRes.data.urls.length > 0) {
-                        documentUrl = uploadRes.data.urls[0].url;
+                    if (uploadRes.data.success && uploadRes.data.file?.file_url) {
+                        documentUrl = uploadRes.data.file.file_url;
                     }
                 } catch (uploadErr) {
                     console.error('File upload failed:', uploadErr);
