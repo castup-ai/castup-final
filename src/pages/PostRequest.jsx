@@ -31,7 +31,7 @@ const CREW_ROLES = [
 ]
 
 export default function PostRequest() {
-    const { isAuthenticated, requireAuth, addJob, user, isProfileComplete, allJobs, deleteJob } = useAuth()
+    const { isAuthenticated, requireAuth, addJob, updateJob, user, isProfileComplete, allJobs, deleteJob } = useAuth()
     const navigate = useNavigate()
     const location = useLocation()
     const [submitted, setSubmitted] = useState(false)
