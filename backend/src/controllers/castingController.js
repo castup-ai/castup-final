@@ -244,7 +244,7 @@ export const getCastingCallApplicants = async (req, res) => {
                     a.phone as "appliedPhone", a.whatsapp as "appliedWhatsapp", a.email as "appliedEmail",
                     a.address as "appliedAddress", a.photo_url as "appliedPhoto", 
                     a.portfolio_files as "portfolioFiles",
-                    u.name, u.lastName, u.profile_picture as "photo", u.role, u.department
+                    u.name, u.profile_picture as "photo", u.role, u.department
              FROM job_applications a
              JOIN users u ON a.user_id = u.id
              WHERE a.job_id = $1
@@ -256,7 +256,7 @@ export const getCastingCallApplicants = async (req, res) => {
             ...row,
             user: {
                 id: row.userId,
-                name: `${row.name} ${row.lastName || ''}`.trim(),
+                name: row.name,
                 photo: row.photo,
                 role: row.role,
                 department: row.department
