@@ -186,7 +186,7 @@ export const updateProfile = async (req, res) => {
 export const getNotifications = async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT id, type, title, message, read, metadata, created_at as "timestamp" 
+            `SELECT id, user_id, type, title, message, read, metadata, created_at as "timestamp" 
              FROM notifications 
              WHERE user_id = $1 OR (metadata->>'senderId')::uuid = $1
              ORDER BY created_at DESC 
