@@ -5,7 +5,7 @@ import { useAuth } from '@/context/RealAuthContext'
 import {
     User, Save, X, Camera, MapPin, Calendar, Award, Globe,
     Briefcase, Languages, Edit3, CheckCircle, Trash2, Film, Image as ImageIcon,
-    Play, ZoomIn, Upload, ChevronLeft, ChevronRight, Share2
+    Play, ZoomIn, Upload, ChevronLeft, ChevronRight, Share2, FileText, ExternalLink
 } from 'lucide-react'
 import api from '@/services/api'
 
@@ -531,7 +531,14 @@ export default function MyProfile() {
                             <div
                                 key={project.id || project.title}
                                 className="card overflow-hidden flex flex-col group cursor-pointer hover:shadow-lg transition-all duration-300"
-                                onClick={() => setLightbox({ project, fileIndex: 0 })}
+                                onClick={() => {
+                                    if (!project.files || project.files.length === 0) {
+                                        const linkToOpen = project.documentUrl || project.sourceUrl;
+                                        if (linkToOpen) window.open(linkToOpen, '_blank');
+                                    } else {
+                                        setLightbox({ project, fileIndex: 0 });
+                                    }
+                                }}
                             >
                                 {/* Thumbnail */}
                                 <div className="w-full bg-black relative flex items-center justify-center overflow-hidden" style={{ minHeight: '180px', maxHeight: '260px' }}>
@@ -562,6 +569,11 @@ export default function MyProfile() {
                                                 </div>
                                             </div>
                                         )
+                                    ) : project.documentUrl && !project.sourceUrl ? (
+                                        <div className="w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900/40 to-purple-900/20" style={{ height: '180px' }}>
+                                            <FileText size={32} className="opacity-20 text-white mb-2" />
+                                            <span className="text-xs text-white/40">PDF Document</span>
+                                        </div>
                                     ) : (
                                         <div className="w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900/40 to-purple-900/20" style={{ height: '180px' }}>
                                             <Film size={32} className="opacity-20 text-white mb-2" />

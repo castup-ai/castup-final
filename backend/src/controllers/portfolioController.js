@@ -128,6 +128,7 @@ export const addPortfolioMedia = async (req, res) => {
             castCrew,
             sourceUrl: sourceUrl || null,
             sourceType: sourceType || 'link',
+            documentUrl: req.body.documentUrl || null,
             createdAt: new Date().toISOString()
         };
 
@@ -148,9 +149,9 @@ export const addPortfolioMedia = async (req, res) => {
             : 'computer';
 
         await pool.query(
-            `INSERT INTO files (user_id, name, description, source_type, source_url)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [req.userId, title, description, detectedSourceType, sourceUrl || null]
+            `INSERT INTO files (user_id, name, description, source_type, source_url, file_url)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [req.userId, title, description, detectedSourceType, sourceUrl || null, req.body.documentUrl || null]
         );
 
         res.json({

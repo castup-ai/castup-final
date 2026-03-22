@@ -7,7 +7,7 @@ import {
     MapPin, Briefcase, Star, Clock, Languages, UserPlus, MessageSquare,
     Instagram, Youtube, Linkedin, Twitter, Globe, ExternalLink,
     ChevronLeft, Film, ImageIcon, FileVideo, Eye, Award, CheckCircle,
-    Share2
+    Share2, FileText
 } from 'lucide-react'
 
 export default function PublicProfile() {
@@ -328,25 +328,27 @@ export default function PublicProfile() {
                         style={{ background: 'var(--color-bg-offset)', borderColor: 'var(--color-border)' }}>
                         <h2 className="font-bold mb-4 text-sm uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Portfolio</h2>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            {media.map((item, idx) => (
+                            {media.map((item, idx) => {
+                                const linkUrl = item.sourceUrl || item.documentUrl;
+                                return (
                                 <a key={item.id || idx}
-                                    href={item.sourceUrl || '#'}
-                                    target={item.sourceUrl ? '_blank' : undefined}
+                                    href={linkUrl || '#'}
+                                    target={linkUrl ? '_blank' : undefined}
                                     rel="noreferrer"
                                     className="aspect-square rounded-xl border overflow-hidden flex flex-col items-center justify-center text-center p-3 transition-all hover:border-primary group relative"
                                     style={{ background: 'var(--color-bg)', borderColor: 'var(--color-border)' }}>
                                     <div style={{ color: 'var(--color-primary)', opacity: 0.4 }} className="group-hover:opacity-80 transition-opacity mb-2">
-                                        {item.type?.toLowerCase().includes('video') ? <FileVideo size={28} /> : <Film size={28} />}
+                                        {item.documentUrl && !item.sourceUrl ? <FileText size={28} /> : item.type?.toLowerCase().includes('video') ? <FileVideo size={28} /> : <Film size={28} />}
                                     </div>
                                     <span className="text-xs font-bold truncate w-full">{item.title}</span>
                                     <span className="text-[10px] mt-1" style={{ color: 'var(--color-text-muted)' }}>{item.type}</span>
-                                    {item.sourceUrl && (
+                                    {linkUrl && (
                                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <ExternalLink size={12} style={{ color: 'var(--color-primary)' }} />
                                         </div>
                                     )}
                                 </a>
-                            ))}
+                            )})}
                         </div>
                     </motion.div>
                 )}

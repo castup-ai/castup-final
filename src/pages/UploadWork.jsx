@@ -91,27 +91,39 @@ export default function UploadWork() {
 
         setIsLoading(true)
         try {
-            const formData = {
+            let documentUrl = null;
+            if (form.document) {
+                // Actually upload the document to Cloudinary
+                const uploadData = new FormData();
+                uploadData.append('files', form.document);
+                
+                try {
+                    const uploadRes = await api.post('/upload', uploadData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                    
+                    if (uploadRes.data.success && uploadRes.data.urls.length > 0) {
+                        documentUrl = uploadRes.data.urls[0].url;
+                    }
+                } catch (uploadErr) {
+                    console.error('File upload failed:', uploadErr);
+                    alert('Failed to upload the document. Please try again.');
+                    setIsLoading(false);
+                    return;
+                }
+            }
+
+            const payloadData = {
                 title: form.title,
                 type: form.type,
                 description: form.description,
                 castCrew: form.castCrew,
                 sourceUrl: form.sourceUrl || null,
-                sourceType: detectSourceType(form.sourceUrl)
+                sourceType: detectSourceType(form.sourceUrl),
+                documentUrl: documentUrl
             };
 
-            // If there's a document, we might need to handle it differently 
-            // but for now let's send it in the body if it's small or just metadata if the backend doesn't support binary yet.
-            // Based on PostRequest.jsx, it sends metadata.
-            if (form.document) {
-                formData.document = {
-                    name: form.document.name,
-                    type: form.document.type,
-                    size: form.document.size
-                };
-            }
-
-            await api.post('/portfolios/media', formData)
+            await api.post('/portfolios/media', payloadData)
             setSubmitted(true)
         } catch (error) {
             console.error('Error uploading work:', error)
