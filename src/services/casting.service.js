@@ -88,7 +88,16 @@ export const castingService = {
     },
 
     async update(id, data) {
-        const res = await api.put(`/casting/${id}`, data);
-        return res.data;
+        try {
+            const response = await api.put(`/casting/${id}`, data);
+            return { success: true, ...response.data };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.response?.data?.error || 'Failed to update casting call',
+                details: error.response?.data?.details,
+                code: error.response?.data?.code
+            };
+        }
     }
 };

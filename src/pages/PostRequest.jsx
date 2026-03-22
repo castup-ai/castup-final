@@ -143,8 +143,8 @@ export default function PostRequest() {
             city: job.city || '',
             category: job.category || '',
             subCategory: job.subCategory || '',
-            serviceStart: job.serviceDuration?.start || '',
-            serviceEnd: job.serviceDuration?.end || '',
+            serviceStart: job.serviceDuration?.start ? new Date(job.serviceDuration.start).toISOString().split('T')[0] : '',
+            serviceEnd: job.serviceDuration?.end ? new Date(job.serviceDuration.end).toISOString().split('T')[0] : '',
             lastDateToApply: job.lastDateToApply ? new Date(job.lastDateToApply).toISOString().split('T')[0] : '',
             payRate: job.payRate || '',
             requirements: job.requirements || ''

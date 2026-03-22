@@ -232,6 +232,11 @@ export default function Explore() {
     let filtered = (allUsers || []).filter(u => {
         if (user && String(u.id) === String(user.id)) return false;
         
+        // Hide admins from talent discovery
+        const isAdmin = u.role?.toLowerCase() === 'admin' || 
+                       ['castup4862446@gmail.com', 'castupaiapp@gmail.com'].includes(u.email);
+        if (isAdmin) return false;
+        
         // Category filtering (case insensitive)
         if (filters.category !== 'All') {
             const list = filters.category === 'Artist' ? ARTIST_ROLES : CREW_ROLES;
