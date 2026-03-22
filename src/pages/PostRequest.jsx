@@ -711,15 +711,15 @@ export default function PostRequest() {
                                         <div className="mt-4 grid grid-cols-2 gap-y-3 gap-x-6 text-[11px] font-medium opacity-70">
                                             <div className="flex items-center gap-2">
                                                 <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Age:</span>
-                                                <span>{app.appliedAge || 'N/A'}</span>
+                                                <span>{app.appliedAge || app.user?.age || 'N/A'}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Gender:</span>
-                                                <span>{app.appliedGender || 'N/A'}</span>
+                                                <span>{app.appliedGender || app.user?.gender || 'N/A'}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Phone:</span>
-                                                <span className="text-primary font-bold">{app.appliedPhone || 'N/A'}</span>
+                                                <span className="text-primary font-bold">{app.appliedPhone || app.user?.phone || 'N/A'}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Whatsapp:</span>
@@ -789,7 +789,7 @@ export default function PostRequest() {
                                             </div>
                                         </div>
                                     </div>
-                                })
+                                }))
                             )}
                         </div>
 

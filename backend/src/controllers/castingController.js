@@ -245,7 +245,9 @@ export const getCastingCallApplicants = async (req, res) => {
                     a.phone as "appliedPhone", a.whatsapp as "appliedWhatsapp", a.email as "appliedEmail",
                     a.address as "appliedAddress", a.photo_url as "appliedPhoto", 
                     a.portfolio_files as "portfolioFiles", a.social_links as "socialLinks",
-                    u.name, u.profile_picture as "photo", u.role, u.department
+                    u.name, u.profile_picture as "photo", u.role, u.department,
+                    u.email as "userEmail", u.phone as "userPhone", u.age as "userAge", 
+                    u.gender as "userGender", u.location as "userLocation"
              FROM job_applications a
              JOIN users u ON a.user_id = u.id
              WHERE a.job_id = $1
@@ -260,7 +262,12 @@ export const getCastingCallApplicants = async (req, res) => {
                 name: row.name,
                 photo: row.photo,
                 role: row.role,
-                department: row.department
+                department: row.department,
+                email: row.userEmail,
+                phone: row.userPhone,
+                age: row.userAge,
+                gender: row.userGender,
+                location: row.userLocation
             }
         }));
 
