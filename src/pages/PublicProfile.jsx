@@ -246,7 +246,7 @@ export default function PublicProfile() {
                             </div>
 
                             {/* Action buttons */}
-                            {(!user || user.id !== profile.id) && (
+                            {(!user || user.id !== profile.id) && profile.role !== 'admin' && (
                                 <div className="flex gap-2 shrink-0">
                                          {connectedUserIds.includes(userId) ? (
                                              <div className="btn btn-sm btn-success flex items-center gap-2 cursor-default">

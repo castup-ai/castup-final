@@ -720,6 +720,10 @@ export default function PostRequest() {
                                                 <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Whatsapp:</span>
                                                 <span className="text-success font-bold">{app.appliedWhatsapp || 'N/A'}</span>
                                             </div>
+                                            <div className="col-span-2 flex items-center gap-2">
+                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Email:</span>
+                                                <span className="font-bold">{app.appliedEmail || 'N/A'}</span>
+                                            </div>
                                             <div className="col-span-2 flex items-start gap-2">
                                                 <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black pt-0.5">Address:</span>
                                                 <span className="flex-1">{app.appliedAddress || 'N/A'}</span>
@@ -730,6 +734,21 @@ export default function PostRequest() {
                                             <div className="mt-4 p-4 rounded-xl bg-black/30 text-xs italic opacity-90 leading-relaxed border-l-2 border-primary">
                                                 <span className="block not-italic text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Message:</span>
                                                 "{app.message}"
+                                            </div>
+                                        )}
+
+                                        {/* Social Links */}
+                                        {app.socialLinks && Object.values(app.socialLinks).some(Boolean) && (
+                                            <div className="mt-4 space-y-2">
+                                                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Links & Projects</span>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {Object.entries(app.socialLinks).filter(([_, url]) => url).map(([platform, url], i) => (
+                                                        <a key={i} href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noreferrer" 
+                                                           className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-xs font-bold hover:bg-white/10 transition-all capitalize">
+                                                            <Globe size={10} /> {platform}
+                                                        </a>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
 

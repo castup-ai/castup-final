@@ -132,6 +132,7 @@ export const initializeDatabase = async () => {
             ['city', 'VARCHAR(100)'],
             ['last_date_to_apply', 'DATE'],
             ['service_duration', 'JSONB DEFAULT \'{}\''],
+            ['requirements', 'TEXT'],
             ['documents', 'JSONB DEFAULT \'[]\''],
             ['pay_rate', 'VARCHAR(255)'],
             ['start_date', 'DATE'],
@@ -207,6 +208,7 @@ export const initializeDatabase = async () => {
                 address TEXT,
                 photo_url TEXT,
                 portfolio_files JSONB DEFAULT '[]',
+                social_links JSONB DEFAULT '{}',
                 message TEXT,
                 status VARCHAR(50) DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -234,6 +236,14 @@ export const initializeDatabase = async () => {
                 ADD COLUMN photo_url TEXT,
                 ADD COLUMN portfolio_files JSONB DEFAULT '[]'
             `);
+        }
+
+        const appCols2 = await pool.query(`
+            SELECT column_name FROM information_schema.columns WHERE table_name = 'job_applications'
+        `);
+        const existingAppCols2 = appCols2.rows.map(r => r.column_name);
+        if (!existingAppCols2.includes('social_links')) {
+            await pool.query(`ALTER TABLE job_applications ADD COLUMN social_links JSONB DEFAULT '{}'`);
         }
 
         // Contact Messages table

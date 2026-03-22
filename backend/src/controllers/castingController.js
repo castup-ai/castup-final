@@ -173,7 +173,7 @@ export const applyToCastingCall = async (req, res) => {
         const { id } = req.params;
         const { 
             category, role, age, gender, phone, whatsapp, 
-            email, address, photo, portfolioFiles, additionalInfo 
+            email, address, photo, portfolioFiles, additionalInfo, socialLinks 
         } = req.body;
         const userId = req.userId;
 
@@ -188,9 +188,9 @@ export const applyToCastingCall = async (req, res) => {
             `INSERT INTO job_applications (
                 job_id, user_id, category, role, age, gender, 
                 phone, whatsapp, email, address, photo_url, 
-                portfolio_files, message
+                portfolio_files, social_links, message
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
              ON CONFLICT (job_id, user_id) 
              DO UPDATE SET 
                 category = EXCLUDED.category,
@@ -203,12 +203,13 @@ export const applyToCastingCall = async (req, res) => {
                 address = EXCLUDED.address,
                 photo_url = EXCLUDED.photo_url,
                 portfolio_files = EXCLUDED.portfolio_files,
+                social_links = EXCLUDED.social_links,
                 message = EXCLUDED.message,
                 updated_at = CURRENT_TIMESTAMP`,
             [
                 id, userId, category, role, age || null, gender,
                 phone, whatsapp, email, address, photo,
-                JSON.stringify(portfolioFiles || []), additionalInfo
+                JSON.stringify(portfolioFiles || []), JSON.stringify(socialLinks || {}), additionalInfo
             ]
         );
 
@@ -243,7 +244,7 @@ export const getCastingCallApplicants = async (req, res) => {
                     a.category, a.role as "appliedRole", a.age as "appliedAge", a.gender as "appliedGender",
                     a.phone as "appliedPhone", a.whatsapp as "appliedWhatsapp", a.email as "appliedEmail",
                     a.address as "appliedAddress", a.photo_url as "appliedPhoto", 
-                    a.portfolio_files as "portfolioFiles",
+                    a.portfolio_files as "portfolioFiles", a.social_links as "socialLinks",
                     u.name, u.profile_picture as "photo", u.role, u.department
              FROM job_applications a
              JOIN users u ON a.user_id = u.id

@@ -177,7 +177,8 @@ export default function FindWork() {
                 portfolioFiles: applyForm.portfolioFiles,
                 additionalInfo: applyForm.additionalInfo,
                 gmail: applyForm.gmail || user?.email || '',
-                phone: applyForm.phone || user?.phone || ''
+                phone: applyForm.phone || user?.phone || '',
+                socialLinks: applyForm.socialLinks
             };
             applyForJob(selectedJob.id, applicationData);
         }
@@ -492,9 +493,32 @@ export default function FindWork() {
                                     <h2 className="text-3xl font-black mb-2 tracking-tight group-hover:text-primary transition-colors cursor-pointer" onClick={() => setSelectedJob(job)}>
                                         {job.title}
                                     </h2>
-                                    <p className="text-sm text-text-dim mb-6 line-clamp-2 leading-relaxed italic opacity-80">
+                                    <p className="text-sm text-text-dim mb-4 line-clamp-2 leading-relaxed italic opacity-80">
                                         {job.description || `Looking for professional ${job.subCategory} for our upcoming ${job.projectType}. Join a team of passionate creators and bring visions to life.`}
                                     </p>
+
+                                    {/* Document Indicator */}
+                                    {(() => {
+                                        let docs = job.documents;
+                                        if (typeof docs === 'string') {
+                                            try { docs = JSON.parse(docs); } catch (e) { docs = []; }
+                                        }
+                                        if (docs && docs.length > 0) {
+                                            return (
+                                                <div className="flex gap-2 mb-6">
+                                                    {docs.map((doc, idx) => (
+                                                        <a key={idx} href={doc.url} target="_blank" rel="noopener noreferrer" 
+                                                           className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 rounded-lg text-xs font-bold text-primary max-w-[150px]"
+                                                           onClick={e => e.stopPropagation()}>
+                                                            <FileText size={12} className="flex-shrink-0" />
+                                                            <span className="truncate">{doc.name || `Document ${idx + 1}`}</span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            );
+                                        }
+                                        return <div className="mb-6"></div>;
+                                    })()}
 
                                     {/* Info Row - Refined Separated Specs */}
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">

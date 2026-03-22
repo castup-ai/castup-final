@@ -84,8 +84,8 @@ export default function UploadWork() {
             return
         }
 
-        if (!form.document && !form.sourceUrl) {
-            alert('You must provide either a link (YouTube/Instagram) or upload a file/document to showcase your work.')
+        if (!form.document) {
+            alert('You must upload a file/document to showcase your work.')
             return
         }
 
@@ -212,8 +212,8 @@ export default function UploadWork() {
                         {/* Document Upload - NEW */}
                         <div className="form-group">
                             <label className="flex items-center gap-2">
-                                <Upload size={14} /> Attach Script/Document
-                                <span className="text-xs font-normal" style={{ color: 'var(--color-text-muted)' }}>(optional, PDF only)</span>
+                                <Upload size={14} /> Attach Script/Document *
+                                <span className="text-xs font-normal" style={{ color: 'var(--color-text-muted)' }}>(PDF only)</span>
                             </label>
                             <div 
                                 className="file-upload p-4 border-2 border-dashed rounded-xl text-center cursor-pointer hover:bg-primary/5 transition-colors"

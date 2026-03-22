@@ -657,31 +657,35 @@ export default function Explore() {
                                         <div className="flex flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
                                             {!activeAction ? (
                                                 <>
-                                                     {connectedUserIds.includes(selectedProfile.id) ? (
-                                                         <div className="flex-1 md:flex-none h-11 px-6 bg-success/10 text-success border border-success/30 rounded-xl font-bold flex items-center justify-center gap-2">
-                                                             <UserCheck size={16} /> Connected
-                                                         </div>
-                                                     ) : sentConnections.has(String(selectedProfile.id)) ? (
-                                                         <button
-                                                             disabled
-                                                             className="flex-1 md:flex-none h-11 px-6 bg-bg-offset text-text-muted border border-border rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed"
-                                                         >
-                                                             <UserCheck size={16} /> Pending...
-                                                         </button>
-                                                     ) : (
-                                                         <button 
-                                                             onClick={() => requireAuth(() => setActiveAction('connect'))}
-                                                             className="flex-1 md:flex-none h-11 px-6 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-                                                         >
-                                                             <User size={16} /> Connect
-                                                         </button>
+                                                     {selectedProfile.role !== 'admin' && (
+                                                         <>
+                                                             {connectedUserIds.includes(selectedProfile.id) ? (
+                                                                 <div className="flex-1 md:flex-none h-11 px-6 bg-success/10 text-success border border-success/30 rounded-xl font-bold flex items-center justify-center gap-2">
+                                                                     <UserCheck size={16} /> Connected
+                                                                 </div>
+                                                             ) : sentConnections.has(String(selectedProfile.id)) ? (
+                                                                 <button
+                                                                     disabled
+                                                                     className="flex-1 md:flex-none h-11 px-6 bg-bg-offset text-text-muted border border-border rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed"
+                                                                 >
+                                                                     <UserCheck size={16} /> Pending...
+                                                                 </button>
+                                                             ) : (
+                                                                 <button 
+                                                                     onClick={() => requireAuth(() => setActiveAction('connect'))}
+                                                                     className="flex-1 md:flex-none h-11 px-6 bg-primary text-white rounded-xl font-bold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                                                                 >
+                                                                     <User size={16} /> Connect
+                                                                 </button>
+                                                             )}
+                                                             <button 
+                                                                 onClick={() => requireAuth(() => setActiveAction('message'))}
+                                                                 className="flex-1 md:flex-none h-11 px-6 bg-bg border border-border text-text-main rounded-xl font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2"
+                                                             >
+                                                                 <MessageSquare size={16} /> Message
+                                                             </button>
+                                                         </>
                                                      )}
-                                                    <button 
-                                                        onClick={() => requireAuth(() => setActiveAction('message'))}
-                                                        className="flex-1 md:flex-none h-11 px-6 bg-bg border border-border text-text-main rounded-xl font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2"
-                                                    >
-                                                        <MessageSquare size={16} /> Message
-                                                    </button>
                                                 </>
                                             ) : (
                                                 <div className="flex flex-col w-full gap-3">
@@ -855,7 +859,9 @@ export default function Explore() {
                                                                 onClick={() => setLightbox({ project: item, fileIndex: 0 })}
                                                                 className="aspect-square bg-bg-offset rounded-2xl border border-border/50 overflow-hidden flex flex-col items-center justify-center text-primary/40 hover:text-primary transition-all cursor-pointer relative group p-2 text-center"
                                                             >
-                                                                {item.type?.toLowerCase().includes('video') || (item.files && item.files.some(f => f.type?.includes('video'))) ? (
+                                                                {item.documentUrl?.toLowerCase().endsWith('.pdf') ? (
+                                                                    <FileText size={32} className="mb-2" />
+                                                                ) : item.type?.toLowerCase().includes('video') || (item.files && item.files.some(f => f.type?.includes('video'))) ? (
                                                                     <FileVideo size={32} className="mb-2" />
                                                                 ) : (
                                                                     <ImageIcon size={32} className="mb-2" />
@@ -972,6 +978,20 @@ export default function Explore() {
                             {/* Media Viewer */}
                             <div className="rounded-2xl overflow-hidden bg-black flex items-center justify-center border border-white/10 shadow-2xl" style={{ minHeight: '300px', maxHeight: '80vh' }}>
                                 {(() => {
+                                    if (lightbox.project.documentUrl) {
+                                        if (lightbox.project.documentUrl.toLowerCase().endsWith('.pdf')) {
+                                            return (
+                                                <div className="w-full h-full bg-white max-w-full" style={{ height: '80vh', width: '1000px' }}>
+                                                    <iframe src={lightbox.project.documentUrl} width="100%" height="100%" title="PDF Viewer" />
+                                                </div>
+                                            )
+                                        }
+                                        return (
+                                            <div className="text-white/30 text-sm p-24 text-center">
+                                                <a href={lightbox.project.documentUrl} target="_blank" rel="noreferrer" className="btn btn-primary mt-4">Download Document</a>
+                                            </div>
+                                        )
+                                    }
                                     const file = lightbox.project.files?.[lightbox.fileIndex]
                                     if (!file?.data) return (
                                         <div className="text-white/30 text-sm p-24 text-center">
