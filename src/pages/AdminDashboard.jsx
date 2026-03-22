@@ -128,7 +128,8 @@ export default function AdminDashboard() {
         if (!replyText.trim() || !replyingTo) return
         setSendingReply(true)
         try {
-            const { api } = await import('@/services/api')
+            const apiModule = await import('@/services/api')
+            const api = apiModule.default
             const res = await api.post(`/admin/contacts/${replyingTo.id}/reply`, { replyMessage: replyText })
             if (res.data.success) {
                 setDeletedMsg('Reply sent successfully')
