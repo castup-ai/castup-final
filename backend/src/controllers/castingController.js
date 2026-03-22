@@ -171,6 +171,7 @@ export const getMyApplications = async (req, res) => {
 export const applyToCastingCall = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log(`📝 Job Application for ${id}:`, req.body);
         const { 
             category, role, age, gender, phone, whatsapp, 
             email, address, photo, portfolioFiles, additionalInfo, socialLinks 

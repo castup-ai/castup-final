@@ -675,121 +675,121 @@ export default function PostRequest() {
                                     <p className="text-xs max-w-xs mt-1">Once professionals apply to your request, they will appear here.</p>
                                 </div>
                             ) : (
-                                applicants.map((app, idx) => {
-                                    const safeSocialLinks = typeof app.socialLinks === 'string' ? JSON.parse(app.socialLinks || '{}') : (app.socialLinks || {});
-                                    const safePortfolioFiles = typeof app.portfolioFiles === 'string' ? JSON.parse(app.portfolioFiles || '[]') : (app.portfolioFiles || []);
-                                    
-                                    return (
-                                    <div key={idx} className="group p-5 rounded-2xl bg-white/[0.03] border border-white/5 transition-all hover:bg-white/[0.06] hover:border-primary/30">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="relative">
-                                                    {app.appliedPhoto ? (
-                                                        <img src={app.appliedPhoto} alt="" className="w-14 h-14 rounded-xl object-cover shadow-lg" />
-                                                    ) : (
-                                                        <div className="w-14 h-14 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xl">
-                                                            {app.user?.name?.[0]?.toUpperCase()}
+                                <div className="space-y-4">
+                                    {applicants.map((app, idx) => {
+                                        const safeSocialLinks = typeof app.socialLinks === 'string' ? JSON.parse(app.socialLinks || '{}') : (app.socialLinks || {});
+                                        const safePortfolioFiles = typeof app.portfolioFiles === 'string' ? JSON.parse(app.portfolioFiles || '[]') : (app.portfolioFiles || []);
+                                        
+                                        return (
+                                            <div key={idx} className="group p-5 rounded-2xl bg-white/[0.03] border border-white/5 transition-all hover:bg-white/[0.06] hover:border-primary/30">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="relative">
+                                                            {app.appliedPhoto ? (
+                                                                <img src={app.appliedPhoto} alt="" className="w-14 h-14 rounded-xl object-cover shadow-lg" />
+                                                            ) : (
+                                                                <div className="w-14 h-14 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xl">
+                                                                    {app.user?.name?.[0]?.toUpperCase()}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
+                                                        <div>
+                                                            <div className="font-bold text-lg group-hover:text-primary transition-colors">{app.user?.name} {app.user?.lastName}</div>
+                                                            <div className="text-[10px] font-black text-primary/60 uppercase tracking-widest">
+                                                                {app.category} • {app.appliedRole || app.user?.role || 'Professional'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => navigate(`/explore`, { state: { viewProfileId: app.user?.id, fromJobs: true } })}
+                                                        className="btn btn-secondary btn-xs px-3 py-1 flex items-center gap-2 h-auto"
+                                                    >
+                                                        <Eye size={12} /> Profile
+                                                    </button>
                                                 </div>
-                                                <div>
-                                                    <div className="font-bold text-lg group-hover:text-primary transition-colors">{app.user?.name} {app.user?.lastName}</div>
-                                                    <div className="text-[10px] font-black text-primary/60 uppercase tracking-widest">
-                                                        {app.category} • {app.appliedRole || app.user?.role || 'Professional'}
+                                                
+                                                <div className="mt-4 grid grid-cols-2 gap-y-3 gap-x-6 text-[11px] font-medium opacity-70">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Age:</span>
+                                                        <span>{app.appliedAge || app.user?.age || 'N/A'}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Gender:</span>
+                                                        <span>{app.appliedGender || app.user?.gender || 'N/A'}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Phone:</span>
+                                                        <span className="text-primary font-bold">{app.appliedPhone || app.user?.phone || 'N/A'}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Whatsapp:</span>
+                                                        <span className="text-success font-bold">{app.appliedWhatsapp || 'N/A'}</span>
+                                                    </div>
+                                                    <div className="col-span-2 flex items-center gap-2">
+                                                        <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Email:</span>
+                                                        <span className="font-bold">{app.appliedEmail || app.user?.email || 'N/A'}</span>
+                                                    </div>
+                                                    <div className="col-span-2 flex items-start gap-2">
+                                                        <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black pt-0.5">Address:</span>
+                                                        <span className="flex-1">{app.appliedAddress || app.user?.location || 'N/A'}</span>
+                                                    </div>
+                                                </div>
+
+                                                {app.message && (
+                                                    <div className="mt-4 p-4 rounded-xl bg-black/30 text-xs italic opacity-90 leading-relaxed border-l-2 border-primary">
+                                                        <span className="block not-italic text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Message:</span>
+                                                        "{app.message}"
+                                                    </div>
+                                                )}
+
+                                                {safeSocialLinks && Object.values(safeSocialLinks).some(Boolean) && (
+                                                    <div className="mt-4 space-y-2">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Links & Projects</span>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {Object.entries(safeSocialLinks).filter(([_, url]) => url).map(([platform, url], i) => (
+                                                                <a key={i} href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noreferrer" 
+                                                                   className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-xs font-bold hover:bg-white/10 transition-all capitalize">
+                                                                    <Globe size={10} /> {platform}
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {safePortfolioFiles && safePortfolioFiles.length > 0 && (
+                                                    <div className="mt-4 space-y-2">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Portfolio Files</span>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {safePortfolioFiles.map((pf, i) => (
+                                                                <a key={i} href={pf.url || pf} target="_blank" rel="noreferrer" 
+                                                                   className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all">
+                                                                    <FileText size={12} /> {pf.name || `File ${i+1}`}
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
+                                                <div className="mt-6 flex items-center justify-between pt-4 border-t border-white/5">
+                                                    <div className="flex items-center gap-4 text-[10px] font-bold opacity-30">
+                                                        <span className="flex items-center gap-1">
+                                                            <Calendar size={10} /> Applied {new Date(app.appliedAt).toLocaleDateString()}
+                                                        </span>
+                                                        {app.user?.location && (
+                                                            <span className="flex items-center gap-1">
+                                                                <MapPin size={10} /> {app.user.location}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button className="btn btn-primary btn-xs px-4 h-7 text-[10px] font-black uppercase tracking-widest">Hire</button>
+                                                        <button className="btn btn-ghost btn-xs px-4 h-7 text-[10px] font-black uppercase tracking-widest opacity-50">Decline</button>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button 
-                                                onClick={() => navigate(`/explore`, { state: { viewProfileId: app.user?.id, fromJobs: true } })}
-                                                className="btn btn-secondary btn-xs px-3 py-1 flex items-center gap-2 h-auto"
-                                            >
-                                                <Eye size={12} /> Profile
-                                            </button>
-                                        </div>
-                                        
-                                        {/* Detailed Info Grid */}
-                                        <div className="mt-4 grid grid-cols-2 gap-y-3 gap-x-6 text-[11px] font-medium opacity-70">
-                                            <div className="flex items-center gap-2">
-                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Age:</span>
-                                                <span>{app.appliedAge || app.user?.age || 'N/A'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Gender:</span>
-                                                <span>{app.appliedGender || app.user?.gender || 'N/A'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Phone:</span>
-                                                <span className="text-primary font-bold">{app.appliedPhone || app.user?.phone || 'N/A'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Whatsapp:</span>
-                                                <span className="text-success font-bold">{app.appliedWhatsapp || 'N/A'}</span>
-                                            </div>
-                                            <div className="col-span-2 flex items-center gap-2">
-                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Email:</span>
-                                                <span className="font-bold">{app.appliedEmail || 'N/A'}</span>
-                                            </div>
-                                            <div className="col-span-2 flex items-start gap-2">
-                                                <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black pt-0.5">Address:</span>
-                                                <span className="flex-1">{app.appliedAddress || 'N/A'}</span>
-                                            </div>
-                                        </div>
-
-                                        {app.message && (
-                                            <div className="mt-4 p-4 rounded-xl bg-black/30 text-xs italic opacity-90 leading-relaxed border-l-2 border-primary">
-                                                <span className="block not-italic text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">Message:</span>
-                                                "{app.message}"
-                                            </div>
-                                        )}
-
-                                        {/* Social Links */}
-                                        {safeSocialLinks && Object.values(safeSocialLinks).some(Boolean) && (
-                                            <div className="mt-4 space-y-2">
-                                                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Links & Projects</span>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {Object.entries(safeSocialLinks).filter(([_, url]) => url).map(([platform, url], i) => (
-                                                        <a key={i} href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noreferrer" 
-                                                           className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-xs font-bold hover:bg-white/10 transition-all capitalize">
-                                                            <Globe size={10} /> {platform}
-                                                        </a>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Portfolio Files */}
-                                        {safePortfolioFiles && safePortfolioFiles.length > 0 && (
-                                            <div className="mt-4 space-y-2">
-                                                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Portfolio Files</span>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {safePortfolioFiles.map((pf, i) => (
-                                                        <a key={i} href={pf.url || pf} target="_blank" rel="noreferrer" 
-                                                           className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all">
-                                                            <FileText size={12} /> {pf.name || `File ${i+1}`}
-                                                        </a>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                        
-                                        <div className="mt-6 flex items-center justify-between pt-4 border-t border-white/5">
-                                            <div className="flex items-center gap-4 text-[10px] font-bold opacity-30">
-                                                <span className="flex items-center gap-1">
-                                                    <Calendar size={10} /> Applied {new Date(app.appliedAt).toLocaleDateString()}
-                                                </span>
-                                                {app.user?.location && (
-                                                    <span className="flex items-center gap-1">
-                                                        <MapPin size={10} /> {app.user.location}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button className="btn btn-primary btn-xs px-4 h-7 text-[10px] font-black uppercase tracking-widest">Hire</button>
-                                                <button className="btn btn-ghost btn-xs px-4 h-7 text-[10px] font-black uppercase tracking-widest opacity-50">Decline</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }))
+                                        );
+                                    })}
+                                </div>
                             )}
                         </div>
 
