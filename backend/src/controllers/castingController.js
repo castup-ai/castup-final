@@ -37,7 +37,7 @@ export const createCastingCall = async (req, res) => {
                 last_date_to_apply, service_duration, requirements, documents,
                 pay_rate, start_date, end_date
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, $14::jsonb, $15, $16, $17) 
              RETURNING *`,
             [
                 req.userId, title, description, projectType, category, 
@@ -190,7 +190,7 @@ export const applyToCastingCall = async (req, res) => {
                 phone, whatsapp, email, address, photo_url, 
                 portfolio_files, social_links, message
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13::jsonb, $14)
              ON CONFLICT (job_id, user_id) 
              DO UPDATE SET 
                 category = EXCLUDED.category,
@@ -330,8 +330,8 @@ export const updateCastingCall = async (req, res) => {
             `UPDATE casting_calls SET 
                 title = $1, description = $2, project_type = $3, category = $4, 
                 sub_category = $5, experience = $6, country = $7, state = $8, 
-                city = $9, last_date_to_apply = $10, service_duration = $11, 
-                requirements = $12, documents = $13, pay_rate = $14, 
+                city = $9, last_date_to_apply = $10, service_duration = $11::jsonb, 
+                requirements = $12, documents = $13::jsonb, pay_rate = $14, 
                 start_date = $15, end_date = $16, updated_at = CURRENT_TIMESTAMP
              WHERE id = $17
              RETURNING *`,
