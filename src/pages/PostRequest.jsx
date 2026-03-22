@@ -723,7 +723,7 @@ export default function PostRequest() {
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Whatsapp:</span>
-                                                        <span className="text-success font-bold">{app.appliedWhatsapp || 'N/A'}</span>
+                                                        <span className="text-success font-bold">{app.appliedWhatsapp || app.user?.phone || 'N/A'}</span>
                                                     </div>
                                                     <div className="col-span-2 flex items-center gap-2">
                                                         <span className="opacity-40 uppercase tracking-wider text-[9px] w-12 font-black">Email:</span>
@@ -770,7 +770,7 @@ export default function PostRequest() {
                                                     </div>
                                                 )}
                                                 
-                                                <div className="mt-6 flex items-center justify-between pt-4 border-t border-white/5">
+                                                <div className="mt-6 pt-4 border-t border-white/5">
                                                     <div className="flex items-center gap-4 text-[10px] font-bold opacity-30">
                                                         <span className="flex items-center gap-1">
                                                             <Calendar size={10} /> Applied {new Date(app.appliedAt).toLocaleDateString()}
@@ -780,10 +780,6 @@ export default function PostRequest() {
                                                                 <MapPin size={10} /> {app.user.location}
                                                             </span>
                                                         )}
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <button className="btn btn-primary btn-xs px-4 h-7 text-[10px] font-black uppercase tracking-widest">Hire</button>
-                                                        <button className="btn btn-ghost btn-xs px-4 h-7 text-[10px] font-black uppercase tracking-widest opacity-50">Decline</button>
                                                     </div>
                                                 </div>
                                             </div>
