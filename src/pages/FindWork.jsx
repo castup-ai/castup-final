@@ -98,6 +98,9 @@ export default function FindWork() {
                 (statusFilter === 'Open' && !isClosed) ||
                 (statusFilter === 'Closed' && isClosed)
 
+            // Hide own jobs from Find Work
+            if (user && job.createdBy?.id === user.id) return false;
+
             return matchesSearch && matchesProjectType && matchesSubCategory && matchesCountry && matchesState && matchesStatus
         }).sort((a, b) => {
             if (filters.sortBy === 'newest') return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
