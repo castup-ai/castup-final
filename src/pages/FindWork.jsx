@@ -202,7 +202,10 @@ export default function FindWork() {
                     address: myApp.address || '',
                     photo: myApp.photo_url || null,
                     portfolioFiles: typeof myApp.portfolio_files === 'string' ? JSON.parse(myApp.portfolio_files || '[]') : (myApp.portfolio_files || []),
-                    additionalInfo: myApp.message || ''
+                    additionalInfo: myApp.message || '',
+                    socialLinks: typeof myApp.social_links === 'string' ? JSON.parse(myApp.social_links || '{}') : (myApp.social_links || {
+                        instagram: '', linkedin: '', youtube: '', other: ''
+                    })
                 });
                 setIsEditingApplication(true);
             } else {
@@ -217,7 +220,10 @@ export default function FindWork() {
                     address: user?.location || '',
                     photo: user?.photo || null,
                     portfolioFiles: [],
-                    additionalInfo: ''
+                    additionalInfo: '',
+                    socialLinks: user?.social_links || {
+                        instagram: '', linkedin: '', youtube: '', other: ''
+                    }
                 });
                 setIsEditingApplication(false);
             }
