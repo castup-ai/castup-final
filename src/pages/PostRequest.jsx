@@ -675,7 +675,11 @@ export default function PostRequest() {
                                     <p className="text-xs max-w-xs mt-1">Once professionals apply to your request, they will appear here.</p>
                                 </div>
                             ) : (
-                                applicants.map((app, idx) => (
+                                applicants.map((app, idx) => {
+                                    const safeSocialLinks = typeof app.socialLinks === 'string' ? JSON.parse(app.socialLinks || '{}') : (app.socialLinks || {});
+                                    const safePortfolioFiles = typeof app.portfolioFiles === 'string' ? JSON.parse(app.portfolioFiles || '[]') : (app.portfolioFiles || []);
+                                    
+                                    return (
                                     <div key={idx} className="group p-5 rounded-2xl bg-white/[0.03] border border-white/5 transition-all hover:bg-white/[0.06] hover:border-primary/30">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex items-center gap-4">
@@ -739,11 +743,11 @@ export default function PostRequest() {
                                         )}
 
                                         {/* Social Links */}
-                                        {app.socialLinks && Object.values(app.socialLinks).some(Boolean) && (
+                                        {safeSocialLinks && Object.values(safeSocialLinks).some(Boolean) && (
                                             <div className="mt-4 space-y-2">
                                                 <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Links & Projects</span>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {Object.entries(app.socialLinks).filter(([_, url]) => url).map(([platform, url], i) => (
+                                                    {Object.entries(safeSocialLinks).filter(([_, url]) => url).map(([platform, url], i) => (
                                                         <a key={i} href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noreferrer" 
                                                            className="flex items-center gap-1.5 px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-xs font-bold hover:bg-white/10 transition-all capitalize">
                                                             <Globe size={10} /> {platform}
@@ -754,11 +758,11 @@ export default function PostRequest() {
                                         )}
 
                                         {/* Portfolio Files */}
-                                        {app.portfolioFiles && app.portfolioFiles.length > 0 && (
+                                        {safePortfolioFiles && safePortfolioFiles.length > 0 && (
                                             <div className="mt-4 space-y-2">
                                                 <span className="text-[9px] font-black uppercase tracking-widest opacity-40">Portfolio Files</span>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {app.portfolioFiles.map((pf, i) => (
+                                                    {safePortfolioFiles.map((pf, i) => (
                                                         <a key={i} href={pf.url || pf} target="_blank" rel="noreferrer" 
                                                            className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-xs font-bold text-primary hover:bg-primary/20 transition-all">
                                                             <FileText size={12} /> {pf.name || `File ${i+1}`}
@@ -785,7 +789,7 @@ export default function PostRequest() {
                                             </div>
                                         </div>
                                     </div>
-                                ))
+                                })
                             )}
                         </div>
 
