@@ -263,7 +263,8 @@ export default function PostRequest() {
             }
         } catch (err) {
             console.error("Job Save Error:", err)
-            alert('An unexpected error occurred while saving the request.')
+            const msg = err.response?.data?.error || err.message || 'An unexpected error occurred';
+            alert(`Error saving request: ${msg}`)
         } finally {
             setIsSubmitting(false)
         }
