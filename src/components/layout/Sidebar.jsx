@@ -248,10 +248,11 @@ export default function Sidebar() {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => {
+                            if (isAdmin) return;
                             if (isAuthenticated) navigate('/profile')
                             else requireAuth()
                         }}
-                        className="flex items-center gap-3 flex-1 min-w-0 px-3 py-2.5 rounded-lg transition-all duration-200 hover:bg-[var(--color-surface-light)]"
+                        className={`flex items-center gap-3 flex-1 min-w-0 px-3 py-2.5 rounded-lg transition-all duration-200 ${!isAdmin ? 'hover:bg-[var(--color-surface-light)]' : 'cursor-default'}`}
                     >
                         <div className="avatar avatar-sm flex-shrink-0">
                             {user?.photo ? <img src={user.photo} alt="" /> : (user ? (user.name?.split(" ")[0])?.[0] || 'U' : <User size={14} />)}

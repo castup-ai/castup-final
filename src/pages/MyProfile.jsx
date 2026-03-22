@@ -58,6 +58,19 @@ export default function MyProfile() {
         skills: '', additionalSkills: '', portfolioLink: '', socialMedia: '',
         projectType: '', projectsWorkedOn: '', photo: null
     })
+
+    const ADMIN_EMAILS = ['castup4862446@gmail.com', 'castupaiapp@gmail.com']
+
+    useEffect(() => {
+        if (user) {
+            const isKnownAdmin = ADMIN_EMAILS.includes(user.email)
+            const hasAdminRole = user.role === 'admin' || user.role === 'Admin'
+            if (isKnownAdmin || hasAdminRole) {
+                navigate('/admin', { replace: true })
+            }
+        }
+    }, [user, navigate])
+
     const [portfolioLoading, setPortfolioLoading] = useState(false)
     const { loading: authLoading } = useAuth()
 
