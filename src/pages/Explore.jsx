@@ -119,25 +119,18 @@ export default function Explore() {
     const handleConnect = async (targetUserId) => {
         if (!requireAuth()) return
         
-        const { isProfileComplete } = useAuth.getState?.() || { isProfileComplete: true }; // Fallback if context not structured this way, but useAuth actually provides it
-        // Actually useAuth is already destructuring isProfileComplete from context in this component
-        
-        if (!activeAction) {
-            setActiveAction('connect')
-            return
-        }
-        
         if (connectedUserIds.includes(targetUserId) || sentConnections.has(String(targetUserId))) {
             return;
         }
+
+        setActionLoading(prev => ({ ...prev, connect: true }))
         const { success } = await sendTargetedNotification(targetUserId, {
             type: 'connect',
             title: 'Connection Request',
-            message: customMessage || `${user.name} wants to connect with you.`,
+            message: `${user.name} wants to connect with you.`,
             metadata: { 
                 senderId: user.id, 
-                senderName: user.name,
-                originalMessage: customMessage
+                senderName: user.name
             }
         })
         

@@ -62,6 +62,32 @@ export function RealAuthProvider({ children }) {
         }
     };
 
+    const fetchNotifications = async () => {
+        if (!token) return;
+        try {
+            const notifsRes = await authService.getNotifications();
+            if (notifsRes.success) {
+                setNotifications(notifsRes.data || []);
+            }
+        } catch (e) {
+            console.error("Error fetching notifications:", e);
+        }
+    };
+
+    const fetchConnections = async () => {
+        if (!token) return;
+        try {
+            const [connRes, connIdsRes] = await Promise.all([
+                api.get('/users/connections/count').catch(() => ({ data: { count: 0 } })),
+                api.get('/users/connections/ids').catch(() => ({ data: { ids: [] } }))
+            ]);
+            setConnectionCount(connRes.data?.count || 0);
+            setConnectedUserIds(connIdsRes.data?.ids || []);
+        } catch (e) {
+            console.error("Error fetching connections:", e);
+        }
+    };
+
     const fetchRecentActivity = async () => {
         try {
             const res = await api.get('/users/recent');
@@ -107,9 +133,11 @@ export function RealAuthProvider({ children }) {
                 if (contactRes.success) setContactMessages(contactRes.data || []);
             }
 
-            // Also fetch stats/recent
+            // Also fetch stats/recent/notifications/connections
             fetchUserStats();
             fetchRecentActivity();
+            fetchNotifications();
+            fetchConnections();
         } catch (error) {
             console.error("Error refreshing platform data:", error);
         } finally {
@@ -148,17 +176,11 @@ export function RealAuthProvider({ children }) {
     useEffect(() => {
         if (user) {
             const loadData = async () => {
-                const [notifsRes, connRes, connIdsRes] = await Promise.all([
-                    authService.getNotifications(),
-                    api.get('/users/connections/count').catch(() => ({ data: { count: 0 } })),
-                    api.get('/users/connections/ids').catch(() => ({ data: { ids: [] } }))
+                await Promise.all([
+                    fetchNotifications(),
+                    fetchConnections(),
+                    fetchUserStats()
                 ]);
-
-                if (notifsRes.success) {
-                    setNotifications(notifsRes.data || []);
-                }
-                setConnectionCount(connRes.data?.count || 0);
-                setConnectedUserIds(connIdsRes.data?.ids || []);
 
                 // Still use localStorage for appliedJobs temporarily
                 try {

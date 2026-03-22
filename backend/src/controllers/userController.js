@@ -188,7 +188,8 @@ export const getNotifications = async (req, res) => {
         const result = await pool.query(
             `SELECT id, type, title, message, read, metadata, created_at as "timestamp" 
              FROM notifications 
-             WHERE user_id = $1 
+             FROM notifications 
+             WHERE user_id = $1 OR (metadata->>'senderId')::uuid = $1
              ORDER BY created_at DESC 
              LIMIT 50`,
             [req.userId]
