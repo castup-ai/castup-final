@@ -25,7 +25,10 @@ export const uploadFile = async (req, res) => {
                 const stream = cloudinary.uploader.upload_stream(
                     {
                         folder: 'castup/files',
-                        resource_type: isPdf ? 'raw' : 'auto'
+                        resource_type: isPdf ? 'raw' : 'auto',
+                        format: isPdf ? 'pdf' : undefined,
+                        use_filename: true,
+                        unique_filename: true
                     },
                     (error, result) => {
                         if (error) reject(error);
