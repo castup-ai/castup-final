@@ -123,7 +123,14 @@ export const login = async (req, res) => {
 export const getCurrentUser = async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT id, email, name, department, role, profile_picture as photo, created_at FROM users WHERE id = $1',
+            `SELECT id, name, email, department, country, phone, 
+                    role, category, experience, availability, location, 
+                    languages, age, gender, height, weight, next_available as "nextAvailable", 
+                    bio, years_of_experience as "yearsOfExperience", awards, skills, 
+                    portfolio_link as "portfolioLink", social_media as "socialMedia", project_type as "projectType", 
+                    profile_picture as "photo", created_at as "createdAt"
+             FROM users 
+             WHERE id = $1`,
             [req.userId]
         );
 

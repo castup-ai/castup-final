@@ -60,7 +60,7 @@ export default function FindWork() {
         gender: '',
         phone: user?.phone || '',
         whatsapp: '',
-        gmail: user?.email || '',
+        email: user?.email || '',
         address: '',
         photo: null,
         portfolioFiles: [],
@@ -145,12 +145,12 @@ export default function FindWork() {
             { key: 'gender', label: 'Gender' },
             { key: 'phone', label: 'Phone' },
             { key: 'whatsapp', label: 'WhatsApp' },
-            { key: 'gmail', label: 'Email' },
+            { key: 'email', label: 'Email' },
             { key: 'address', label: 'Address' }
         ];
 
         const missing = requiredFields.filter(f => {
-            const val = applyForm[f.key] || (f.key === 'gmail' ? user?.email : '') || (f.key === 'phone' ? user?.phone : '');
+            const val = applyForm[f.key] || (f.key === 'email' ? user?.email : '') || (f.key === 'phone' ? user?.phone : '');
             return !val;
         });
 
@@ -179,7 +179,7 @@ export default function FindWork() {
                 photo: applyForm.photo,
                 portfolioFiles: applyForm.portfolioFiles,
                 additionalInfo: applyForm.additionalInfo,
-                gmail: applyForm.gmail || user?.email || '',
+                email: applyForm.email || user?.email || '',
                 phone: applyForm.phone || user?.phone || '',
                 socialLinks: applyForm.socialLinks
             };
@@ -201,17 +201,16 @@ export default function FindWork() {
                     gender: myApp.gender || '',
                     phone: myApp.phone || '',
                     whatsapp: myApp.whatsapp || '',
-                    gmail: myApp.email || '',
+                    email: myApp.email || '',
                     address: myApp.address || '',
                     photo: myApp.photo_url || null,
                     portfolioFiles: typeof myApp.portfolio_files === 'string' ? JSON.parse(myApp.portfolio_files || '[]') : (myApp.portfolio_files || []),
                     additionalInfo: myApp.message || '',
-                    socialLinks: typeof myApp.social_links === 'string' ? JSON.parse(myApp.social_links || '{}') : (myApp.social_links || {
-                        instagram: '', linkedin: '', youtube: '', other: ''
-                    })
+                    socialLinks: typeof myApp.social_links === 'string' ? JSON.parse(myApp.social_links || '{}') : (myApp.social_links || {})
                 });
                 setIsEditingApplication(true);
-            } else {
+            } else if (!isEditingApplication) {
+                // Only initialize for new app if we're not already in a modal session
                 setApplyForm({
                     category: user?.category || 'Artist',
                     role: user?.role || '',
@@ -219,7 +218,7 @@ export default function FindWork() {
                     gender: user?.gender || '',
                     phone: user?.phone || '',
                     whatsapp: user?.whatsapp || '',
-                    gmail: user?.email || '',
+                    email: user?.email || '',
                     address: user?.location || '',
                     photo: user?.photo || null,
                     portfolioFiles: [],
@@ -964,7 +963,7 @@ export default function FindWork() {
                                         </div>
                                         <div className="form-group mb-0">
                                             <label className="text-[10px] font-bold uppercase tracking-wider mb-1.5 block opacity-60">Email Address</label>
-                                            <input type="email" value={applyForm.gmail || user?.email || ''} onChange={e => setApplyForm({ ...applyForm, gmail: e.target.value })} className="border-border rounded-lg h-11 text-sm bg-card" />
+                                            <input type="email" value={applyForm.email || user?.email || ''} onChange={e => setApplyForm({ ...applyForm, email: e.target.value })} className="border-border rounded-lg h-11 text-sm bg-card" />
                                         </div>
                                     </div>
                                     <div className="form-group mb-0">
