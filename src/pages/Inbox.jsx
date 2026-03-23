@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/context/RealAuthContext'
-import { MessageSquare, Clock, ArrowRight, Plus, X, User, Search } from 'lucide-react'
+import { MessageSquare, Clock, ArrowRight, Plus, X, User, Search, Trash2, ChevronLeft, ChevronRight, Send } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 export default function Inbox() {
