@@ -188,10 +188,10 @@ export const getNotifications = async (req, res) => {
         const result = await pool.query(
             `SELECT id, user_id, type, title, message, read, metadata, created_at as "timestamp" 
              FROM notifications 
-             WHERE user_id = $1 OR (metadata->>'senderId')::uuid = $1
+             WHERE user_id = $1 OR (metadata->>'senderId') = $2
              ORDER BY created_at DESC 
              LIMIT 50`,
-            [req.userId]
+            [req.userId, String(req.userId)]
         );
 
         res.json({ success: true, notifications: result.rows });
