@@ -46,12 +46,20 @@ export default function AICastingDirector() {
         const desc = description.toLowerCase()
         const newCriteria = { ...criteria }
 
-        // Detect category
-        if (desc.includes('actor') || desc.includes('actress') || desc.includes('model') || desc.includes('singer')) {
+        // Detect category & role
+        if (desc.includes('singer')) {
+            newCriteria.category = 'Artist'
+            newCriteria.role = desc.includes('female') ? 'Female Singer' : 'Male Singer'
+        } else if (desc.includes('model')) {
+            newCriteria.category = 'Artist'
+            newCriteria.role = desc.includes('female') ? 'Female Model' : 'Male Model'
+        } else if (desc.includes('child') || desc.includes('kid')) {
+            newCriteria.category = 'Artist'
+            newCriteria.role = 'Child Artist'
+        } else if (desc.includes('actor') || desc.includes('actress')) {
             newCriteria.category = 'Artist'
             if (desc.includes('actress') || (desc.includes('female') && desc.includes('actor'))) newCriteria.role = 'Actress'
-            else if (desc.includes('actor') || (desc.includes('male') && desc.includes('actor'))) newCriteria.role = 'Actor'
-            else if (desc.includes('model')) newCriteria.role = desc.includes('female') ? 'Female Model' : 'Male Model'
+            else newCriteria.role = 'Actor'
         } else if (desc.includes('director') || desc.includes('cinematograph') || desc.includes('editor') || desc.includes('crew')) {
             newCriteria.category = 'Crew'
             if (desc.includes('music director')) newCriteria.role = 'Music Director'
