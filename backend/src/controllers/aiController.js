@@ -23,8 +23,10 @@ export const chat = async (req, res) => {
 
         const modelNames = [
             "gemini-2.0-flash",
-            "gemini-1.5-flash",
+            "gemini-1.5-flash", 
             "gemini-1.5-flash-latest",
+            "gemini-1.5-pro",
+            "gemini-1.5-pro-latest",
             "gemini-pro"
         ];
 
@@ -33,6 +35,7 @@ export const chat = async (req, res) => {
 
         for (const name of modelNames) {
             try {
+                // Try each model until one works
                 const model = genAI.getGenerativeModel({ 
                     model: name,
                     systemInstruction: "You are CastUp AI Assistant, a helpful companion for cinema industry professionals. Help users find talent, prepare for auditions, and answer questions about filmmaking. Be concise and professional."
@@ -45,14 +48,18 @@ export const chat = async (req, res) => {
                 const result = await chatSession.sendMessage(message);
                 responseText = result.response.text();
                 lastError = null;
+                console.log(`AI Success with model: ${name}`);
                 break; // Success!
             } catch (error) {
                 console.error(`AI Model [${name}] failed:`, error.message);
                 lastError = error;
+                // If it's a 404, we continue to the next model. 
+                // If it's something else (like 401 Unauthorized), we might want to stop, 
+                // but for now we try all to be safe.
             }
         }
 
-        if (lastError) {
+        if (lastError && !responseText) {
             throw lastError;
         }
 
