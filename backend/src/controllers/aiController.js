@@ -21,32 +21,40 @@ export const chat = async (req, res) => {
             });
         }
 
-        const modelName = "gemini-1.5-flash-latest"; // Using -latest alias for better reliability
-        const model = genAI.getGenerativeModel({ 
-            model: modelName,
-            systemInstruction: "You are CastUp AI Assistant, a helpful companion for cinema industry professionals. Help users find talent, prepare for auditions, and answer questions about filmmaking. Be concise and professional."
-        });
+        const modelNames = [
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-latest",
+            "gemini-pro"
+        ];
 
-        // Convert history format if needed (Gemini uses { role, parts: [{ text: '' }] })
-        let chatHistory = (history || [])
-            .filter(msg => msg.content && msg.content.trim()) // filter empty messages
-            .map(msg => ({
-                role: msg.role === 'ai' ? 'model' : 'user',
-                parts: [{ text: msg.content }]
-            }));
+        let responseText = '';
+        let lastError = null;
 
-        // CRITICAL: Gemini history MUST start with a 'user' message.
-        // If the frontend sends the initial AI greeting as the first history item, skip it.
-        while (chatHistory.length > 0 && chatHistory[0].role === 'model') {
-            chatHistory.shift();
+        for (const name of modelNames) {
+            try {
+                const model = genAI.getGenerativeModel({ 
+                    model: name,
+                    systemInstruction: "You are CastUp AI Assistant, a helpful companion for cinema industry professionals. Help users find talent, prepare for auditions, and answer questions about filmmaking. Be concise and professional."
+                });
+
+                const chatSession = model.startChat({
+                    history: chatHistory,
+                });
+
+                const result = await chatSession.sendMessage(message);
+                responseText = result.response.text();
+                lastError = null;
+                break; // Success!
+            } catch (error) {
+                console.error(`AI Model [${name}] failed:`, error.message);
+                lastError = error;
+            }
         }
 
-        const chatSession = model.startChat({
-            history: chatHistory,
-        });
-
-        const result = await chatSession.sendMessage(message);
-        const responseText = result.response.text();
+        if (lastError) {
+            throw lastError;
+        }
 
         res.json({
             success: true,
