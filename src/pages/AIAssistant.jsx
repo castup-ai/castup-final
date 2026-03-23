@@ -32,11 +32,12 @@ export default function AIAssistant() {
             if (res.data?.success) {
                 setMessages(prev => [...prev, { role: 'ai', content: res.data.response, time: new Date() }])
             } else {
-                setMessages(prev => [...prev, { role: 'ai', content: "I'm sorry, I'm having trouble connecting right now.", time: new Date() }])
+                setMessages(prev => [...prev, { role: 'ai', content: res.data?.error || "I'm sorry, I'm having trouble connecting right now.", time: new Date() }])
             }
         } catch (error) {
             console.error("AI chat error:", error)
-            setMessages(prev => [...prev, { role: 'ai', content: "I'm offline at the moment. Please check your internet or try again later.", time: new Date() }])
+            const errMsg = error?.response?.data?.error || "I'm offline at the moment. Please check your internet or try again later.";
+            setMessages(prev => [...prev, { role: 'ai', content: errMsg, time: new Date() }])
         } finally {
             setTyping(false)
         }

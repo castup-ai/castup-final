@@ -13,16 +13,26 @@ export const chat = async (req, res) => {
             return res.status(400).json({ error: 'Message is required' });
         }
 
+        if (!process.env.GEMINI_API_KEY) {
+            console.error('AI Chat Error: GEMINI_API_KEY is not set in environment variables');
+            return res.status(500).json({ 
+                success: false, 
+                error: 'AI service is not configured. Please add GEMINI_API_KEY to environment variables.' 
+            });
+        }
+
         const model = genAI.getGenerativeModel({ 
             model: "gemini-1.5-flash",
             systemInstruction: "You are CastUp AI Assistant, a helpful companion for cinema industry professionals. Help users find talent, prepare for auditions, and answer questions about filmmaking. Be concise and professional."
         });
 
         // Convert history format if needed (Gemini uses { role, parts: [{ text: '' }] })
-        const chatHistory = (history || []).map(msg => ({
-            role: msg.role === 'ai' ? 'model' : 'user',
-            parts: [{ text: msg.content }]
-        }));
+        const chatHistory = (history || [])
+            .filter(msg => msg.content && msg.content.trim()) // filter empty messages
+            .map(msg => ({
+                role: msg.role === 'ai' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
 
         const chatSession = model.startChat({
             history: chatHistory,
@@ -36,10 +46,11 @@ export const chat = async (req, res) => {
             response: responseText
         });
     } catch (error) {
-        console.error('AI Chat Error:', error);
+        console.error('AI Chat Error:', error.message || error);
         res.status(500).json({ 
             success: false, 
-            error: 'Failed to get AI response' 
+            error: `AI error: ${error.message || 'Failed to get AI response'}` 
         });
     }
 };
+
