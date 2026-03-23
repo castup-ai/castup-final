@@ -535,17 +535,16 @@ export default function PostRequest() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                { (allJobs || []).filter(j => j.createdBy?.id === user?.id).length === 0 ? (
+                                {allJobs.filter(job => String(job.creatorId) === String(user?.id)).length === 0 ? (
                                     <tr>
-                                        <td colSpan="5" className="p-12 text-center">
-                                            <div className="flex flex-col items-center opacity-20">
-                                                <FileText size={48} className="mb-4" />
-                                                <p className="text-sm font-bold">No requests posted yet.</p>
-                                            </div>
+                                        <td colSpan="5" className="py-20 text-center opacity-30">
+                                            <FileText size={48} className="mx-auto mb-4" />
+                                            <div className="text-sm font-bold">No active requests found</div>
+                                            <div className="text-xs">Your posted requests will appear here once created.</div>
                                         </td>
                                     </tr>
                                 ) : (
-                                    (allJobs || []).filter(j => j.createdBy?.id === user?.id).map((job) => (
+                                    allJobs.filter(job => String(job.creatorId) === String(user?.id)).map((job, idx) => (
                                         <tr key={job.id} className="hover:bg-white/[0.02] transition-colors group">
                                             <td className="p-4">
                                                 <div className="flex items-center gap-3">

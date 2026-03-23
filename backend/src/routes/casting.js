@@ -4,9 +4,11 @@ import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Public routes
+router.get('/', getCastingCalls);
+
 // Protected routes - Now fully secured
 router.post('/', authMiddleware, createCastingCall);
-router.get('/', authMiddleware, getCastingCalls);
 router.get('/applications/me', authMiddleware, (req, res, next) => {
     // This is a placeholder for the controller we're about to add
     import('../controllers/castingController.js').then(m => m.getMyApplications(req, res));

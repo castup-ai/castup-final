@@ -214,6 +214,16 @@ export default function Explore() {
         return ['All', ...ARTIST_ROLES, ...CREW_ROLES].sort()
     }
 
+    const getRoleCount = (role) => {
+        return (allUsers || []).filter(u => u.role?.toLowerCase() === role.toLowerCase()).length;
+    }
+
+    const getCategoryCount = (category) => {
+        const list = category === 'Artist' ? ARTIST_ROLES : CREW_ROLES;
+        const lowerList = list.map(r => r.toLowerCase());
+        return (allUsers || []).filter(u => u.role && lowerList.includes(u.role.toLowerCase())).length;
+    }
+
     useEffect(() => {
         const checkViewProfile = async () => {
             if (location.state?.viewProfileId) {
@@ -317,7 +327,7 @@ export default function Explore() {
                                     onClick={() => setFilters({ ...filters, category: filters.category === 'Artist' ? 'All' : 'Artist', role: 'All' })}
                                     style={{ borderColor: filters.category === 'Artist' ? 'var(--color-primary)' : 'var(--color-border)' }}>
                                     Artist
-                                    <span className="opacity-50">{ARTIST_ROLES.length}</span>
+                                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px]">{getCategoryCount('Artist')}</span>
                                 </h3>
                                 <ul className="space-y-0.5">
                                     {ARTIST_ROLES.map(role => (
@@ -327,8 +337,8 @@ export default function Explore() {
                                                 onClick={() => setFilters({ ...filters, category: 'Artist', role: filters.role === role ? 'All' : role })}
                                             >
                                                 <span>{role}</span>
-                                                {filters.role === role && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-                                                {filters.role !== role && <span className="w-1 h-1 rounded-full bg-primary/0 group-hover:bg-primary/40 transition-all" />}
+                                                <span className="text-[10px] opacity-40 font-normal">{getRoleCount(role)}</span>
+                                                {filters.role === role && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-2" />}
                                             </button>
                                         </li>
                                     ))}
@@ -341,7 +351,7 @@ export default function Explore() {
                                     onClick={() => setFilters({ ...filters, category: filters.category === 'Crew' ? 'All' : 'Crew', role: 'All' })}
                                     style={{ borderColor: filters.category === 'Crew' ? 'var(--color-primary)' : 'var(--color-border)' }}>
                                     Crew
-                                    <span className="opacity-50">{CREW_ROLES.length}</span>
+                                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px]">{getCategoryCount('Crew')}</span>
                                 </h3>
                                 <ul className="space-y-0.5">
                                     {CREW_ROLES.map(role => (
@@ -351,8 +361,8 @@ export default function Explore() {
                                                 onClick={() => setFilters({ ...filters, category: 'Crew', role: filters.role === role ? 'All' : role })}
                                             >
                                                 <span>{role}</span>
-                                                {filters.role === role && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-                                                {filters.role !== role && <span className="w-1 h-1 rounded-full bg-primary/0 group-hover:bg-primary/40 transition-all" />}
+                                                <span className="text-[10px] opacity-40 font-normal">{getRoleCount(role)}</span>
+                                                {filters.role === role && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-2" />}
                                             </button>
                                         </li>
                                     ))}

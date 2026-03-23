@@ -9,11 +9,12 @@ import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Public route - no auth required (for public profile pages)
+// Public routes - no auth required
+router.get('/', getUsers);
 router.get('/:userId/public', getUserById);
+router.get('/recent', getRecentUsers);
 
 // Protected routes - Now fully secured
-router.get('/', authMiddleware, getUsers);
 router.get('/notifications', authMiddleware, getNotifications);
 router.post('/notifications/read', authMiddleware, markNotificationsRead);
 router.delete('/notifications/:id', authMiddleware, deleteNotification);
