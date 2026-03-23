@@ -72,36 +72,22 @@ export default function Sidebar() {
                 </button>
             </div>
 
-            {/* Quick Actions (standalone icons for Inbox & Chat) */}
+            {/* Quick Action: AI Chat */}
             <div className={`p-4 flex ${collapsed ? 'flex-col items-center' : 'items-center justify-start'} gap-2`}>
-                <div className="flex items-center gap-1">
-                    <NavLink
-                        to="/inbox"
-                        className={({ isActive }) =>
-                            `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'hover:bg-white/5 text-[var(--color-text-dim)] hover:text-[var(--color-primary)]'}`
-                        }
-                        title="Inbox"
-                    >
-                        <MessageSquare size={20} />
-                    </NavLink>
-
-                    <NavLink
-                        to="/ai-assistant"
-                        className={({ isActive }) =>
-                            `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'hover:bg-white/5 text-[var(--color-text-dim)] hover:text-[var(--color-accent)]'}`
-                        }
-                        title="AI Assistant"
-                    >
-                        <Sparkles size={20} />
-                    </NavLink>
-                </div>
+                <NavLink
+                    to="/ai-assistant"
+                    className={({ isActive }) =>
+                        `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'hover:bg-white/5 text-[var(--color-text-dim)] hover:text-[var(--color-accent)]'}`
+                    }
+                    title="AI Assistant"
+                >
+                    <Sparkles size={20} />
+                </NavLink>
 
                 {!collapsed && (
                     <div className="flex flex-col ml-1">
                         <span className="text-[10px] uppercase font-black tracking-widest opacity-30 px-1">Quick Access</span>
                         <div className="flex gap-2 text-xs font-bold px-1">
-                            <NavLink to="/inbox" className="hover:text-primary transition-colors">Inbox</NavLink>
-                            <span className="opacity-20">•</span>
                             <NavLink to="/ai-assistant" className="hover:text-accent transition-colors">AI Chat</NavLink>
                         </div>
                     </div>
