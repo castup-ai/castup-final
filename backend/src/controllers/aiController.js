@@ -21,8 +21,9 @@ export const chat = async (req, res) => {
             });
         }
 
+        const modelName = "gemini-1.5-flash-latest"; // Using -latest alias for better reliability
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
+            model: modelName,
             systemInstruction: "You are CastUp AI Assistant, a helpful companion for cinema industry professionals. Help users find talent, prepare for auditions, and answer questions about filmmaking. Be concise and professional."
         });
 
