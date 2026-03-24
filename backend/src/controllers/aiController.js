@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, { apiVersion: 'v1' });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export const chat = async (req, res) => {
     try {
@@ -55,10 +55,13 @@ export const chat = async (req, res) => {
         for (const name of modelNames) {
             try {
                 // Try each model until one works
-                const model = genAI.getGenerativeModel({ 
-                    model: name,
-                    systemInstruction: "You are CastUp AI Assistant, a helpful companion for cinema industry professionals. Help users find talent, prepare for auditions, and answer questions about filmmaking. Be concise and professional."
-                });
+                const model = genAI.getGenerativeModel(
+                    { 
+                        model: name,
+                        systemInstruction: "You are CastUp AI Assistant, a helpful companion for cinema industry professionals. Help users find talent, prepare for auditions, and answer questions about filmmaking. Be concise and professional."
+                    },
+                    { apiVersion: 'v1' }
+                );
 
                 const chatSession = model.startChat({
                     history: chatHistory,
