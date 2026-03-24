@@ -33,6 +33,20 @@ export const chat = async (req, res) => {
         let responseText = '';
         let lastError = null;
 
+        // Convert history format if needed (Gemini uses { role, parts: [{ text: '' }] })
+        let chatHistory = (history || [])
+            .filter(msg => msg.content && msg.content.trim()) // filter empty messages
+            .map(msg => ({
+                role: msg.role === 'ai' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
+
+        // CRITICAL: Gemini history MUST start with a 'user' message.
+        // If the frontend sends the initial AI greeting as the first history item, skip it.
+        while (chatHistory.length > 0 && chatHistory[0].role === 'model') {
+            chatHistory.shift();
+        }
+
         for (const name of modelNames) {
             try {
                 // Try each model until one works
