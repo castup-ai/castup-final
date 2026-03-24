@@ -55,16 +55,20 @@ export const chat = async (req, res) => {
         for (const name of modelNames) {
             try {
                 // Try each model until one works
-                const model = genAI.getGenerativeModel(
-                    { 
-                        model: name,
-                        systemInstruction: "You are CastUp AI Assistant, a helpful companion for cinema industry professionals. Help users find talent, prepare for auditions, and answer questions about filmmaking. Be concise and professional."
-                    },
-                    { apiVersion: 'v1' }
-                );
+                const model = genAI.getGenerativeModel({ model: name });
 
                 const chatSession = model.startChat({
-                    history: chatHistory,
+                    history: [
+                        {
+                            role: "user",
+                            parts: [{ text: "You are CastUp AI Assistant, a helpful companion for cinema industry professionals. Help users find talent, prepare for auditions, and answer questions about filmmaking. Be concise and professional." }]
+                        },
+                        {
+                            role: "model",
+                            parts: [{ text: "Understood! I am CastUp's AI Assistant, ready to help with talent, auditions, and filmmaking." }]
+                        },
+                        ...chatHistory
+                    ],
                 });
 
                 const result = await chatSession.sendMessage(message);
