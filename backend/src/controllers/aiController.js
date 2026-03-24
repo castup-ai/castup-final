@@ -22,9 +22,7 @@ export const chat = async (req, res) => {
         }
 
         const modelNames = [
-            "gemini-1.5-flash",
-            "gemini-1.5-pro",
-            "gemini-pro"
+            "gemini-1.5-flash"
         ];
 
         let responseText = '';

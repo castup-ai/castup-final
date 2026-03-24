@@ -1,0 +1,38 @@
+﻿Testing Gemini 1.5 Flash...
+node : Γ¥î Error 
+encountered:
+At line:1 char:1
++ node backend/test_ne
+w_key.cjs 2>&1 | 
+Out-File -Encoding 
+utf8 backend/ ...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (Γ¥î Error    
+ encountered::Stri    
+ng) [], RemoteExc    
+eption
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+Message: 
+[GoogleGenerativeAI 
+Error]: Error 
+fetching from https://
+generativelanguage.goo
+gleapis.com/v1beta/mod
+els/gemini-1.5-flash:g
+enerateContent: [404 
+Not Found] models/gemi
+ni-1.5-flash is not 
+found for API version 
+v1beta, or is not 
+supported for 
+generateContent. Call 
+ListModels to see the 
+list of available 
+models and their 
+supported methods.
