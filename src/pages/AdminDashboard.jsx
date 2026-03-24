@@ -6,7 +6,7 @@ import {
     Shield, Users, Briefcase, Trash2, Search, BarChart2, Mail,
     CheckCircle, XCircle, Eye, RefreshCw, Video, Database, Sparkles,
     Filter, Download, Plus, ArrowRight, Check, X as CloseIcon, ChevronLeft, ChevronRight, 
-    FileVideo, Loader2, FileText, Send, Layers
+    FileVideo, Loader2, FileText, Send, Layers, User
 } from 'lucide-react'
 
 const ADMIN_EMAILS = ['castup4862446@gmail.com', 'castupaiapp@gmail.com']
@@ -319,15 +319,24 @@ export default function AdminDashboard() {
                                     <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md tracking-tighter ${u.availability === 'Immediately' ? 'bg-success/20 text-success' : 'bg-warning/20 text-warning'}`}>
                                         {u.availability || 'Pending'}
                                     </span>
-                                    {!ADMIN_EMAILS.includes(u.email) && (
+                                    <div className="flex gap-2">
                                         <button
-                                            onClick={() => handleDeleteUser(u.id, u.email)}
-                                            className="w-10 h-10 rounded-xl flex items-center justify-center text-danger hover:bg-danger/10 transition-colors"
-                                            title="Permanently Remove User"
+                                            onClick={() => navigate('/explore', { state: { viewProfileId: u.id } })}
+                                            className="w-10 h-10 rounded-xl flex items-center justify-center text-primary hover:bg-primary/10 transition-colors"
+                                            title="View Profile"
                                         >
-                                            <Trash2 size={20} />
+                                            <User size={20} />
                                         </button>
-                                    )}
+                                        {!ADMIN_EMAILS.includes(u.email) && (
+                                            <button
+                                                onClick={() => handleDeleteUser(u.id, u.email)}
+                                                className="w-10 h-10 rounded-xl flex items-center justify-center text-danger hover:bg-danger/10 transition-colors"
+                                                title="Permanently Remove User"
+                                            >
+                                                <Trash2 size={20} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </motion.div>
                         ))}

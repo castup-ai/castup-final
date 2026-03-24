@@ -22,11 +22,8 @@ export const chat = async (req, res) => {
         }
 
         const modelNames = [
-            "gemini-2.0-flash",
-            "gemini-1.5-flash", 
-            "gemini-1.5-flash-latest",
+            "gemini-1.5-flash",
             "gemini-1.5-pro",
-            "gemini-1.5-pro-latest",
             "gemini-pro"
         ];
 
@@ -34,17 +31,27 @@ export const chat = async (req, res) => {
         let lastError = null;
 
         // Convert history format if needed (Gemini uses { role, parts: [{ text: '' }] })
-        let chatHistory = (history || [])
+        let rawHistory = (history || [])
             .filter(msg => msg.content && msg.content.trim()) // filter empty messages
             .map(msg => ({
                 role: msg.role === 'ai' ? 'model' : 'user',
                 parts: [{ text: msg.content }]
             }));
 
-        // CRITICAL: Gemini history MUST start with a 'user' message.
-        // If the frontend sends the initial AI greeting as the first history item, skip it.
-        while (chatHistory.length > 0 && chatHistory[0].role === 'model') {
-            chatHistory.shift();
+        // CRITICAL: Gemini history MUST start with a 'user' message, and strictly alternate.
+        let chatHistory = [];
+        let expectedRole = 'user';
+
+        for (const item of rawHistory) {
+            if (item.role === expectedRole) {
+                chatHistory.push(item);
+                expectedRole = expectedRole === 'user' ? 'model' : 'user';
+            }
+        }
+
+        // If history ends with 'user', we drop it so the new incoming message can be 'user'
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
+            chatHistory.pop();
         }
 
         for (const name of modelNames) {

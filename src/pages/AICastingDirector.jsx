@@ -340,7 +340,6 @@ export default function AICastingDirector() {
                                                         })}
                                                 </div>
                                                 <div className="flex gap-2 mt-3">
-                                                    <button className="btn btn-outline btn-sm"><Mail size={14} /> Connect</button>
                                                     <button
                                                         className="btn btn-primary btn-sm"
                                                         onClick={() => { setMessagingUser(talent); setMessageText(''); }}
